@@ -9,6 +9,8 @@
         "lint": "next lint"
     },
     "dependencies": {
+        "@stripe/react-stripe-js": "^5.6.0",
+        "@stripe/stripe-js": "^8.7.0",
         "@vis.gl/react-google-maps": "latest",
         "firebase": "^12.8.0",
         "lucide-react": "^0.474.0",
