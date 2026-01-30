@@ -1,0 +1,7 @@
+lib/
+node_modules/
+*.log
+*.json
+!package.json
+!tsconfig.json
+!package-lock.json

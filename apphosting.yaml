@@ -1,0 +1,12 @@
+# Firebase App Hosting Configuration
+runtime: nodejs20
+
+# Settings for the backend
+runConfig:
+  # The directory containing the app's source code
+  appRoot: apps/modus-archive
+
+# Environment variables
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: modus-archive-nexus

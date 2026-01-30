@@ -1,0 +1,23 @@
+steps:
+  # Install dependencies
+  - name: 'node:20'
+    id: 'install'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        npm install -g pnpm@10.15.0
+        pnpm install --frozen-lockfile
+
+  # Build modus-archive app only
+  - name: 'node:20'
+    id: 'build'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        npm install -g pnpm@10.15.0
+        pnpm run build --filter=@repo/modus-archive
+
+options:
+  logging: CLOUD_LOGGING_ONLY

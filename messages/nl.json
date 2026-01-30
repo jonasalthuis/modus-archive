@@ -1,0 +1,22 @@
+{
+    "HomePage": {
+        "title": "Modus Maquettebouw",
+        "subtitle": "Het documenteren van het analoge DNA van 40 jaar architectuurgeschiedenis. Een onderzoeksgericht archief met 850 maquettes en 1.500 verhalen.",
+        "links": {
+            "collection": "De Collectie",
+            "about": "Over Modus",
+            "research": "Onderzoekseenheid"
+        }
+    },
+    "Acquisitions": {
+        "title": "Nieuwe Aanwinsten",
+        "browseAll": "Alles Bekijken",
+        "series": "Model Serie #{number}"
+    },
+    "Footer": {
+        "supportedBy": "Project Ondersteund door",
+        "funder": "Stimuleringsfonds Creatieve Industrie",
+        "admin": "Beheerder: {name}",
+        "copyright": "© Modus Archief {year}"
+    }
+}
