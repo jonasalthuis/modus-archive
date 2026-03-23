@@ -22,9 +22,10 @@ export default async function LocaleLayout({
     return (
         <html lang={locale}>
             <body className={`font-sans antialiased`}>
-                <NextIntlClientProvider messages={messages}>
+                <NextIntlClientProvider messages={messages} locale={locale}>
                     {children}
                 </NextIntlClientProvider>
+
             </body>
         </html>
     );
