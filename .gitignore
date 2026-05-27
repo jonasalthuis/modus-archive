@@ -50,3 +50,6 @@ ui-debug.log*
 # Claude Code local settings
 .claude/settings.local.json
 .claude/worktrees/
+
+# Local project files (design docs, PDFs, brainstorms)
+project_files/
