@@ -29,11 +29,13 @@ export const GenericEditor = ({
     existingDoc,
     onCancel,
     onSave,
+    hideHeader = false,
 }: {
     schema: Schema;
     existingDoc?: Record<string, unknown>;
     onCancel: () => void;
     onSave: () => void;
+    hideHeader?: boolean;
 }) => {
     const [formData, setFormData] = useState<Record<string, unknown>>({});
     const [saving, setSaving] = useState(false);
@@ -86,23 +88,25 @@ export const GenericEditor = ({
         (formData.modelNumber as string) || '';
 
     return (
-        <div className="bg-stone-50 p-8 border border-stone-200 animate-in slide-in-from-right duration-300">
-            <div className="flex justify-between items-center mb-8 border-b border-stone-200 pb-4">
-                <div>
-                    <h3 className="text-xl font-light uppercase tracking-widest">
-                        {existingDoc ? `Edit: ${existingDoc.title as string || existingDoc.id as string}` : `New ${schema.name}`}
-                    </h3>
-                    {existingDoc && (
-                        <span className="text-[10px] font-mono text-stone-400">ID: {existingDoc.id as string}</span>
-                    )}
+        <div className="bg-white p-8">
+            {!hideHeader && (
+                <div className="flex justify-between items-center mb-8 border-b border-stone-200 pb-4">
+                    <div>
+                        <h3 className="text-xl font-light uppercase tracking-widest">
+                            {existingDoc ? `Edit: ${existingDoc.title as string || existingDoc.id as string}` : `New ${schema.name}`}
+                        </h3>
+                        {existingDoc && (
+                            <span className="text-[10px] font-mono text-stone-400">ID: {existingDoc.id as string}</span>
+                        )}
+                    </div>
+                    <button
+                        onClick={onCancel}
+                        className="bg-white border border-stone-300 p-2 hover:bg-stone-100 transition-colors"
+                    >
+                        <X size={16} />
+                    </button>
                 </div>
-                <button
-                    onClick={onCancel}
-                    className="bg-white border border-stone-300 p-2 hover:bg-stone-100 transition-colors"
-                >
-                    <X size={16} />
-                </button>
-            </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
                 {Object.entries(schema.properties).map(([key, prop]) => (

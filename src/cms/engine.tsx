@@ -205,57 +205,40 @@ export const getNMASchemas = () => ({
         name: "Models",
         path: "ma_models",
         properties: {
-            // — Visibility —
-            inPrototype: { name: "In prototype", dataType: "boolean", defaultValue: false },
-            isVisible:   { name: "Visible on site", dataType: "boolean", defaultValue: false },
-            gridSize: {
-                name: "Grid card size",
-                dataType: "string",
-                config: { enumValues: ["S", "M", "L", "Bi"] },
-                defaultValue: "M",
-            },
+            // ── Table-primary columns (visible by default) ──
+            modelNumber:    { name: "Ref #",           dataType: "string",       validation: { required: true }, tableVisible: true,  tableWidth: 85 },
+            title:          { name: "Title",           dataType: "string",       validation: { required: true }, tableVisible: true,  tableWidth: 230 },
+            architect:      { name: "Architect",       dataType: "string",       tableVisible: true,  tableWidth: 180 },
+            year:           { name: "Year",            dataType: "number",       tableVisible: true,  tableWidth: 72 },
+            isVisible:      { name: "Published",       dataType: "boolean",      defaultValue: false, tableVisible: true,  tableWidth: 90 },
+            inPrototype:    { name: "Prototype",       dataType: "boolean",      defaultValue: false, tableVisible: true,  tableWidth: 90 },
+            images:         { name: "Images",          dataType: "imageGallery", tableVisible: true,  tableWidth: 72 },
+            voiceNarrative: { name: "Audio",           dataType: "audioUpload",  tableVisible: true,  tableWidth: 65 },
 
-            // — Core identity —
-            modelNumber: { name: "Model number (REF #)", dataType: "string", validation: { required: true } },
-            title:       { name: "Project title", dataType: "string", validation: { required: true } },
-            architect:   { name: "Architect / Studio", dataType: "string" },
-            year:        { name: "Year", dataType: "number" },
-
-            // — Model specifics —
-            scale:     { name: "Scale", dataType: "string" },
-            modelSize: { name: "Physical size", dataType: "string" },
+            // ── Extra detail columns (hidden by default, toggleable) ──
             modelType: {
-                name: "Model type",
-                dataType: "string",
-                config: {
-                    enumValues: [
-                        "presentation", "study", "competition", "urban",
-                        "structural", "detail", "section", "interior", "fragment",
-                    ],
-                },
+                name: "Model type", dataType: "string", tableVisible: false, tableWidth: 120,
+                config: { enumValues: ["presentation","study","competition","urban","structural","detail","section","interior","fragment"] },
             },
-            buildingType:   { name: "Building type", dataType: "string" },
+            buildingType:   { name: "Building type",  dataType: "string",  tableVisible: false, tableWidth: 130 },
             buildingStatus: {
-                name: "Building status",
-                dataType: "string",
-                config: { enumValues: ["built", "unbuilt", "competition", "demolished", "unknown"] },
+                name: "Building status", dataType: "string", tableVisible: false, tableWidth: 120,
+                config: { enumValues: ["built","unbuilt","competition","demolished","unknown"] },
             },
-            materials: { name: "Materials", dataType: "array", of: { dataType: "string" } },
-            tags:      { name: "Tags", dataType: "array", of: { dataType: "string" } },
-
-            // — People & provenance —
-            location:    { name: "Building location", dataType: "string" },
-            leadMaker:   { name: "Lead maker", dataType: "string" },
-            otherMakers: { name: "Other makers", dataType: "string" },
-            photographer: { name: "Photographer", dataType: "string" },
-            provenance:  { name: "Current location / provenance", dataType: "string" },
-
-            // — Editorial —
-            notes: { name: "Notes", dataType: "string", multiline: true },
-
-            // — Media —
-            images:         { name: "Images", dataType: "imageGallery" },
-            voiceNarrative: { name: "Audio narrative", dataType: "audioUpload" },
+            scale:       { name: "Scale",          dataType: "string",  tableVisible: false, tableWidth: 90 },
+            modelSize:   { name: "Physical size",  dataType: "string",  tableVisible: false, tableWidth: 120 },
+            location:    { name: "Location",       dataType: "string",  tableVisible: false, tableWidth: 160 },
+            leadMaker:   { name: "Lead maker",     dataType: "string",  tableVisible: false, tableWidth: 150 },
+            otherMakers: { name: "Other makers",   dataType: "string",  tableVisible: false, tableWidth: 150 },
+            photographer:{ name: "Photographer",   dataType: "string",  tableVisible: false, tableWidth: 140 },
+            provenance:  { name: "Provenance",     dataType: "string",  tableVisible: false, tableWidth: 160 },
+            materials:   { name: "Materials",      dataType: "array",   tableVisible: false, tableWidth: 150, of: { dataType: "string" } },
+            tags:        { name: "Tags",           dataType: "array",   tableVisible: false, tableWidth: 130, of: { dataType: "string" } },
+            notes:       { name: "Notes",          dataType: "string",  tableVisible: false, tableWidth: 200, multiline: true },
+            gridSize: {
+                name: "Grid size", dataType: "string", tableVisible: false, tableWidth: 80,
+                config: { enumValues: ["S","M","L","Bi"] }, defaultValue: "M",
+            },
         },
     },
 
@@ -263,11 +246,11 @@ export const getNMASchemas = () => ({
         name: "Dossiers",
         path: "ma_dossiers",
         properties: {
-            isVisible:  { name: "Visible on site", dataType: "boolean", defaultValue: false },
-            title:      { name: "Title", dataType: "string", validation: { required: true } },
-            slug:       { name: "Slug (URL)", dataType: "string", validation: { required: true } },
-            intro:      { name: "Intro text", dataType: "string", multiline: true },
-            coverImage: { name: "Cover image URL", dataType: "string" },
+            title:      { name: "Title",       dataType: "string",  validation: { required: true }, tableVisible: true,  tableWidth: 280 },
+            slug:       { name: "Slug",        dataType: "string",  validation: { required: true }, tableVisible: true,  tableWidth: 180 },
+            isVisible:  { name: "Visible",     dataType: "boolean", defaultValue: false,             tableVisible: true,  tableWidth: 80 },
+            intro:      { name: "Intro text",  dataType: "string",  tableVisible: false, tableWidth: 300, multiline: true },
+            coverImage: { name: "Cover image", dataType: "string",  tableVisible: false, tableWidth: 200 },
         },
     },
 
@@ -275,13 +258,13 @@ export const getNMASchemas = () => ({
         name: "Articles",
         path: "ma_articles",
         properties: {
-            isVisible: { name: "Published", dataType: "boolean", defaultValue: false },
-            title:     { name: "Title", dataType: "string", validation: { required: true } },
-            slug:      { name: "Slug (URL)", dataType: "string", validation: { required: true } },
-            author:    { name: "Author", dataType: "string" },
-            excerpt:   { name: "Excerpt", dataType: "string", multiline: true },
-            content:   { name: "Content", dataType: "string", markdown: true },
-            tags:      { name: "Tags", dataType: "array", of: { dataType: "string" } },
+            title:    { name: "Title",    dataType: "string",  validation: { required: true }, tableVisible: true, tableWidth: 260 },
+            slug:     { name: "Slug",     dataType: "string",  validation: { required: true }, tableVisible: true, tableWidth: 180 },
+            author:   { name: "Author",   dataType: "string",  tableVisible: true,  tableWidth: 140 },
+            isVisible:{ name: "Published",dataType: "boolean", defaultValue: false,  tableVisible: true,  tableWidth: 90 },
+            excerpt:  { name: "Excerpt",  dataType: "string",  tableVisible: false, tableWidth: 280, multiline: true },
+            content:  { name: "Content",  dataType: "string",  tableVisible: false, tableWidth: 300, markdown: true },
+            tags:     { name: "Tags",     dataType: "array",   tableVisible: false, tableWidth: 130, of: { dataType: "string" } },
         },
     },
 
@@ -289,13 +272,11 @@ export const getNMASchemas = () => ({
         name: "Users",
         path: "ma_users",
         properties: {
-            displayName: { name: "Name", dataType: "string", validation: { required: true } },
-            email:       { name: "Email", dataType: "string", validation: { required: true } },
+            displayName: { name: "Name",  dataType: "string", validation: { required: true }, tableVisible: true, tableWidth: 200 },
+            email:       { name: "Email", dataType: "string", validation: { required: true }, tableVisible: true, tableWidth: 240 },
             role: {
-                name: "Role",
-                dataType: "string",
-                config: { enumValues: ["admin", "editor", "viewer"] },
-                defaultValue: "viewer",
+                name: "Role", dataType: "string", tableVisible: true, tableWidth: 100,
+                config: { enumValues: ["admin","editor","viewer"] }, defaultValue: "viewer",
             },
         },
     },
