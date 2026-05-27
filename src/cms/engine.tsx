@@ -100,6 +100,11 @@ export const getNMASchemas = () => ({
         path: "ma_models",
         properties: {
             // — Visibility & display —
+            inPrototype: {
+                name: "In prototype",
+                dataType: "boolean",
+                defaultValue: false,
+            },
             isVisible: {
                 name: "Visible on site",
                 dataType: "boolean",

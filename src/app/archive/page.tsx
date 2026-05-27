@@ -24,6 +24,7 @@ interface ModelRecord {
     modelType?: string;
     buildingType?: string;
     isVisible?: boolean;
+    inPrototype?: boolean;
     images?: ModelImage[];
     tags?: string[];
     gridSize?: string;
@@ -44,9 +45,8 @@ export default function ArchivePage() {
                 const snapshot = await getDocs(q);
                 const results = snapshot.docs
                     .map(doc => ({ id: doc.id, ...doc.data() } as ModelRecord))
-                    // Show only visible models; if isVisible is not set, show the model
-                    // (during setup phase before visibility is configured)
-                    .filter(m => m.isVisible !== false);
+                    // Show only models marked for the prototype
+                    .filter(m => m.inPrototype === true);
                 setModels(results);
             } catch (error) {
                 console.error("Failed to fetch archive:", error);
