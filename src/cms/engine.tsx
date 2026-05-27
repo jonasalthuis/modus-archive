@@ -5,9 +5,10 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { LoginView } from "./views/LoginView";
 import { GenericCollection } from "./components/GenericCollection";
-import { Open_Sans } from "next/font/google";
+import { PrototypeCollection } from "./components/PrototypeCollection";
+import { Inter } from "next/font/google";
 
-const openSans = Open_Sans({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"] });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const CMSEngine = ({ name: _name, config: _config }: { name?: string; config?: unknown }) => {
@@ -36,11 +37,11 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
     const schemas = getNMASchemas();
 
     return (
-        <div className="bg-white min-h-screen font-sans text-black">
+        <div className={`bg-white min-h-screen text-black ${inter.className}`}>
             <div className="p-12 border-b border-black">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className={`text-4xl font-light uppercase tracking-widest text-black ${openSans.className}`}>
+                        <h1 className="text-4xl font-light uppercase tracking-widest text-black">
                             NMA
                         </h1>
                         <p className="mt-1 text-stone-400 text-[10px] uppercase tracking-[0.4em] font-bold">
@@ -60,25 +61,62 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
 
             <div className="p-12">
                 {!activeCollection ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {Object.entries(schemas).map(([key, schema]) => (
+                    <div className="space-y-8">
+                        {/* Prototype — primary editorial view */}
+                        <div>
+                            <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300 mb-4">
+                                Editorial
+                            </p>
                             <div
-                                key={key}
-                                className="group p-8 border border-stone-200 hover:border-black hover:bg-stone-50 transition-all duration-300 cursor-pointer"
-                                onClick={() => setActiveCollection(key)}
+                                className="group p-8 bg-stone-900 text-white cursor-pointer hover:bg-stone-800 transition-colors duration-300"
+                                onClick={() => setActiveCollection('prototype')}
                             >
-                                <h2 className="text-xl font-bold uppercase tracking-tight mb-1">{schema.name}</h2>
-                                <p className="text-[10px] font-mono text-stone-400 mb-6">/{schema.path}</p>
-                                <div className="h-px w-8 bg-black mb-4 group-hover:w-16 transition-all duration-500" />
-                                <span className="text-[10px] uppercase tracking-widest font-bold text-stone-400 group-hover:text-black transition-colors">
-                                    Open →
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h2 className="text-xl font-bold uppercase tracking-tight mb-1">Prototype</h2>
+                                        <p className="text-[10px] font-mono text-stone-400 mb-6">
+                                            ma_models — inPrototype: true
+                                        </p>
+                                    </div>
+                                    <span className="text-[9px] uppercase tracking-widest font-bold bg-white/10 px-2 py-1">
+                                        35 selected
+                                    </span>
+                                </div>
+                                <div className="h-px w-8 bg-white/30 mb-4 group-hover:w-16 transition-all duration-500" />
+                                <span className="text-[10px] uppercase tracking-widest font-bold text-stone-400 group-hover:text-white transition-colors">
+                                    Manage prototype →
                                 </span>
                             </div>
-                        ))}
+                        </div>
+
+                        {/* All collections */}
+                        <div>
+                            <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300 mb-4">
+                                Collections
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                {Object.entries(schemas).map(([key, schema]) => (
+                                    <div
+                                        key={key}
+                                        className="group p-8 border border-stone-200 hover:border-black hover:bg-stone-50 transition-all duration-300 cursor-pointer"
+                                        onClick={() => setActiveCollection(key)}
+                                    >
+                                        <h2 className="text-xl font-bold uppercase tracking-tight mb-1">{schema.name}</h2>
+                                        <p className="text-[10px] font-mono text-stone-400 mb-6">/{schema.path}</p>
+                                        <div className="h-px w-8 bg-black mb-4 group-hover:w-16 transition-all duration-500" />
+                                        <span className="text-[10px] uppercase tracking-widest font-bold text-stone-400 group-hover:text-black transition-colors">
+                                            Open →
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     <div>
-                        {schemas[activeCollection as keyof ReturnType<typeof getNMASchemas>] ? (
+                        {activeCollection === 'prototype' ? (
+                            <PrototypeCollection schema={schemas.models} />
+                        ) : schemas[activeCollection as keyof ReturnType<typeof getNMASchemas>] ? (
                             <GenericCollection
                                 schema={schemas[activeCollection as keyof ReturnType<typeof getNMASchemas>]}
                             />
@@ -218,8 +256,8 @@ export const getNMASchemas = () => ({
                 dataType: "imageGallery",
             },
             voiceNarrative: {
-                name: "Audio narrative URL",
-                dataType: "string",
+                name: "Audio narrative",
+                dataType: "audioUpload",
             },
         },
     },

@@ -5,6 +5,7 @@ import { doc, setDoc, updateDoc, addDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { X, Save } from 'lucide-react';
 import { ImageGalleryEditor, type ModelImage } from './ImageGalleryEditor';
+import { AudioUploader } from './AudioUploader';
 
 interface SchemaProperty {
     name: string;
@@ -196,7 +197,7 @@ export const GenericEditor = ({
                                 </div>
                             )}
 
-                            {/* Image gallery — new */}
+                            {/* Image gallery */}
                             {prop.dataType === 'imageGallery' && (
                                 <ImageGalleryEditor
                                     modelId={modelId}
@@ -205,10 +206,20 @@ export const GenericEditor = ({
                                 />
                             )}
 
+                            {/* Audio upload */}
+                            {prop.dataType === 'audioUpload' && (
+                                <AudioUploader
+                                    modelId={modelId}
+                                    url={(formData[key] as string) || null}
+                                    onChange={(url) => handleChange(key, url ?? '')}
+                                />
+                            )}
+
                             {/* Plain string / number — catch-all (exclude handled types) */}
                             {prop.dataType !== 'boolean' &&
                                 prop.dataType !== 'array' &&
                                 prop.dataType !== 'imageGallery' &&
+                                prop.dataType !== 'audioUpload' &&
                                 !prop.config?.enumValues &&
                                 !(prop.dataType === 'string' && (prop.multiline || prop.markdown)) && (
                                     <input
