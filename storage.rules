@@ -1,19 +1,24 @@
 rules_version = '2';
-
 service firebase.storage {
   match /b/{bucket}/o {
-    // Media Vault: High-res masters
-    match /ma_high_res/{allPaths=**} {
-      allow read: if request.auth != null; // Restrict high-res to authenticated users/institutions
-      allow write: if request.auth != null;
-    }
-    
-    // Public thumbnails and optimized web assets
-    match /ma_web_assets/{allPaths=**} {
+
+    // Model images — public read, auth write
+    match /models/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null;
     }
-    
+
+    // Dossier images — public read, auth write
+    match /dossiers/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // High-res masters — auth only
+    match /ma_high_res/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+
     // Default fallback
     match /{allPaths=**} {
       allow read, write: if request.auth != null;

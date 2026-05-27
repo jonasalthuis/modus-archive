@@ -46,9 +46,9 @@ export const LoginView = () => {
             <div className="bg-white p-12 border border-black shadow-none max-w-md w-full">
                 <div className="text-center mb-10">
                     <h1 className="text-2xl font-light uppercase tracking-widest text-black mb-2">
-                        Modus
+                        NMA
                     </h1>
-                    <p className="text-gray-400 italic text-sm">Restricted Access</p>
+                    <p className="text-gray-400 italic text-sm tracking-widest text-[10px] uppercase">Restricted Access</p>
                 </div>
 
                 <div className="space-y-6">

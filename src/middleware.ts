@@ -1,14 +1,6 @@
-import createMiddleware from 'next-intl/middleware';
-
-export default createMiddleware({
-    // A list of all locales that are supported
-    locales: ['en', 'nl'],
-
-    // Used when no locale matches
-    defaultLocale: 'en'
-});
+// No locale routing — NMA is a single-language (English) platform.
+export function middleware() {}
 
 export const config = {
-    // Match only internationalized pathnames
-    matcher: ['/((?!api|_next|.*\\..*).*)']
+    matcher: [],
 };

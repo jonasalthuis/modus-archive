@@ -20,7 +20,7 @@ export const DashboardLayout = ({
     title,
     sidebarItems = [],
     userInitials = 'MA',
-    appName = 'MODUS'
+    appName = 'NMA'
 }: DashboardLayoutProps) => {
     return (
         <div className="min-h-screen bg-stone-50 dark:bg-[#050505] flex font-sans selection:bg-stone-200 selection:text-stone-900">
@@ -55,7 +55,7 @@ export const DashboardLayout = ({
                         </div>
                         <div className="flex flex-col">
                             <span className="text-xs font-bold dark:text-white uppercase tracking-tight">Archivist</span>
-                            <span className="text-[10px] text-stone-400 font-mono">Modus Workshop</span>
+                            <span className="text-[10px] text-stone-400 font-mono">NMA</span>
                         </div>
                     </div>
                 </div>

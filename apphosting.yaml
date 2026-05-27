@@ -1,12 +1,13 @@
-# Firebase App Hosting Configuration
-runtime: nodejs20
+runtime: nodejs22
 
-# Settings for the backend
 runConfig:
-  # The directory containing the app's source code
-  appRoot: apps/modus-archive
+  concurrency: 80
+  maxInstances: 4
+  minInstances: 0
 
-# Environment variables
 env:
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     value: modus-archive-nexus
+    availability:
+      - BUILD
+      - RUNTIME
