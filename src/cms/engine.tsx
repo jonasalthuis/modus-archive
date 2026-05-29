@@ -13,6 +13,7 @@ import {
     Users,
     UserCircle,
     LogOut,
+    Plus,
 } from 'lucide-react';
 
 import { LoginView } from "./views/LoginView";
@@ -20,6 +21,7 @@ import { DashboardView } from "./views/DashboardView";
 import { AccountView } from "./views/AccountView";
 import { GenericCollection } from "./components/GenericCollection";
 import { PrototypeCollection } from "./components/PrototypeCollection";
+import { AddModelPanel } from "./components/AddModelPanel";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,6 +29,7 @@ export type ActiveView =
     | 'dashboard'
     | 'prototype'
     | 'models'
+    | 'add-model'
     | 'articles'
     | 'dossiers'
     | 'users'
@@ -72,6 +75,21 @@ const Sidebar = ({
             <div className="px-6 py-7 border-b border-stone-100">
                 <p className="text-xl font-light uppercase tracking-[0.25em]">NMA</p>
                 <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-stone-300 mt-0.5">Admin</p>
+            </div>
+
+            {/* ── Add model CTA ── */}
+            <div className="px-4 py-4 border-b border-stone-100">
+                <button
+                    onClick={() => onNavigate('add-model')}
+                    className={`w-full flex items-center justify-center gap-2 py-2.5 text-[9px] uppercase tracking-[0.3em] font-bold transition-all ${
+                        activeView === 'add-model'
+                            ? 'bg-stone-700 text-white'
+                            : 'bg-stone-900 text-white hover:bg-stone-700'
+                    }`}
+                >
+                    <Plus size={13} />
+                    New model
+                </button>
             </div>
 
             {/* Nav */}
@@ -170,14 +188,20 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
 
     const renderView = () => {
         switch (activeView) {
-            case 'dashboard': return <DashboardView onNavigate={setActiveView} />;
-            case 'prototype': return <PrototypeCollection schema={schemas.models} />;
-            case 'models':    return <GenericCollection schema={schemas.models} />;
-            case 'articles':  return <GenericCollection schema={schemas.articles} />;
-            case 'dossiers':  return <GenericCollection schema={schemas.dossiers} />;
-            case 'users':     return <GenericCollection schema={schemas.users} />;
-            case 'account':   return <AccountView user={user} />;
-            default:          return null;
+            case 'dashboard':  return <DashboardView onNavigate={setActiveView} />;
+            case 'prototype':  return <PrototypeCollection schema={schemas.models} />;
+            case 'models':     return <GenericCollection schema={schemas.models} />;
+            case 'add-model':  return (
+                <AddModelPanel
+                    onSave={() => setActiveView('models')}
+                    onCancel={() => setActiveView('models')}
+                />
+            );
+            case 'articles':   return <GenericCollection schema={schemas.articles} />;
+            case 'dossiers':   return <GenericCollection schema={schemas.dossiers} />;
+            case 'users':      return <GenericCollection schema={schemas.users} />;
+            case 'account':    return <AccountView user={user} />;
+            default:           return null;
         }
     };
 

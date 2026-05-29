@@ -15,8 +15,15 @@ export const LoginView = () => {
         setError(null);
         try {
             await signInWithPopup(auth, new GoogleAuthProvider());
-        } catch {
-            setError('Failed to sign in with Google. Please try again.');
+        } catch (err: unknown) {
+            const code = (err as { code?: string }).code;
+            if (code === 'auth/unauthorized-domain') {
+                setError('This domain is not authorised. Add it in Firebase Console → Authentication → Settings → Authorised domains.');
+            } else if (code === 'auth/popup-blocked') {
+                setError('Popup was blocked. Please allow popups for this site and try again.');
+            } else {
+                setError('Google sign-in failed. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
