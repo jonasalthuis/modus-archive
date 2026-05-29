@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { doc, setDoc, updateDoc, addDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { X, Save } from 'lucide-react';
+import { X, Save, AlertTriangle } from 'lucide-react';
 import { ImageGalleryEditor, type ModelImage } from './ImageGalleryEditor';
 import { AudioUploader } from './AudioUploader';
 
@@ -24,22 +24,79 @@ interface Schema {
     properties: Record<string, SchemaProperty>;
 }
 
+// ── Save confirmation modal ────────────────────────────────────────────────────
+
+const SaveConfirmModal = ({
+    recordTitle,
+    onConfirm,
+    onCancel,
+    saving,
+}: {
+    recordTitle: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+    saving: boolean;
+}) => (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
+        <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
+        <div className="relative bg-white border border-stone-200 shadow-2xl p-8 max-w-sm w-full space-y-6 animate-in fade-in zoom-in-95 duration-150">
+            <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                    <Save size={14} className="text-stone-400 flex-shrink-0" />
+                    <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-500">Confirm save</p>
+                </div>
+                <h3 className="text-lg font-light leading-snug">
+                    Save changes to <span className="font-medium">"{recordTitle}"</span>?
+                </h3>
+                <p className="text-[12px] text-stone-500 leading-relaxed">
+                    Please confirm the information is accurate before writing to the database. This will overwrite the existing record.
+                </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    disabled={saving}
+                    className="flex-1 py-3 border border-stone-200 text-[10px] uppercase tracking-[0.25em] font-bold text-stone-500 hover:border-stone-900 hover:text-stone-900 transition-colors disabled:opacity-40"
+                >
+                    Go back
+                </button>
+                <button
+                    type="button"
+                    onClick={onConfirm}
+                    disabled={saving}
+                    className="flex-1 py-3 bg-stone-900 text-white text-[10px] uppercase tracking-[0.25em] font-bold hover:bg-stone-700 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+                >
+                    {saving ? 'Saving…' : <><Save size={12} /> Yes, save</>}
+                </button>
+            </div>
+        </div>
+    </div>
+);
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export const GenericEditor = ({
     schema,
     existingDoc,
     onCancel,
     onSave,
     hideHeader = false,
+    onDirtyChange,
 }: {
     schema: Schema;
     existingDoc?: Record<string, unknown>;
     onCancel: () => void;
     onSave: () => void;
     hideHeader?: boolean;
+    onDirtyChange?: (dirty: boolean) => void;
 }) => {
     const [formData, setFormData] = useState<Record<string, unknown>>({});
     const [saving, setSaving] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
+    const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
+    // Reset form and dirty state whenever the doc being edited changes
     useEffect(() => {
         if (existingDoc) {
             setFormData({ ...existingDoc });
@@ -52,14 +109,27 @@ export const GenericEditor = ({
             });
             setFormData(defaults);
         }
+        setIsDirty(false);
+        onDirtyChange?.(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [existingDoc, schema]);
 
     const handleChange = (key: string, value: unknown) => {
-        setFormData((prev) => ({ ...prev, [key]: value }));
+        setFormData(prev => ({ ...prev, [key]: value }));
+        if (!isDirty) {
+            setIsDirty(true);
+            onDirtyChange?.(true);
+        }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    // Intercept form submit — show confirmation modal instead of saving immediately
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setShowSaveConfirm(true);
+    };
+
+    // The actual save logic — only called after user confirms in modal
+    const doSave = async () => {
         setSaving(true);
         try {
             if (existingDoc) {
@@ -75,20 +145,40 @@ export const GenericEditor = ({
                     await addDoc(collection(db, schema.path), formData);
                 }
             }
+            setShowSaveConfirm(false);
+            setIsDirty(false);
+            onDirtyChange?.(false);
             onSave();
         } catch (error) {
             console.error("Save failed", error);
-            alert("Failed to save record.");
+            setShowSaveConfirm(false);
+            alert("Failed to save record. Please try again.");
         }
         setSaving(false);
     };
 
     // The model ID for Storage path — use existing doc ID, or the entered modelNumber
-    const modelId = (existingDoc?.id as string) ||
-        (formData.modelNumber as string) || '';
+    const modelId = (existingDoc?.id as string) || (formData.modelNumber as string) || '';
+
+    const recordTitle =
+        (existingDoc?.title as string) ||
+        (existingDoc?.modelNumber as string) ||
+        (formData.modelNumber as string) ||
+        (existingDoc?.id as string) ||
+        'new record';
 
     return (
         <div className="bg-white p-8">
+            {/* Save confirmation modal */}
+            {showSaveConfirm && (
+                <SaveConfirmModal
+                    recordTitle={recordTitle}
+                    onConfirm={doSave}
+                    onCancel={() => setShowSaveConfirm(false)}
+                    saving={saving}
+                />
+            )}
+
             {!hideHeader && (
                 <div className="flex justify-between items-center mb-8 border-b border-stone-200 pb-4">
                     <div>
@@ -108,7 +198,7 @@ export const GenericEditor = ({
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
+            <form id="generic-editor-form" onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
                 {Object.entries(schema.properties).map(([key, prop]) => (
                     <div
                         key={key}
@@ -147,7 +237,7 @@ export const GenericEditor = ({
                             {prop.dataType === 'string' && (prop.multiline || prop.markdown) && (
                                 <textarea
                                     value={(formData[key] as string) || ''}
-                                    onChange={(e) => handleChange(key, e.target.value)}
+                                    onChange={e => handleChange(key, e.target.value)}
                                     rows={6}
                                     className="w-full bg-white border border-stone-200 p-3 font-mono text-sm focus:outline-none focus:border-black transition-colors"
                                     placeholder={`${prop.name}...`}
@@ -158,11 +248,11 @@ export const GenericEditor = ({
                             {prop.config?.enumValues && (
                                 <select
                                     value={(formData[key] as string) || ''}
-                                    onChange={(e) => handleChange(key, e.target.value)}
+                                    onChange={e => handleChange(key, e.target.value)}
                                     className="w-full bg-white border border-stone-200 p-3 font-mono text-sm focus:outline-none focus:border-black"
                                 >
                                     <option value="">— select —</option>
-                                    {prop.config.enumValues.map((val) => (
+                                    {prop.config.enumValues.map(val => (
                                         <option key={val} value={val}>{val}</option>
                                     ))}
                                 </select>
@@ -179,10 +269,10 @@ export const GenericEditor = ({
                                                 ? (formData[key] as string[]).join(', ')
                                                 : ((formData[key] as string) || '')
                                         }
-                                        onChange={(e) =>
+                                        onChange={e =>
                                             handleChange(
                                                 key,
-                                                e.target.value.split(',').map((s) => s.trim()).filter(Boolean)
+                                                e.target.value.split(',').map(s => s.trim()).filter(Boolean)
                                             )
                                         }
                                         className="w-full bg-white border border-stone-200 p-3 font-mono text-sm focus:outline-none focus:border-black"
@@ -190,10 +280,7 @@ export const GenericEditor = ({
                                     <div className="flex flex-wrap gap-1">
                                         {Array.isArray(formData[key]) &&
                                             (formData[key] as string[]).map((item, i) => (
-                                                <span
-                                                    key={i}
-                                                    className="bg-stone-100 text-[10px] px-2 py-1 font-mono uppercase"
-                                                >
+                                                <span key={i} className="bg-stone-100 text-[10px] px-2 py-1 font-mono uppercase">
                                                     {item}
                                                 </span>
                                             ))}
@@ -206,7 +293,7 @@ export const GenericEditor = ({
                                 <ImageGalleryEditor
                                     modelId={modelId}
                                     images={(formData[key] as ModelImage[]) || []}
-                                    onChange={(imgs) => handleChange(key, imgs)}
+                                    onChange={imgs => handleChange(key, imgs)}
                                 />
                             )}
 
@@ -215,12 +302,23 @@ export const GenericEditor = ({
                                 <AudioUploader
                                     modelId={modelId}
                                     url={(formData[key] as string) || null}
-                                    onChange={(url) => handleChange(key, url ?? '')}
+                                    onChange={url => handleChange(key, url ?? '')}
                                 />
                             )}
 
-                            {/* Plain string / number — catch-all (exclude handled types) */}
+                            {/* Date picker */}
+                            {prop.dataType === 'date' && (
+                                <input
+                                    type="date"
+                                    value={(formData[key] as string) || ''}
+                                    onChange={e => handleChange(key, e.target.value)}
+                                    className="w-full bg-white border border-stone-200 p-3 font-mono text-sm focus:outline-none focus:border-black transition-colors"
+                                />
+                            )}
+
+                            {/* Plain string / number — catch-all */}
                             {prop.dataType !== 'boolean' &&
+                                prop.dataType !== 'date' &&
                                 prop.dataType !== 'array' &&
                                 prop.dataType !== 'imageGallery' &&
                                 prop.dataType !== 'audioUpload' &&
@@ -230,7 +328,7 @@ export const GenericEditor = ({
                                         type={prop.dataType === 'number' ? 'number' : 'text'}
                                         required={prop.validation?.required}
                                         value={(formData[key] as string | number) || ''}
-                                        onChange={(e) =>
+                                        onChange={e =>
                                             handleChange(
                                                 key,
                                                 prop.dataType === 'number' ? Number(e.target.value) : e.target.value
@@ -243,22 +341,33 @@ export const GenericEditor = ({
                     </div>
                 ))}
 
-                <div className="pt-8 border-t border-black flex justify-end gap-4">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="px-6 py-3 uppercase text-xs font-bold tracking-widest text-stone-400 hover:text-red-500 transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={saving}
-                        className="bg-black text-white px-8 py-3 uppercase text-xs font-bold tracking-widest hover:bg-stone-800 flex items-center gap-2 disabled:opacity-50"
-                    >
-                        {saving ? 'Saving...' : <><Save size={14} /> Save</>}
-                    </button>
-                </div>
+                {/* Footer — only shown when not in slide-over (hideHeader = false = standalone mode) */}
+                {!hideHeader && (
+                    <div className="pt-8 border-t border-black flex justify-end gap-4">
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="px-6 py-3 uppercase text-xs font-bold tracking-widest text-stone-400 hover:text-red-500 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="bg-black text-white px-8 py-3 uppercase text-xs font-bold tracking-widest hover:bg-stone-800 flex items-center gap-2 disabled:opacity-50"
+                        >
+                            {saving ? 'Saving...' : <><Save size={14} /> Save</>}
+                        </button>
+                    </div>
+                )}
+
+                {/* Dirty indicator shown when in slide-over (hideHeader = true) */}
+                {hideHeader && isDirty && (
+                    <div className="flex items-center gap-2 py-3 border-t border-amber-100 bg-amber-50 -mx-8 px-8 mt-2">
+                        <AlertTriangle size={11} className="text-amber-500 flex-shrink-0" />
+                        <p className="text-[10px] text-amber-700 font-medium">Unsaved changes</p>
+                    </div>
+                )}
             </form>
         </div>
     );

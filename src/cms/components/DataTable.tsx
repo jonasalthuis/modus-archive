@@ -93,7 +93,7 @@ export function DataTable<T extends Record<string, unknown>>({
             <div className="flex items-center gap-2 flex-wrap">
                 {/* Search */}
                 <div className="relative flex-1 min-w-[180px] max-w-sm">
-                    <Search size={11} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-300 pointer-events-none" />
+                    <Search size={11} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
                     <input
                         type="text"
                         value={globalFilter}
@@ -110,12 +110,12 @@ export function DataTable<T extends Record<string, unknown>>({
                         className={`flex items-center gap-2 border px-3 py-2 text-[9px] uppercase tracking-[0.25em] font-bold transition-all select-none ${
                             showColumnPicker
                                 ? 'border-stone-900 text-stone-900 bg-stone-50'
-                                : 'border-stone-200 text-stone-400 hover:border-stone-900 hover:text-stone-900'
+                                : 'border-stone-200 text-stone-600 hover:border-stone-900 hover:text-stone-900'
                         }`}
                     >
                         <SlidersHorizontal size={11} />
                         Columns
-                        <span className="font-mono text-[9px] text-stone-300">
+                        <span className="font-mono text-[9px] text-stone-500">
                             {table.getVisibleLeafColumns().length}/{table.getAllLeafColumns().length}
                         </span>
                     </button>
@@ -123,13 +123,13 @@ export function DataTable<T extends Record<string, unknown>>({
                     {showColumnPicker && (
                         <div className="absolute top-full left-0 mt-1 w-60 bg-white border border-stone-200 shadow-2xl z-30 flex flex-col max-h-96">
                             <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 flex-shrink-0">
-                                <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-stone-400">Visible columns</p>
+                                <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-stone-600">Visible columns</p>
                                 <div className="flex gap-3">
                                     <button onClick={() => table.toggleAllColumnsVisible(true)}
-                                        className="text-[8px] uppercase tracking-[0.2em] font-bold text-stone-300 hover:text-stone-900 transition-colors">Show all</button>
+                                        className="text-[8px] uppercase tracking-[0.2em] font-bold text-stone-400 hover:text-stone-900 transition-colors">Show all</button>
                                     <button onClick={() => {
                                         table.getAllLeafColumns().forEach((col, i) => { if (i > 0) col.toggleVisibility(false); });
-                                    }} className="text-[8px] uppercase tracking-[0.2em] font-bold text-stone-300 hover:text-stone-900 transition-colors">Min</button>
+                                    }} className="text-[8px] uppercase tracking-[0.2em] font-bold text-stone-400 hover:text-stone-900 transition-colors">Min</button>
                                 </div>
                             </div>
                             <div className="overflow-y-auto flex-1">
@@ -162,7 +162,7 @@ export function DataTable<T extends Record<string, unknown>>({
 
                 {/* Page size */}
                 <div className="flex items-center gap-1">
-                    <span className="text-[8px] uppercase tracking-[0.35em] font-bold text-stone-300 mr-1.5">Per page</span>
+                    <span className="text-[8px] uppercase tracking-[0.35em] font-bold text-stone-500 mr-1.5">Per page</span>
                     {[25, 50, 100].map(n => (
                         <button
                             key={n}
@@ -170,7 +170,7 @@ export function DataTable<T extends Record<string, unknown>>({
                             className={`w-9 h-8 text-[10px] font-mono border transition-all ${
                                 pageSize === n
                                     ? 'bg-stone-900 text-white border-stone-900'
-                                    : 'border-stone-200 text-stone-400 hover:border-stone-900 hover:text-stone-900'
+                                    : 'border-stone-200 text-stone-600 hover:border-stone-900 hover:text-stone-900'
                             }`}
                         >
                             {n}
@@ -180,14 +180,14 @@ export function DataTable<T extends Record<string, unknown>>({
             </div>
 
             {/* ── Table ── */}
-            <div className="overflow-x-auto border border-stone-100 relative">
+            <div className="overflow-x-auto border border-stone-200 relative">
                 {loading ? (
                     <div className="py-20 text-center">
-                        <p className="text-[9px] uppercase tracking-[0.5em] text-stone-300 animate-pulse">Loading records…</p>
+                        <p className="text-[9px] uppercase tracking-[0.5em] text-stone-400 animate-pulse">Loading records…</p>
                     </div>
                 ) : data.length === 0 ? (
                     <div className="py-20 text-center border-2 border-dashed border-stone-100 m-4">
-                        <p className="text-[9px] uppercase tracking-[0.4em] text-stone-300">No records found</p>
+                        <p className="text-[9px] uppercase tracking-[0.4em] text-stone-400">No records found</p>
                     </div>
                 ) : (
                     <table
@@ -196,15 +196,15 @@ export function DataTable<T extends Record<string, unknown>>({
                     >
                         <thead>
                             {table.getHeaderGroups().map(hg => (
-                                <tr key={hg.id} className="border-b-2 border-stone-100 bg-stone-50">
+                                <tr key={hg.id} className="border-b-2 border-stone-200 bg-stone-100">
                                     {hg.headers.map(header => (
                                         <th
                                             key={header.id}
                                             style={{ width: header.getSize() }}
-                                            className="relative text-left border-r border-stone-100 last:border-r-0"
+                                            className="relative text-left border-r border-stone-200 last:border-r-0"
                                         >
                                             <div
-                                                className={`flex items-center gap-1 px-3 py-3 text-[8px] uppercase tracking-[0.3em] font-bold text-stone-400 select-none whitespace-nowrap overflow-hidden ${
+                                                className={`flex items-center gap-1 px-3 py-3 text-[9px] uppercase tracking-[0.3em] font-bold text-stone-600 select-none whitespace-nowrap overflow-hidden ${
                                                     header.column.getCanSort()
                                                         ? 'cursor-pointer hover:text-stone-900 hover:bg-stone-100 transition-colors'
                                                         : ''
@@ -220,7 +220,7 @@ export function DataTable<T extends Record<string, unknown>>({
                                                             ? <ChevronUp size={9} className="text-stone-900" />
                                                             : header.column.getIsSorted() === 'desc'
                                                             ? <ChevronDown size={9} className="text-stone-900" />
-                                                            : <ChevronsUpDown size={9} className="text-stone-300" />}
+                                                            : <ChevronsUpDown size={9} className="text-stone-400" />}
                                                     </span>
                                                 )}
                                             </div>
@@ -246,7 +246,7 @@ export function DataTable<T extends Record<string, unknown>>({
                                 <tr
                                     key={row.id}
                                     onClick={() => onRowClick?.(row.original)}
-                                    className={`border-b border-stone-50 transition-colors ${
+                                    className={`border-b border-stone-100 transition-colors ${
                                         onRowClick ? 'cursor-pointer hover:bg-stone-50 group' : ''
                                     }`}
                                 >
@@ -254,7 +254,7 @@ export function DataTable<T extends Record<string, unknown>>({
                                         <td
                                             key={cell.id}
                                             style={{ width: cell.column.getSize() }}
-                                            className="border-r border-stone-50 last:border-r-0 align-middle overflow-hidden"
+                                            className="border-r border-stone-100 last:border-r-0 align-middle overflow-hidden"
                                         >
                                             <div className="px-3 py-2.5 overflow-hidden">
                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -271,24 +271,24 @@ export function DataTable<T extends Record<string, unknown>>({
             {/* ── Pagination ── */}
             {!loading && table.getPageCount() > 1 && (
                 <div className="flex items-center justify-between pt-1">
-                    <span className="text-[9px] font-mono text-stone-300">
+                    <span className="text-[9px] font-mono text-stone-500">
                         {rangeStart}–{rangeEnd} of {filteredCount}
                         {filteredCount !== data.length && ` (filtered from ${data.length})`}
                     </span>
 
                     <div className="flex items-center gap-1">
                         <button onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}
-                            className="px-2 py-1.5 border border-stone-200 text-stone-400 hover:border-stone-900 hover:text-stone-900 disabled:opacity-25 transition-all text-[9px] font-mono">
+                            className="px-2 py-1.5 border border-stone-200 text-stone-600 hover:border-stone-900 hover:text-stone-900 disabled:opacity-25 transition-all text-[9px] font-mono">
                             «
                         </button>
                         <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}
-                            className="p-1.5 border border-stone-200 text-stone-400 hover:border-stone-900 hover:text-stone-900 disabled:opacity-25 transition-all">
+                            className="p-1.5 border border-stone-200 text-stone-600 hover:border-stone-900 hover:text-stone-900 disabled:opacity-25 transition-all">
                             <ChevronLeft size={13} />
                         </button>
 
                         {pages.map((p, i) =>
                             p === 'ellipsis' ? (
-                                <span key={`e${i}`} className="px-1.5 text-stone-300 text-[10px] font-mono select-none">…</span>
+                                <span key={`e${i}`} className="px-1.5 text-stone-400 text-[10px] font-mono select-none">…</span>
                             ) : (
                                 <button
                                     key={p}
@@ -305,11 +305,11 @@ export function DataTable<T extends Record<string, unknown>>({
                         )}
 
                         <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}
-                            className="p-1.5 border border-stone-200 text-stone-400 hover:border-stone-900 hover:text-stone-900 disabled:opacity-25 transition-all">
+                            className="p-1.5 border border-stone-200 text-stone-600 hover:border-stone-900 hover:text-stone-900 disabled:opacity-25 transition-all">
                             <ChevronRight size={13} />
                         </button>
                         <button onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}
-                            className="px-2 py-1.5 border border-stone-200 text-stone-400 hover:border-stone-900 hover:text-stone-900 disabled:opacity-25 transition-all text-[9px] font-mono">
+                            className="px-2 py-1.5 border border-stone-200 text-stone-600 hover:border-stone-900 hover:text-stone-900 disabled:opacity-25 transition-all text-[9px] font-mono">
                             »
                         </button>
                     </div>

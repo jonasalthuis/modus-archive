@@ -6,7 +6,6 @@ import { auth } from '@/lib/firebase';
 import { Inter } from "next/font/google";
 import {
     LayoutDashboard,
-    Star,
     Archive,
     FileText,
     BookOpen,
@@ -14,26 +13,34 @@ import {
     UserCircle,
     LogOut,
     Plus,
+    Link2,
 } from 'lucide-react';
 
 import { LoginView } from "./views/LoginView";
 import { DashboardView } from "./views/DashboardView";
 import { AccountView } from "./views/AccountView";
+import { InvitesView } from "./views/InvitesView";
+import { DossierEditor } from "./views/DossierEditor";
 import { GenericCollection } from "./components/GenericCollection";
-import { PrototypeCollection } from "./components/PrototypeCollection";
 import { AddModelPanel } from "./components/AddModelPanel";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export type ActiveView =
     | 'dashboard'
-    | 'prototype'
     | 'models'
     | 'add-model'
-    | 'articles'
+    | 'artefacts'
     | 'dossiers'
+    | 'dossier-editor'
     | 'users'
+    | 'invites'
     | 'account';
+
+// State passed when navigating to dossier-editor
+export interface DossierEditorParams {
+    id: string | null; // null = new dossier
+}
 
 const NAV: {
     id: ActiveView;
@@ -42,11 +49,11 @@ const NAV: {
     section?: string;
 }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={15} /> },
-    { id: 'prototype', label: 'Prototype', icon: <Star size={15} />, section: 'Editorial' },
     { id: 'models', label: 'Models', icon: <Archive size={15} />, section: 'Collections' },
-    { id: 'articles', label: 'Articles', icon: <FileText size={15} />, section: 'Collections' },
+    { id: 'artefacts', label: 'Artefacts', icon: <FileText size={15} />, section: 'Collections' },
     { id: 'dossiers', label: 'Dossiers', icon: <BookOpen size={15} />, section: 'Collections' },
     { id: 'users', label: 'Users', icon: <Users size={15} />, section: 'Collections' },
+    { id: 'invites', label: 'Invites', icon: <Link2 size={15} />, section: 'Access' },
 ];
 
 // ─── Sidebar ────────────────────────────────────────────────────────────────
@@ -74,7 +81,7 @@ const Sidebar = ({
             {/* Logo */}
             <div className="px-6 py-7 border-b border-stone-100">
                 <p className="text-xl font-light uppercase tracking-[0.25em]">NMA</p>
-                <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-stone-300 mt-0.5">Admin</p>
+                <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-stone-400 mt-0.5">Admin</p>
             </div>
 
             {/* ── Add model CTA ── */}
@@ -99,7 +106,7 @@ const Sidebar = ({
                     return (
                         <div key={section ?? 'top'} className="mb-1">
                             {section && (
-                                <p className="text-[8px] uppercase tracking-[0.6em] font-bold text-stone-200 px-6 py-3">
+                                <p className="text-[8px] uppercase tracking-[0.6em] font-bold text-stone-400 px-6 py-3">
                                     {section}
                                 </p>
                             )}
@@ -110,10 +117,10 @@ const Sidebar = ({
                                     className={`w-full flex items-center gap-3 px-6 py-2.5 text-[10px] uppercase tracking-[0.2em] font-bold transition-colors ${
                                         activeView === item.id
                                             ? 'text-stone-900 bg-stone-50'
-                                            : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'
+                                            : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
                                     }`}
                                 >
-                                    <span className={activeView === item.id ? 'text-stone-900' : 'text-stone-300'}>
+                                    <span className={activeView === item.id ? 'text-stone-900' : 'text-stone-400'}>
                                         {item.icon}
                                     </span>
                                     {item.label}
@@ -137,17 +144,17 @@ const Sidebar = ({
                             : 'text-stone-500 hover:bg-stone-50 hover:text-stone-900'
                     }`}
                 >
-                    <UserCircle size={15} className="flex-shrink-0 text-stone-300" />
+                    <UserCircle size={15} className="flex-shrink-0 text-stone-400" />
                     <div className="text-left min-w-0">
                         <p className="text-[10px] font-bold truncate leading-tight">
                             {user.displayName || 'Account'}
                         </p>
-                        <p className="text-[9px] text-stone-300 truncate">{user.email}</p>
+                        <p className="text-[9px] text-stone-400 truncate">{user.email}</p>
                     </div>
                 </button>
                 <button
                     onClick={onSignOut}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-300 hover:text-red-500 transition-colors"
+                    className="w-full flex items-center gap-3 px-3 py-2 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-500 hover:text-red-500 transition-colors"
                 >
                     <LogOut size={13} />
                     Sign out
@@ -164,6 +171,12 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
     const [user, setUser] = useState<User | null>(null);
     const [authLoading, setAuthLoading] = useState(true);
     const [activeView, setActiveView] = useState<ActiveView>('dashboard');
+    const [dossierEditorId, setDossierEditorId] = useState<string | null>(null);
+
+    const openDossierEditor = (id: string | null) => {
+        setDossierEditorId(id);
+        setActiveView('dossier-editor');
+    };
 
     useEffect(() => {
         return onAuthStateChanged(auth, u => {
@@ -180,6 +193,25 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
 
     if (!user) return <LoginView />;
 
+    // Anonymous users (invite guests) cannot access the admin panel
+    if (user.isAnonymous) return (
+        <div className={`min-h-screen flex items-center justify-center bg-white ${inter.className}`}>
+            <div className="text-center space-y-4 max-w-sm px-6">
+                <p className="text-xl font-light uppercase tracking-[0.25em]">NMA</p>
+                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300">Restricted</p>
+                <p className="text-sm text-stone-500 leading-relaxed">
+                    Admin access requires a staff account. Guest access codes grant view-only access to the public archive.
+                </p>
+                <button
+                    onClick={() => firebaseSignOut(auth)}
+                    className="mt-4 text-[10px] uppercase tracking-[0.3em] font-bold text-stone-400 hover:text-stone-900 transition-colors"
+                >
+                    Sign out →
+                </button>
+            </div>
+        </div>
+    );
+
     const schemas = getNMASchemas();
 
     const handleSignOut = async () => {
@@ -189,17 +221,40 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
     const renderView = () => {
         switch (activeView) {
             case 'dashboard':  return <DashboardView onNavigate={setActiveView} />;
-            case 'prototype':  return <PrototypeCollection schema={schemas.models} />;
-            case 'models':     return <GenericCollection schema={schemas.models} />;
+            case 'models':     return (
+                <GenericCollection
+                    schema={schemas.models}
+                    quickFilters={[
+                        { label: 'Prototype', filterFn: doc => doc.inPrototype === true },
+                        { label: 'Published',  filterFn: doc => doc.isVisible === true },
+                        { label: 'With images', filterFn: doc => Array.isArray(doc.images) && (doc.images as unknown[]).length > 0 },
+                        { label: 'No images',  filterFn: doc => !Array.isArray(doc.images) || (doc.images as unknown[]).length === 0 },
+                    ]}
+                />
+            );
             case 'add-model':  return (
                 <AddModelPanel
                     onSave={() => setActiveView('models')}
                     onCancel={() => setActiveView('models')}
                 />
             );
-            case 'articles':   return <GenericCollection schema={schemas.articles} />;
-            case 'dossiers':   return <GenericCollection schema={schemas.dossiers} />;
+            case 'artefacts':  return <GenericCollection schema={schemas.artefacts} />;
+            case 'dossiers':   return (
+                <GenericCollection
+                    schema={schemas.dossiers}
+                    onRowClick={row => openDossierEditor(row.id as string)}
+                    rowActionLabel="Edit dossier →"
+                    onAddNew={() => openDossierEditor(null)}
+                />
+            );
+            case 'dossier-editor': return (
+                <DossierEditor
+                    dossierId={dossierEditorId}
+                    onBack={() => setActiveView('dossiers')}
+                />
+            );
             case 'users':      return <GenericCollection schema={schemas.users} />;
+            case 'invites':    return <InvitesView />;
             case 'account':    return <AccountView user={user} />;
             default:           return null;
         }
@@ -270,25 +325,35 @@ export const getNMASchemas = () => ({
         name: "Dossiers",
         path: "ma_dossiers",
         properties: {
-            title:      { name: "Title",       dataType: "string",  validation: { required: true }, tableVisible: true,  tableWidth: 280 },
-            slug:       { name: "Slug",        dataType: "string",  validation: { required: true }, tableVisible: true,  tableWidth: 180 },
-            isVisible:  { name: "Visible",     dataType: "boolean", defaultValue: false,             tableVisible: true,  tableWidth: 80 },
-            intro:      { name: "Intro text",  dataType: "string",  tableVisible: false, tableWidth: 300, multiline: true },
-            coverImage: { name: "Cover image", dataType: "string",  tableVisible: false, tableWidth: 200 },
+            // ── Table-primary ──
+            title:      { name: "Title",        dataType: "string",  validation: { required: true }, tableVisible: true,  tableWidth: 260 },
+            slug:       { name: "Slug",         dataType: "string",  validation: { required: true }, tableVisible: true,  tableWidth: 160 },
+            isVisible:  { name: "Published",    dataType: "boolean", defaultValue: false,             tableVisible: true,  tableWidth: 90 },
+            coverImage: { name: "Cover image",  dataType: "string",  tableVisible: true,  tableWidth: 100 },
+
+            // ── Detail fields (managed via full-screen editor) ──
+            intro:      { name: "Intro text",   dataType: "string",  tableVisible: false, tableWidth: 300, multiline: true },
+            tags:       { name: "Tags",         dataType: "array",   tableVisible: false, tableWidth: 140, of: { dataType: "string" } },
+            // items: DossierItem[] — managed exclusively via DossierEditor, not shown in generic table
         },
     },
 
-    articles: {
-        name: "Articles",
+    artefacts: {
+        name: "Artefacts",
         path: "ma_articles",
         properties: {
-            title:    { name: "Title",    dataType: "string",  validation: { required: true }, tableVisible: true, tableWidth: 260 },
-            slug:     { name: "Slug",     dataType: "string",  validation: { required: true }, tableVisible: true, tableWidth: 180 },
-            author:   { name: "Author",   dataType: "string",  tableVisible: true,  tableWidth: 140 },
-            isVisible:{ name: "Published",dataType: "boolean", defaultValue: false,  tableVisible: true,  tableWidth: 90 },
-            excerpt:  { name: "Excerpt",  dataType: "string",  tableVisible: false, tableWidth: 280, multiline: true },
-            content:  { name: "Content",  dataType: "string",  tableVisible: false, tableWidth: 300, markdown: true },
-            tags:     { name: "Tags",     dataType: "array",   tableVisible: false, tableWidth: 130, of: { dataType: "string" } },
+            // ── Table-primary ──
+            title:       { name: "Title",        dataType: "string",  validation: { required: true }, tableVisible: true,  tableWidth: 260 },
+            slug:        { name: "Slug",         dataType: "string",  validation: { required: true }, tableVisible: true,  tableWidth: 160 },
+            author:      { name: "Author",       dataType: "string",  tableVisible: true,  tableWidth: 140 },
+            publishDate: { name: "Date",         dataType: "date",    tableVisible: true,  tableWidth: 100 },
+            isVisible:   { name: "Published",    dataType: "boolean", defaultValue: false,  tableVisible: true,  tableWidth: 90 },
+
+            // ── Detail fields ──
+            heroImage:   { name: "Hero image",   dataType: "string",  tableVisible: false, tableWidth: 180 },
+            excerpt:     { name: "Excerpt",      dataType: "string",  tableVisible: false, tableWidth: 280, multiline: true },
+            content:     { name: "Content",      dataType: "string",  tableVisible: false, tableWidth: 300, markdown: true },
+            tags:        { name: "Tags",         dataType: "array",   tableVisible: false, tableWidth: 130, of: { dataType: "string" } },
         },
     },
 

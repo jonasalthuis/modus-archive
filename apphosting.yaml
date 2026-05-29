@@ -41,3 +41,14 @@ env:
     availability:
       - BUILD
       - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: G-ZKYJVT1GS4
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: GA4_PROPERTY_ID
+    value: "539501183"
+    availability:
+      - RUNTIME

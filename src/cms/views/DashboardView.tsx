@@ -3,9 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { collection, query, where, getCountFromServer, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Archive, FileText, BookOpen, Star, Eye, Image as ImageIcon, ExternalLink } from 'lucide-react';
+import { Archive, FileText, BookOpen, Star, Eye, Image as ImageIcon } from 'lucide-react';
+import { AnalyticsPanel } from '../components/AnalyticsPanel';
 
-type ActiveView = 'dashboard' | 'prototype' | 'models' | 'articles' | 'dossiers' | 'users' | 'account';
+type ActiveView = 'dashboard' | 'models' | 'add-model' | 'artefacts' | 'dossiers' | 'dossier-editor' | 'users' | 'invites' | 'account';
 
 interface Metrics {
     totalModels: number;
@@ -121,14 +122,14 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
             {/* Header */}
             <div className="border-b border-stone-100 pb-8">
                 <h2 className="text-3xl font-light uppercase tracking-[0.15em]">Dashboard</h2>
-                <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-stone-300 mt-2">
+                <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-stone-400 mt-2">
                     Network Modelmakers Archive — Status overview
                 </p>
             </div>
 
             {/* Primary stats */}
             <div>
-                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300 mb-4">Models</p>
+                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-500 mb-4">Models</p>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard
                         label="Total models"
@@ -142,35 +143,35 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
                         value={metrics?.prototypeModels ?? '—'}
                         sub="selected for site"
                         icon={<Star size={16} />}
-                        onClick={() => onNavigate('prototype')}
+                        onClick={() => onNavigate('models')}
                     />
                     <StatCard
                         label="Published"
                         value={metrics?.visibleModels ?? '—'}
                         sub="visible on site"
                         icon={<Eye size={16} />}
-                        onClick={() => onNavigate('prototype')}
+                        onClick={() => onNavigate('models')}
                     />
                     <StatCard
                         label="With images"
                         value={metrics?.modelsWithImages ?? '—'}
                         sub={`of ${metrics?.prototypeModels ?? '?'} prototype`}
                         icon={<ImageIcon size={16} />}
-                        onClick={() => onNavigate('prototype')}
+                        onClick={() => onNavigate('models')}
                     />
                 </div>
             </div>
 
             {/* Content stats */}
             <div>
-                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300 mb-4">Content</p>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-400 mb-4">Content</p>
+                <div className="grid grid-cols-2 gap-4">
                     <StatCard
                         label="Articles"
                         value={metrics?.totalArticles ?? '—'}
                         sub={`${metrics?.publishedArticles ?? 0} published`}
                         icon={<FileText size={16} />}
-                        onClick={() => onNavigate('articles')}
+                        onClick={() => onNavigate('artefacts')}
                     />
                     <StatCard
                         label="Dossiers"
@@ -179,22 +180,13 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
                         icon={<BookOpen size={16} />}
                         onClick={() => onNavigate('dossiers')}
                     />
-                    <div className="border border-dashed border-stone-100 p-6 flex flex-col justify-between">
-                        <div>
-                            <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-300">Web Analytics</p>
-                            <p className="text-[11px] text-stone-400 mt-3 leading-relaxed">
-                                Page views, sessions, and traffic data are available in the Firebase Console via Google Analytics.
-                            </p>
-                        </div>
-                        <a
-                            href="https://console.firebase.google.com/project/modus-archive-nexus/analytics"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-4 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-400 hover:text-stone-900 transition-colors"
-                        >
-                            Open Firebase Console <ExternalLink size={10} />
-                        </a>
-                    </div>
+                </div>
+            </div>
+
+            {/* Analytics panel */}
+            <div>
+                <div className="grid grid-cols-1">
+                    <AnalyticsPanel />
                 </div>
             </div>
 
@@ -206,7 +198,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
                             Recently updated — Prototype
                         </p>
                         <button
-                            onClick={() => onNavigate('prototype')}
+                            onClick={() => onNavigate('models')}
                             className="text-[9px] uppercase tracking-[0.2em] font-bold text-stone-400 hover:text-stone-900 transition-colors"
                         >
                             View all →
@@ -217,7 +209,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
                             <div
                                 key={m.id}
                                 className={`flex items-center gap-6 px-5 py-3 hover:bg-stone-50 cursor-pointer transition-colors ${i < recent.length - 1 ? 'border-b border-stone-50' : ''}`}
-                                onClick={() => onNavigate('prototype')}
+                                onClick={() => onNavigate('models')}
                             >
                                 <span className="text-[10px] font-mono text-stone-300 w-12 flex-shrink-0">{m.modelNumber || m.id}</span>
                                 <span className="text-sm font-light flex-1 truncate">{m.title || '—'}</span>
@@ -235,7 +227,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
 
             {/* Completion checklist */}
             <div>
-                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300 mb-4">Prototype readiness</p>
+                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-500 mb-4">Prototype readiness</p>
                 <div className="border border-stone-100 divide-y divide-stone-50">
                     {[
                         {

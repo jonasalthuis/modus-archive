@@ -2,27 +2,36 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Models — public read for visible records, auth required for writes
+    // Models — visible records readable by any auth user; full read for staff (non-anonymous)
     match /ma_models/{document} {
-      allow read: if resource.data.isVisible == true || request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if resource.data.isVisible == true
+        || (request.auth != null && request.auth.token.email != null);
+      allow write: if request.auth != null && request.auth.token.email != null;
     }
 
-    // Dossiers — public read for visible records, auth required for writes
+    // Dossiers — same pattern
     match /ma_dossiers/{document} {
-      allow read: if resource.data.isVisible == true || request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if resource.data.isVisible == true
+        || (request.auth != null && request.auth.token.email != null);
+      allow write: if request.auth != null && request.auth.token.email != null;
     }
 
-    // Articles — public read for visible records
+    // Articles — same pattern
     match /ma_articles/{document} {
-      allow read: if resource.data.isVisible == true || request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if resource.data.isVisible == true
+        || (request.auth != null && request.auth.token.email != null);
+      allow write: if request.auth != null && request.auth.token.email != null;
     }
 
-    // Users — auth only
+    // Users — auth only (not anonymous)
     match /ma_users/{document} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null && request.auth.token.email != null;
+    }
+
+    // Invite codes — readable without auth so guests can validate a code before signing in
+    match /ma_invites/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email != null;
     }
   }
 }
