@@ -1,19 +1,19 @@
-import React from 'react';
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import React from "react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
 // TODO: replace with Firestore fetch from ma_articles
 async function getArticle(slug: string) {
-    if (slug === 'preserving-analog-history') {
+    if (slug === "preserving-analog-history") {
         return {
-            title: 'Preserving Analog History',
-            author: 'Jonas Althuis',
-            date: 'Oct 12, 2025',
+            title: "Preserving Analog History",
+            author: "Jonas Althuis",
+            date: "Oct 12, 2025",
             content: `
-                <p>The role of the physical model in architecture has shifted from a primary design tool to a representational artifact. Yet, the NMA collection reveals a different story: one where the model was the site of active experimentation.</p>
-                <p>In our digital era, the tactile resistance of basswood and the chemical smell of glue are often replaced by the infinite malleability of the mesh. But something is lost in this friction-less translation.</p>
-            `,
-            tags: ['Theory', 'Archival']
+ <p>The role of the physical model in architecture has shifted from a primary design tool to a representational artifact. Yet, the NMA collection reveals a different story: one where the model was the site of active experimentation.</p>
+ <p>In our digital era, the tactile resistance of basswood and the chemical smell of glue are often replaced by the infinite malleability of the mesh. But something is lost in this friction-less translation.</p>
+ `,
+            tags: ["Theory", "Archival"],
         };
     }
     return null;
@@ -26,7 +26,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     if (!article) notFound();
 
     return (
-        <article className="min-h-screen bg-stone-50 font-serif text-stone-900 pb-24">
+        <article className="min-h-screen bg-stone-50 text-stone-900 pb-24">
             <nav className="p-8 border-b border-stone-200 bg-white sticky top-0 z-50">
                 <Link
                     href="/articles"
@@ -38,7 +38,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
             <header className="px-8 md:px-24 py-20 max-w-4xl mx-auto text-center">
                 <div className="flex justify-center space-x-2 mb-6">
-                    {article.tags.map(tag => (
+                    {article.tags.map((tag) => (
                         <span key={tag} className="text-[10px] uppercase tracking-widest bg-stone-200 px-2 py-1">
                             {tag}
                         </span>

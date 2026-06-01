@@ -1,12 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { collection, query, where, getCountFromServer, getDocs, orderBy, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { Archive, FileText, BookOpen, Star, Eye, Image as ImageIcon } from 'lucide-react';
-import { AnalyticsPanel } from '../components/AnalyticsPanel';
+import React, { useEffect, useState } from "react";
+import { collection, query, where, getCountFromServer, getDocs, orderBy, limit } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Archive, FileText, BookOpen, Star, Eye, Image as ImageIcon } from "lucide-react";
+import { AnalyticsPanel } from "../components/AnalyticsPanel";
 
-type ActiveView = 'dashboard' | 'models' | 'add-model' | 'artefacts' | 'dossiers' | 'dossier-editor' | 'users' | 'invites' | 'account';
+type ActiveView =
+    | "dashboard"
+    | "models"
+    | "add-model"
+    | "artefacts"
+    | "dossiers"
+    | "dossier-editor"
+    | "users"
+    | "invites"
+    | "account";
 
 interface Metrics {
     totalModels: number;
@@ -37,7 +46,7 @@ interface StatCardProps {
 const StatCard = ({ label, value, sub, icon, onClick }: StatCardProps) => (
     <div
         onClick={onClick}
-        className={`border border-stone-100 p-6 space-y-4 ${onClick ? 'cursor-pointer hover:border-stone-900 hover:bg-stone-50 transition-all duration-200 group' : ''}`}
+        className={`bg-white rounded-xl border border-stone-200 shadow-sm p-6 space-y-4 ${onClick ? "cursor-pointer hover:shadow-md hover:border-stone-300 transition-all duration-200 group" : ""}`}
     >
         <div className="flex justify-between items-start">
             <span className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-400">{label}</span>
@@ -58,27 +67,19 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
     useEffect(() => {
         async function fetch() {
             try {
-                const [
-                    totalModels,
-                    prototypeModels,
-                    visibleModels,
-                    totalArticles,
-                    publishedArticles,
-                    totalDossiers,
-                ] = await Promise.all([
-                    getCountFromServer(collection(db, 'ma_models')),
-                    getCountFromServer(query(collection(db, 'ma_models'), where('inPrototype', '==', true))),
-                    getCountFromServer(query(collection(db, 'ma_models'), where('isVisible', '==', true))),
-                    getCountFromServer(collection(db, 'ma_articles')),
-                    getCountFromServer(query(collection(db, 'ma_articles'), where('isVisible', '==', true))),
-                    getCountFromServer(collection(db, 'ma_dossiers')),
-                ]);
+                const [totalModels, prototypeModels, visibleModels, totalArticles, publishedArticles, totalDossiers] =
+                    await Promise.all([
+                        getCountFromServer(collection(db, "ma_models")),
+                        getCountFromServer(query(collection(db, "ma_models"), where("inPrototype", "==", true))),
+                        getCountFromServer(query(collection(db, "ma_models"), where("isVisible", "==", true))),
+                        getCountFromServer(collection(db, "ma_articles")),
+                        getCountFromServer(query(collection(db, "ma_articles"), where("isVisible", "==", true))),
+                        getCountFromServer(collection(db, "ma_dossiers")),
+                    ]);
 
                 // Count models with at least one image — fetch prototype subset only (small)
-                const protoSnap = await getDocs(
-                    query(collection(db, 'ma_models'), where('inPrototype', '==', true))
-                );
-                const withImages = protoSnap.docs.filter(d => {
+                const protoSnap = await getDocs(query(collection(db, "ma_models"), where("inPrototype", "==", true)));
+                const withImages = protoSnap.docs.filter((d) => {
                     const imgs = d.data().images;
                     return Array.isArray(imgs) && imgs.length > 0;
                 }).length;
@@ -96,31 +97,37 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
                 // Recent models (by updatedAt)
                 try {
                     const recentSnap = await getDocs(
-                        query(collection(db, 'ma_models'), where('inPrototype', '==', true), orderBy('updatedAt', 'desc'), limit(6))
+                        query(
+                            collection(db, "ma_models"),
+                            where("inPrototype", "==", true),
+                            orderBy("updatedAt", "desc"),
+                            limit(6),
+                        ),
                     );
-                    setRecent(recentSnap.docs.map(d => ({ id: d.id, ...d.data() } as RecentModel)));
+                    setRecent(recentSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as RecentModel));
                 } catch {
                     // updatedAt index may not exist — skip recent list
                 }
             } catch (e) {
-                console.error('Dashboard fetch error:', e);
+                console.error("Dashboard fetch error:", e);
             }
             setLoading(false);
         }
         fetch();
     }, []);
 
-    if (loading) return (
-        <div className="py-32 flex flex-col items-center gap-4">
-            <div className="w-12 h-px bg-stone-200 animate-pulse" />
-            <p className="text-[10px] uppercase tracking-[0.5em] text-stone-300 animate-pulse">Loading metrics…</p>
-        </div>
-    );
+    if (loading)
+        return (
+            <div className="py-32 flex flex-col items-center gap-4">
+                <div className="w-12 h-px bg-stone-200 animate-pulse" />
+                <p className="text-[10px] uppercase tracking-[0.5em] text-stone-300 animate-pulse">Loading metrics…</p>
+            </div>
+        );
 
     return (
         <div className="space-y-12 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="border-b border-stone-100 pb-8">
+            <div className="border-b border-stone-300 pb-8">
                 <h2 className="text-3xl font-light uppercase tracking-[0.15em]">Dashboard</h2>
                 <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-stone-400 mt-2">
                     Network Modelmakers Archive — Status overview
@@ -133,31 +140,31 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard
                         label="Total models"
-                        value={metrics?.totalModels ?? '—'}
+                        value={metrics?.totalModels ?? "—"}
                         sub="in database"
                         icon={<Archive size={16} />}
-                        onClick={() => onNavigate('models')}
+                        onClick={() => onNavigate("models")}
                     />
                     <StatCard
                         label="Prototype"
-                        value={metrics?.prototypeModels ?? '—'}
+                        value={metrics?.prototypeModels ?? "—"}
                         sub="selected for site"
                         icon={<Star size={16} />}
-                        onClick={() => onNavigate('models')}
+                        onClick={() => onNavigate("models")}
                     />
                     <StatCard
                         label="Published"
-                        value={metrics?.visibleModels ?? '—'}
+                        value={metrics?.visibleModels ?? "—"}
                         sub="visible on site"
                         icon={<Eye size={16} />}
-                        onClick={() => onNavigate('models')}
+                        onClick={() => onNavigate("models")}
                     />
                     <StatCard
                         label="With images"
-                        value={metrics?.modelsWithImages ?? '—'}
-                        sub={`of ${metrics?.prototypeModels ?? '?'} prototype`}
+                        value={metrics?.modelsWithImages ?? "—"}
+                        sub={`of ${metrics?.prototypeModels ?? "?"} prototype`}
                         icon={<ImageIcon size={16} />}
-                        onClick={() => onNavigate('models')}
+                        onClick={() => onNavigate("models")}
                     />
                 </div>
             </div>
@@ -168,17 +175,17 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
                 <div className="grid grid-cols-2 gap-4">
                     <StatCard
                         label="Articles"
-                        value={metrics?.totalArticles ?? '—'}
+                        value={metrics?.totalArticles ?? "—"}
                         sub={`${metrics?.publishedArticles ?? 0} published`}
                         icon={<FileText size={16} />}
-                        onClick={() => onNavigate('artefacts')}
+                        onClick={() => onNavigate("artefacts")}
                     />
                     <StatCard
                         label="Dossiers"
-                        value={metrics?.totalDossiers ?? '—'}
+                        value={metrics?.totalDossiers ?? "—"}
                         sub="thematic collections"
                         icon={<BookOpen size={16} />}
-                        onClick={() => onNavigate('dossiers')}
+                        onClick={() => onNavigate("dossiers")}
                     />
                 </div>
             </div>
@@ -198,25 +205,32 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
                             Recently updated — Prototype
                         </p>
                         <button
-                            onClick={() => onNavigate('models')}
+                            onClick={() => onNavigate("models")}
                             className="text-[9px] uppercase tracking-[0.2em] font-bold text-stone-400 hover:text-stone-900 transition-colors"
                         >
                             View all →
                         </button>
                     </div>
-                    <div className="border border-stone-100">
+                    <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
                         {recent.map((m, i) => (
                             <div
                                 key={m.id}
-                                className={`flex items-center gap-6 px-5 py-3 hover:bg-stone-50 cursor-pointer transition-colors ${i < recent.length - 1 ? 'border-b border-stone-50' : ''}`}
-                                onClick={() => onNavigate('models')}
+                                className={`flex items-center gap-6 px-5 py-3 hover:bg-stone-50 cursor-pointer transition-colors ${i < recent.length - 1 ? "border-b border-stone-200" : ""}`}
+                                onClick={() => onNavigate("models")}
                             >
-                                <span className="text-[10px] font-mono text-stone-300 w-12 flex-shrink-0">{m.modelNumber || m.id}</span>
-                                <span className="text-sm font-light flex-1 truncate">{m.title || '—'}</span>
-                                <span className="text-[10px] text-stone-400 truncate hidden md:block">{m.architect || '—'}</span>
+                                <span className="text-[10px] font-mono text-stone-300 w-12 flex-shrink-0">
+                                    {m.modelNumber || m.id}
+                                </span>
+                                <span className="text-sm font-light flex-1 truncate">{m.title || "—"}</span>
+                                <span className="text-[10px] text-stone-400 truncate hidden md:block">
+                                    {m.architect || "—"}
+                                </span>
                                 {m.updatedAt && (
                                     <span className="text-[9px] font-mono text-stone-300 flex-shrink-0">
-                                        {new Date(m.updatedAt.seconds * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                                        {new Date(m.updatedAt.seconds * 1000).toLocaleDateString("en-GB", {
+                                            day: "2-digit",
+                                            month: "short",
+                                        })}
                                     </span>
                                 )}
                             </div>
@@ -224,41 +238,6 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
                     </div>
                 </div>
             )}
-
-            {/* Completion checklist */}
-            <div>
-                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-500 mb-4">Prototype readiness</p>
-                <div className="border border-stone-100 divide-y divide-stone-50">
-                    {[
-                        {
-                            label: 'Models selected',
-                            done: (metrics?.prototypeModels ?? 0) >= 35,
-                            detail: `${metrics?.prototypeModels ?? 0} / 35 target`,
-                        },
-                        {
-                            label: 'Models published',
-                            done: (metrics?.visibleModels ?? 0) >= 35,
-                            detail: `${metrics?.visibleModels ?? 0} visible`,
-                        },
-                        {
-                            label: 'Images uploaded',
-                            done: (metrics?.modelsWithImages ?? 0) >= 35,
-                            detail: `${metrics?.modelsWithImages ?? 0} of ${metrics?.prototypeModels ?? '?'} with photos`,
-                        },
-                        {
-                            label: 'Articles published',
-                            done: (metrics?.publishedArticles ?? 0) > 0,
-                            detail: `${metrics?.publishedArticles ?? 0} live`,
-                        },
-                    ].map(item => (
-                        <div key={item.label} className="flex items-center gap-4 px-5 py-3">
-                            <span className={`w-2 h-2 flex-shrink-0 ${item.done ? 'bg-stone-900' : 'bg-stone-100 border border-stone-200'}`} />
-                            <span className="text-sm flex-1 font-light">{item.label}</span>
-                            <span className="text-[10px] font-mono text-stone-400">{item.detail}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
         </div>
     );
 };

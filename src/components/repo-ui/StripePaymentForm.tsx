@@ -53,7 +53,9 @@ function CheckoutForm({ onSuccess, returnUrl }: { onSuccess?: () => void; return
                 {isLoading ? "Processing..." : "Save Payment Method"}
             </button>
             {message && (
-                <div className={`text-sm text-center font-medium mt-4 ${message.includes('Success') ? 'text-emerald-500' : 'text-red-500'}`}>
+                <div
+                    className={`text-sm text-center font-medium mt-4 ${message.includes("Success") ? "text-emerald-500" : "text-red-500"}`}
+                >
                     {message}
                 </div>
             )}

@@ -1,9 +1,9 @@
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { notFound } from 'next/navigation';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { notFound } from "next/navigation";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 interface ArtefactData {
     id: string;
@@ -15,23 +15,19 @@ interface ArtefactData {
     excerpt?: string;
     content?: string;
     tags?: string[];
+    isVisible?: boolean;
 }
 
 async function getArtefact(slug: string): Promise<ArtefactData | null> {
     try {
-        const snap = await getDocs(
-            query(
-                collection(db, 'ma_articles'),
-                where('slug', '==', slug),
-                where('isVisible', '==', true),
-                limit(1),
-            )
-        );
-        if (snap.empty) return null;
-        const d = snap.docs[0];
-        return { id: d.id, ...d.data() } as ArtefactData;
+        // The slug is the document ID — fetch it directly
+        const snap = await getDoc(doc(db, "ma_articles", slug));
+        if (!snap.exists()) return null;
+        const data = snap.data();
+        if (data.isVisible === false) return null;
+        return { id: snap.id, ...data } as ArtefactData;
     } catch (e) {
-        console.error('Artefact fetch error', e);
+        console.error("Artefact fetch error", e);
         return null;
     }
 }
@@ -39,8 +35,10 @@ async function getArtefact(slug: string): Promise<ArtefactData | null> {
 function formatDate(dateStr: string | undefined): string | null {
     if (!dateStr) return null;
     try {
-        return new Date(dateStr).toLocaleDateString('en-GB', {
-            day: '2-digit', month: 'long', year: 'numeric',
+        return new Date(dateStr).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
         });
     } catch {
         return dateStr;
@@ -52,7 +50,7 @@ function renderContent(content: string | undefined): React.ReactNode {
     if (!content) return null;
     return content
         .split(/\n\n+/)
-        .filter(p => p.trim())
+        .filter((p) => p.trim())
         .map((para, i) => (
             <p key={i} className="text-base font-light text-stone-700 leading-relaxed mb-6">
                 {para.trim()}
@@ -71,7 +69,7 @@ export default async function ArtefactPage({ params }: { params: Promise<{ slug:
     return (
         <main className="min-h-screen bg-white font-sans text-stone-900">
             {/* Nav */}
-            <nav className="px-8 py-5 border-b border-stone-100 flex items-center gap-4 bg-white sticky top-0 z-40">
+            <nav className="px-8 py-5 border-b border-stone-200 flex items-center gap-4 bg-white sticky top-0 z-40">
                 <Link
                     href="/artefacts"
                     className="text-[10px] uppercase tracking-widest font-bold text-stone-400 hover:text-stone-900 transition-colors flex items-center gap-2"
@@ -85,7 +83,7 @@ export default async function ArtefactPage({ params }: { params: Promise<{ slug:
                 <div className="relative w-full h-[50vh] bg-stone-100">
                     <Image
                         src={artefact.heroImage}
-                        alt={artefact.title || ''}
+                        alt={artefact.title || ""}
                         fill
                         className="object-cover"
                         sizes="100vw"
@@ -97,11 +95,11 @@ export default async function ArtefactPage({ params }: { params: Promise<{ slug:
 
             <article className="max-w-2xl mx-auto px-8 py-16">
                 {/* Header */}
-                <header className="mb-12 border-b border-stone-100 pb-12">
+                <header className="mb-12 border-b border-stone-200 pb-12">
                     {/* Tags */}
                     {artefact.tags && artefact.tags.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-6">
-                            {artefact.tags.map(t => (
+                            {artefact.tags.map((t) => (
                                 <span
                                     key={t}
                                     className="text-[8px] uppercase tracking-[0.4em] font-bold border border-stone-200 px-2 py-1 text-stone-400"
@@ -125,19 +123,15 @@ export default async function ArtefactPage({ params }: { params: Promise<{ slug:
 
                     {/* Excerpt */}
                     {artefact.excerpt && (
-                        <p className="mt-6 text-lg font-light text-stone-500 leading-relaxed italic">
-                            {artefact.excerpt}
-                        </p>
+                        <p className="mt-6 text-lg font-light text-stone-500 leading-relaxed ">{artefact.excerpt}</p>
                     )}
                 </header>
 
                 {/* Body */}
-                <div className="prose-artefact">
-                    {renderContent(artefact.content)}
-                </div>
+                <div className="prose-artefact">{renderContent(artefact.content)}</div>
 
                 {/* Footer */}
-                <footer className="mt-20 pt-8 border-t border-stone-100">
+                <footer className="mt-20 pt-8 border-t border-stone-200">
                     <div className="flex items-center justify-between">
                         <Link
                             href="/artefacts"

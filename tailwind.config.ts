@@ -47,10 +47,9 @@ const config: Config = {
         },
       },
       borderRadius: {
-        // --radius is 0rem — keeps all components sharp-cornered per the design system
         lg: "var(--radius)",
-        md: "var(--radius)",
-        sm: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
         sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"],
@@ -72,6 +71,6 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 };
 export default config;

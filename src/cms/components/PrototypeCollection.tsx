@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { GenericEditor } from './GenericEditor';
-import { Edit, Eye, EyeOff, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from "react";
+import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { GenericEditor } from "./GenericEditor";
+import { Edit, Eye, EyeOff, Image as ImageIcon } from "lucide-react";
 
 interface ModelDoc {
     id: string;
@@ -21,32 +21,35 @@ interface ModelDoc {
 interface Schema {
     name: string;
     path: string;
-    properties: Record<string, {
-        name: string;
-        dataType: string;
-        validation?: { required?: boolean };
-        config?: { enumValues?: string[] };
-        defaultValue?: unknown;
-        multiline?: boolean;
-        markdown?: boolean;
-        of?: { dataType: string };
-    }>;
+    properties: Record<
+        string,
+        {
+            name: string;
+            dataType: string;
+            validation?: { required?: boolean };
+            config?: { enumValues?: string[] };
+            defaultValue?: unknown;
+            multiline?: boolean;
+            markdown?: boolean;
+            of?: { dataType: string };
+        }
+    >;
 }
 
 export const PrototypeCollection = ({ schema }: { schema: Schema }) => {
     const [models, setModels] = useState<ModelDoc[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingDoc, setEditingDoc] = useState<ModelDoc | null>(null);
-    const [search, setSearch] = useState('');
+    const [search, setSearch] = useState("");
 
     const fetchModels = useCallback(async () => {
         setLoading(true);
         try {
-            const snapshot = await getDocs(collection(db, 'ma_models'));
-            const all = snapshot.docs.map(d => ({ id: d.id, ...d.data() }) as ModelDoc);
+            const snapshot = await getDocs(collection(db, "ma_models"));
+            const all = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as ModelDoc);
             const prototype = all
-                .filter(m => m.inPrototype === true)
-                .sort((a, b) => (a.modelNumber || '').localeCompare(b.modelNumber || ''));
+                .filter((m) => m.inPrototype === true)
+                .sort((a, b) => (a.modelNumber || "").localeCompare(b.modelNumber || ""));
             setModels(prototype);
         } catch (e) {
             console.error(e);
@@ -54,12 +57,14 @@ export const PrototypeCollection = ({ schema }: { schema: Schema }) => {
         setLoading(false);
     }, []);
 
-    useEffect(() => { fetchModels(); }, [fetchModels]);
+    useEffect(() => {
+        fetchModels();
+    }, [fetchModels]);
 
     const toggleVisibility = async (model: ModelDoc) => {
         const next = !model.isVisible;
-        await updateDoc(doc(db, 'ma_models', model.id), { isVisible: next });
-        setModels(prev => prev.map(m => m.id === model.id ? { ...m, isVisible: next } : m));
+        await updateDoc(doc(db, "ma_models", model.id), { isVisible: next });
+        setModels((prev) => prev.map((m) => (m.id === model.id ? { ...m, isVisible: next } : m)));
     };
 
     const handleSave = () => {
@@ -78,18 +83,18 @@ export const PrototypeCollection = ({ schema }: { schema: Schema }) => {
         );
     }
 
-    const filtered = models.filter(m => {
+    const filtered = models.filter((m) => {
         if (!search) return true;
         const q = search.toLowerCase();
         return (
-            (m.modelNumber || '').includes(q) ||
-            (m.title || '').toLowerCase().includes(q) ||
-            (m.architect || '').toLowerCase().includes(q)
+            (m.modelNumber || "").includes(q) ||
+            (m.title || "").toLowerCase().includes(q) ||
+            (m.architect || "").toLowerCase().includes(q)
         );
     });
 
-    const visible = models.filter(m => m.isVisible).length;
-    const withImages = models.filter(m => Array.isArray(m.images) && m.images.length > 0).length;
+    const visible = models.filter((m) => m.isVisible).length;
+    const withImages = models.filter((m) => Array.isArray(m.images) && m.images.length > 0).length;
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -105,8 +110,8 @@ export const PrototypeCollection = ({ schema }: { schema: Schema }) => {
                     type="text"
                     placeholder="Search…"
                     value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="bg-white border border-stone-200 focus:border-black px-4 py-2 text-[10px] uppercase tracking-[0.2em] font-bold outline-none transition-colors w-48"
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="bg-white border border-stone-300 focus:border-black px-4 py-2 text-[10px] uppercase tracking-[0.2em] font-bold outline-none transition-colors w-48"
                 />
             </div>
 
@@ -127,18 +132,27 @@ export const PrototypeCollection = ({ schema }: { schema: Schema }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filtered.map(m => {
+                            {filtered.map((m) => {
                                 const imgCount = Array.isArray(m.images) ? m.images.length : 0;
                                 return (
-                                    <tr key={m.id} className="border-b border-stone-100 hover:bg-stone-50 transition-colors">
-                                        <td className="py-3 px-3 font-mono text-[11px] text-stone-500">{m.modelNumber || m.id}</td>
-                                        <td className="py-3 px-3 text-sm font-light">{m.title || '—'}</td>
-                                        <td className="py-3 px-3 text-[11px] text-stone-500">{m.architect || '—'}</td>
-                                        <td className="py-3 px-3 font-mono text-[11px] text-stone-400">{m.year || '—'}</td>
+                                    <tr
+                                        key={m.id}
+                                        className="border-b border-stone-300 hover:bg-stone-50 transition-colors"
+                                    >
+                                        <td className="py-3 px-3 font-mono text-[11px] text-stone-500">
+                                            {m.modelNumber || m.id}
+                                        </td>
+                                        <td className="py-3 px-3 text-sm font-light">{m.title || "—"}</td>
+                                        <td className="py-3 px-3 text-[11px] text-stone-500">{m.architect || "—"}</td>
+                                        <td className="py-3 px-3 font-mono text-[11px] text-stone-400">
+                                            {m.year || "—"}
+                                        </td>
                                         <td className="py-3 px-3 text-center">
-                                            <span className={`inline-flex items-center gap-1 text-[10px] font-mono ${
-                                                imgCount > 0 ? 'text-stone-900' : 'text-stone-200'
-                                            }`}>
+                                            <span
+                                                className={`inline-flex items-center gap-1 text-[10px] font-mono ${
+                                                    imgCount > 0 ? "text-stone-900" : "text-stone-200"
+                                                }`}
+                                            >
                                                 <ImageIcon size={10} />
                                                 {imgCount}
                                             </span>
@@ -147,11 +161,15 @@ export const PrototypeCollection = ({ schema }: { schema: Schema }) => {
                                             <button
                                                 type="button"
                                                 onClick={() => toggleVisibility(m)}
-                                                title={m.isVisible ? 'Published — click to hide' : 'Hidden — click to publish'}
+                                                title={
+                                                    m.isVisible
+                                                        ? "Published — click to hide"
+                                                        : "Hidden — click to publish"
+                                                }
                                                 className={`transition-colors ${
                                                     m.isVisible
-                                                        ? 'text-stone-900 hover:text-stone-400'
-                                                        : 'text-stone-200 hover:text-stone-500'
+                                                        ? "text-stone-900 hover:text-stone-400"
+                                                        : "text-stone-200 hover:text-stone-500"
                                                 }`}
                                             >
                                                 {m.isVisible ? <Eye size={15} /> : <EyeOff size={15} />}

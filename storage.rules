@@ -2,26 +2,51 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Model images — public read, auth write
+    // ── Role helpers (read roles from the Firestore `users` collection) ──
+    function loggedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+    function isBootstrapAdmin() {
+      return loggedIn() && request.auth.token.email == 'jonasalthuis@gmail.com';
+    }
+    function roleOf() {
+      return loggedIn()
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.token.email))
+        ? firestore.get(/databases/(default)/documents/users/$(request.auth.token.email)).data.role
+        : null;
+    }
+    // Staff = admin or editor (or the bootstrap owner)
+    function isStaff() {
+      return isBootstrapAdmin() || roleOf() == 'admin' || roleOf() == 'editor';
+    }
+
+    // Model images — readable by anyone (the gated site renders them), staff write only
     match /models/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isStaff();
     }
 
-    // Dossier images — public read, auth write
+    // Dossier images
     match /dossiers/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isStaff();
     }
 
-    // High-res masters — auth only
+    // Article / artefact images
+    match /articles/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // High-res masters — staff only, both read and write
     match /ma_high_res/{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isStaff();
     }
 
-    // Default fallback
+    // Default — deny reads, staff-only writes (nothing else should exist)
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read: if false;
+      allow write: if isStaff();
     }
   }
 }

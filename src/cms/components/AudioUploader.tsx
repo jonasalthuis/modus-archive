@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useRef, useState } from 'react';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase';
-import { Upload, Trash2, Play, Pause } from 'lucide-react';
+import React, { useRef, useState } from "react";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { storage } from "@/lib/firebase";
+import { Upload, Trash2, Play, Pause } from "lucide-react";
 
 interface AudioUploaderProps {
     modelId: string;
@@ -20,11 +20,11 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
 
     const handleFile = (file: File) => {
         if (!modelId) {
-            alert('Save the model number first before uploading audio.');
+            alert("Save the model number first before uploading audio.");
             return;
         }
-        if (!file.type.startsWith('audio/')) {
-            alert('Please upload an audio file (MP3, WAV, M4A, etc.).');
+        if (!file.type.startsWith("audio/")) {
+            alert("Please upload an audio file (MP3, WAV, M4A, etc.).");
             return;
         }
 
@@ -37,15 +37,18 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
         setProgress(0);
 
         task.on(
-            'state_changed',
+            "state_changed",
             (snap) => setProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-            (err) => { console.error('Audio upload error:', err); setUploading(false); },
+            (err) => {
+                console.error("Audio upload error:", err);
+                setUploading(false);
+            },
             async () => {
                 const downloadUrl = await getDownloadURL(task.snapshot.ref);
                 onChange(downloadUrl);
                 setUploading(false);
                 setProgress(0);
-            }
+            },
         );
     };
 
@@ -69,7 +72,7 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
         <div className="space-y-4">
             {/* Current audio */}
             {url ? (
-                <div className="flex items-center gap-4 bg-white border border-stone-200 p-4">
+                <div className="flex items-center gap-4 bg-white border border-stone-300 p-4">
                     <button
                         type="button"
                         onClick={togglePlay}
@@ -79,16 +82,14 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
                     </button>
                     <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-mono text-stone-400 truncate">{url}</p>
-                        <audio
-                            ref={audioRef}
-                            src={url}
-                            onEnded={() => setPlaying(false)}
-                            className="hidden"
-                        />
+                        <audio ref={audioRef} src={url} onEnded={() => setPlaying(false)} className="hidden" />
                     </div>
                     <button
                         type="button"
-                        onClick={() => { onChange(null); setPlaying(false); }}
+                        onClick={() => {
+                            onChange(null);
+                            setPlaying(false);
+                        }}
                         className="p-1 hover:text-red-500 transition-colors text-stone-400 flex-shrink-0"
                         title="Remove audio"
                     >
@@ -115,7 +116,9 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
                         type="file"
                         accept="audio/*"
                         className="hidden"
-                        onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
+                        onChange={(e) => {
+                            if (e.target.files?.[0]) handleFile(e.target.files[0]);
+                        }}
                     />
                 </div>
             )}
@@ -136,22 +139,22 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
                     type="file"
                     accept="audio/*"
                     className="hidden"
-                    onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
+                    onChange={(e) => {
+                        if (e.target.files?.[0]) handleFile(e.target.files[0]);
+                    }}
                 />
             )}
 
             {/* Upload progress */}
             {uploading && (
                 <div className="space-y-2">
-                    <div className="h-px bg-stone-100 w-full overflow-hidden">
+                    <div className="h-px bg-stone-300 w-full overflow-hidden">
                         <div
                             className="h-full bg-stone-900 transition-all duration-200"
                             style={{ width: `${progress}%` }}
                         />
                     </div>
-                    <p className="text-[10px] font-mono text-stone-400">
-                        Uploading… {progress}%
-                    </p>
+                    <p className="text-[10px] font-mono text-stone-400">Uploading… {progress}%</p>
                 </div>
             )}
         </div>

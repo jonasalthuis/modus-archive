@@ -1,24 +1,25 @@
-import React from 'react';
-import Link from 'next/link';
+import React from "react";
+import Link from "next/link";
 
 export default function HomePage() {
     return (
-        <main className="min-h-screen bg-white text-stone-900 font-serif selection:bg-stone-200 selection:text-black">
+        <main className="min-h-screen bg-white text-stone-900 selection:bg-stone-200 selection:text-black">
             {/* Header / Brand */}
-            <header className="px-8 md:px-16 py-16 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-stone-100">
+            <header className="px-8 md:px-16 py-16 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-stone-200">
                 <div className="max-w-2xl">
                     <span className="text-[10px] uppercase tracking-[0.5em] font-bold text-stone-400 mb-6 block leading-none">
                         Archival Repository
                     </span>
-                    <h1 className="text-6xl md:text-8xl font-light tracking-tighter leading-[0.85] mb-12">
-                        NMA
-                    </h1>
+                    <h1 className="text-6xl md:text-8xl font-light tracking-tighter leading-[0.85] mb-12">NMA</h1>
                     <p className="text-xl md:text-2xl text-stone-600 leading-snug max-w-lg mb-12 font-sans font-light tracking-tight">
-                        Documenting the analogue DNA of 40 years of architectural history.
-                        A research-first repository of 850 models and 1,500 narratives.
+                        Documenting the analogue DNA of 40 years of architectural history. A research-first repository
+                        of 850 models and 1,500 narratives.
                     </p>
                     <nav className="flex space-x-12 text-[10px] uppercase tracking-[0.3em] font-bold">
-                        <Link href="/archive" className="hover:text-stone-500 transition-colors border-b border-stone-900 pb-1">
+                        <Link
+                            href="/archive"
+                            className="hover:text-stone-500 transition-colors border-b border-stone-900 pb-1"
+                        >
                             The Collection
                         </Link>
                         <Link href="/about" className="hover:text-stone-500 transition-colors">
@@ -31,8 +32,10 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-16 md:mt-0 text-right">
-                    <div className="p-8 border border-stone-100 bg-stone-50/50 md:min-w-[320px]">
-                        <p className="text-[9px] uppercase tracking-[0.4em] text-stone-400 mb-4">Project Supported by</p>
+                    <div className="p-8 border border-stone-200 bg-stone-50/50 md:min-w-[320px]">
+                        <p className="text-[9px] uppercase tracking-[0.4em] text-stone-400 mb-4">
+                            Project Supported by
+                        </p>
                         <p className="text-xs font-bold uppercase tracking-widest mb-6">Creative Industries Fund NL</p>
                         <div className="flex justify-end space-x-3">
                             <div className="w-1 h-1 bg-stone-900"></div>
@@ -57,9 +60,12 @@ export default function HomePage() {
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-stone-100 border border-stone-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-stone-100 border border-stone-200">
                     {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="aspect-[3/4] bg-white group relative overflow-hidden transition-all duration-1000">
+                        <div
+                            key={i}
+                            className="aspect-[3/4] bg-white group relative overflow-hidden transition-all duration-1000"
+                        >
                             <div className="absolute inset-0 bg-stone-50 flex items-center justify-center">
                                 <span className="text-[12rem] font-bold text-stone-100 select-none tracking-tighter">
                                     0{i}
@@ -71,7 +77,9 @@ export default function HomePage() {
                                     <span className="text-[9px] font-mono bg-white text-stone-900 px-2 py-0.5 uppercase">
                                         NMA-00{i}
                                     </span>
-                                    <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400">1:500</span>
+                                    <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
+                                        1:500
+                                    </span>
                                 </div>
                                 <div>
                                     <p className="text-[10px] uppercase tracking-widest text-stone-500 mb-2 font-bold font-sans">

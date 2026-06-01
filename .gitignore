@@ -53,3 +53,12 @@ ui-debug.log*
 
 # Local project files (design docs, PDFs, brainstorms)
 project_files/
+
+# Firebase service account keys — NEVER commit
+functions/sidenotenexus-*.json
+**/serviceAccount*.json
+**/*-firebase-adminsdk-*.json
+
+# Local tooling (Claude worktrees/settings, installed skills)
+.claude/
+.agents/

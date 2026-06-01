@@ -23,8 +23,8 @@
     --border: 20 5.9% 90%;
     --input: 20 5.9% 90%;
     --ring: 20 14.3% 4.1%;
-    /* Sharp corners — no border radius */
-    --radius: 0rem;
+    /* Soft corners for shadcn components (cards, buttons, panels in admin) */
+    --radius: 0.5rem;
   }
 
   .dark {

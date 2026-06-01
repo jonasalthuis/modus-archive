@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
             },
         ],
     },
+    // Allow importing Markdown files as raw strings (used by the in-app Knowledge Center)
+    webpack: (config) => {
+        config.module.rules.push({
+            test: /\.md$/,
+            type: 'asset/source',
+        });
+        return config;
+    },
 };
 
 export default nextConfig;
