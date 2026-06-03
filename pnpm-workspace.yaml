@@ -1,0 +1,9 @@
+# pnpm 10+ reads build-script allowlists here (no longer from package.json's
+# "pnpm" field). These packages have native/postinstall build steps that the
+# app needs at build time — notably `sharp` for Next.js image optimization.
+onlyBuiltDependencies:
+  - '@firebase/util'
+  - msw
+  - protobufjs
+  - sharp
+  - unrs-resolver
