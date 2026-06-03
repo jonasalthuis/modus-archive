@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { downscaleImage } from "@/lib/downscaleImage";
 import { db, storage } from "@/lib/firebase";
 import { Upload, Star, X, Check, Loader2, ImageIcon, Plus, AlertCircle } from "lucide-react";
 
@@ -106,11 +107,12 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
         imagesRef.current = images;
     }, [images]);
 
-    // ── Upload a single image ──
-    const uploadImage = useCallback((img: PendingImage, modelNum: string) => {
-        const path = `models/images/${modelNum}/${Date.now()}-${img.file.name.replace(/\s+/g, "_")}`;
+    // ── Upload a single image (downscaled to web resolution first) ──
+    const uploadImage = useCallback(async (img: PendingImage, modelNum: string) => {
+        const web = await downscaleImage(img.file);
+        const path = `models/images/${modelNum}/${Date.now()}-${web.name.replace(/\s+/g, "_")}`;
         const storageRef = ref(storage, path);
-        const task = uploadBytesResumable(storageRef, img.file);
+        const task = uploadBytesResumable(storageRef, web);
 
         task.on(
             "state_changed",

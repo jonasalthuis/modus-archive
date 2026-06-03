@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
     output: 'standalone',
+    // Three.js/R3F creates WebGL contexts in effects; Strict Mode's double-invoke
+    // tears them down and recreates them in a tight loop in dev, causing context loss.
+    reactStrictMode: false,
     images: {
         remotePatterns: [
             {

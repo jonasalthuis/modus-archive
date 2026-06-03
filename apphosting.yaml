@@ -53,10 +53,10 @@ env:
     availability:
       - RUNTIME
 
-  # Firebase App Check — uncomment and set once a reCAPTCHA v3 site key is registered
-  # in Firebase Console → App Check. Until then App Check no-ops (see src/lib/firebase.ts).
-  # - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-  #   value: your_recaptcha_v3_site_key
-  #   availability:
-  #     - BUILD
-  #     - RUNTIME
+  # Firebase App Check (reCAPTCHA v3). The site key is public (it ships in client JS),
+  # so it's safe to commit. The matching secret key lives only in the Firebase Console.
+  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    value: 6LeylggtAAAAAG-MveWmhTQqSGryp14TjEV7OsXR
+    availability:
+      - BUILD
+      - RUNTIME

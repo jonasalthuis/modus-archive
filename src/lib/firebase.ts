@@ -26,7 +26,9 @@ const storage = getStorage(app);
 // abused from random scripts. No-ops gracefully until a site key is configured.
 // Set NEXT_PUBLIC_RECAPTCHA_SITE_KEY once App Check is registered in the console.
 // For localhost, set NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN (or "true") to get a debug token.
-if (typeof window !== "undefined") {
+// Skip App Check in development — Firestore rules handle access control.
+// In production, App Check adds a reCAPTCHA attestation layer on top.
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "development") {
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
     if (siteKey) {
         const debugToken = process.env.NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN;

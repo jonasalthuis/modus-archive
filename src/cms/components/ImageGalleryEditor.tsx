@@ -3,6 +3,7 @@
 import React, { useRef, useState } from "react";
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { storage } from "@/lib/firebase";
+import { downscaleImage } from "@/lib/downscaleImage";
 import { Star, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
 import type { ModelImage } from "@/types/model";
@@ -36,7 +37,8 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
         const newImages: ModelImage[] = [];
 
         for (let i = 0; i < files.length; i++) {
-            const file = files[i];
+            // Downscale to web resolution before upload — full-res never reaches the public bucket
+            const file = await downscaleImage(files[i]);
             const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
             const storageRef = ref(storage, `models/images/${modelId}/${filename}`);
             const uploadTask = uploadBytesResumable(storageRef, file);

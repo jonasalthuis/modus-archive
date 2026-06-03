@@ -43,8 +43,8 @@ export default function AccountPage() {
                 <div className="w-16" />
             </nav>
 
-            <div className="max-w-lg mx-auto px-8 py-20">
-                <h1 className="text-4xl font-light tracking-tight leading-[1.05] mb-2">Your account</h1>
+            <div className="max-w-lg mx-auto px-6 md:px-8 py-12 md:py-20">
+                <h1 className="text-3xl md:text-4xl font-light tracking-tight leading-[1.05] mb-2">Your account</h1>
                 <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-stone-400 mb-12">
                     Network Modelmakers Archive
                 </p>
@@ -75,7 +75,7 @@ export default function AccountPage() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-5">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
                     {(role === "admin" || role === "editor") && (
                         <Link
                             href="/admin"

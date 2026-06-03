@@ -54,7 +54,7 @@ export function Nav() {
             <button
                 onClick={() => setOpen((v) => !v)}
                 className={`
- text-[10px] font-bold uppercase tracking-[0.4em] px-3 py-2
+ text-[10px] font-bold uppercase tracking-[0.4em] px-3 py-2 rounded-md
  border transition-all duration-300 select-none
  ${
      open
@@ -70,7 +70,7 @@ export function Nav() {
             {/* Expanded panel */}
             <div
                 className={`
- absolute top-full mt-1 w-44 bg-white border border-stone-200
+ absolute top-full mt-1 w-44 bg-white border border-stone-200 rounded-md
  overflow-hidden transition-all duration-300
  ${onModel ? "left-0 origin-top-left" : "right-0 origin-top-right"}
  ${open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"}

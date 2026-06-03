@@ -61,10 +61,10 @@ export default async function ArtefactsPage() {
                 <div className="w-16" />
             </nav>
 
-            <div className="max-w-4xl mx-auto px-8 py-20">
+            <div className="max-w-4xl mx-auto px-6 md:px-8 py-12 md:py-20">
                 {/* Header */}
-                <div className="mb-16 border-b border-stone-200 pb-12">
-                    <h1 className="text-5xl font-light tracking-tight leading-[1.05] mb-4">Artefacts</h1>
+                <div className="mb-12 md:mb-16 border-b border-stone-200 pb-8 md:pb-12">
+                    <h1 className="text-4xl md:text-5xl font-light tracking-tight leading-[1.05] mb-4">Artefacts</h1>
                     <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-stone-300">
                         Network Modelmakers Archive — Texts &amp; documents
                     </p>
@@ -85,7 +85,7 @@ export default async function ArtefactsPage() {
                             return (
                                 <article key={a.id} className="py-10 group">
                                     {/* Meta row */}
-                                    <div className="flex items-center gap-4 mb-4">
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4">
                                         {date && (
                                             <span className="text-[9px] font-mono text-stone-300 uppercase tracking-widest">
                                                 {date}
@@ -116,7 +116,7 @@ export default async function ArtefactsPage() {
                                         )}
                                     </div>
 
-                                    <h2 className="text-3xl font-light tracking-tight leading-snug mb-4">
+                                    <h2 className="text-2xl md:text-3xl font-light tracking-tight leading-snug mb-4">
                                         <Link href={href} className="hover:text-stone-500 transition-colors">
                                             {a.title || "—"}
                                         </Link>

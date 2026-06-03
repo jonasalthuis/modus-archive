@@ -96,25 +96,27 @@ export const GuidesView = ({
 
     // Heading renderer factory — assigns an id so anchors + the TOC work
     const heading = (level: 1 | 2 | 3) => {
-        const Tag = `h${level}` as keyof React.JSX.IntrinsicElements;
+        const Tag = `h${level}` as "h1";
         const HeadingComponent = ({ children }: { children?: React.ReactNode }) => {
             const id = headingSlug(childrenToText(children));
             return (
                 <Tag id={id} className="scroll-mt-6 group">
-                    {children}
-                    <a
-                        href={`#${id}`}
-                        onClick={(e) => {
-                            e.preventDefault();
-                            scrollRef.current
-                                ?.querySelector(`#${CSS.escape(id)}`)
-                                ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                        }}
-                        className="ml-2 opacity-0 group-hover:opacity-100 text-stone-300 hover:text-stone-600 no-underline align-middle"
-                        aria-label="Link to section"
-                    >
-                        <Hash size={14} className="inline" />
-                    </a>
+                    <>
+                        {children}
+                        <a
+                            href={`#${id}`}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                scrollRef.current
+                                    ?.querySelector(`#${CSS.escape(id)}`)
+                                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }}
+                            className="ml-2 opacity-0 group-hover:opacity-100 text-stone-300 hover:text-stone-600 no-underline align-middle"
+                            aria-label="Link to section"
+                        >
+                            <Hash size={14} className="inline" />
+                        </a>
+                    </>
                 </Tag>
             );
         };

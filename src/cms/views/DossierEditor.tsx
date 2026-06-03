@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { slugify } from "../components/GenericEditor";
 import {
     DndContext,
     closestCenter,
@@ -36,6 +37,8 @@ import {
     X,
     AlertTriangle,
     HelpCircle,
+    Plus,
+    Loader2,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -451,7 +454,23 @@ interface ArtefactDoc {
     excerpt?: string;
 }
 
+// Find a free slug in ma_articles, appending -2, -3… if needed
+async function uniqueArtefactSlug(base: string): Promise<string> {
+    const root = slugify(base) || "artefact";
+    let candidate = root;
+    let n = 2;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+        const snap = await getDoc(doc(db, "ma_articles", candidate));
+        if (!snap.exists()) return candidate;
+        candidate = `${root}-${n++}`;
+    }
+}
+
 const ArtefactPicker = ({ onSelect, onClose }: { onSelect: (artefact: ArtefactDoc) => void; onClose: () => void }) => {
+    const [tab, setTab] = useState<"existing" | "new">("existing");
+
+    // ── Existing tab ──
     const [artefacts, setArtefacts] = useState<ArtefactDoc[]>([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
@@ -470,50 +489,222 @@ const ArtefactPicker = ({ onSelect, onClose }: { onSelect: (artefact: ArtefactDo
             (a.slug || "").toLowerCase().includes(search.toLowerCase()),
     );
 
+    // ── New tab ──
+    const [title, setTitle] = useState("");
+    const [author, setAuthor] = useState("");
+    const [excerpt, setExcerpt] = useState("");
+    const [content, setContent] = useState("");
+    const [tagsInput, setTagsInput] = useState("");
+    const [published, setPublished] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const createArtefact = async () => {
+        if (!title.trim()) {
+            setError("A title is required.");
+            return;
+        }
+        setSaving(true);
+        setError(null);
+        try {
+            const slug = await uniqueArtefactSlug(title);
+            const tags = tagsInput
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean);
+            // Firestore rejects `undefined` — only include fields that have a value
+            const data: Record<string, unknown> = {
+                title: title.trim(),
+                slug,
+                publishDate: new Date().toISOString().slice(0, 10),
+                isVisible: published,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            };
+            if (author.trim()) data.author = author.trim();
+            if (excerpt.trim()) data.excerpt = excerpt.trim();
+            if (content.trim()) data.content = content.trim();
+            if (tags.length) data.tags = tags;
+            // Write the new artefact into the artefacts collection
+            await setDoc(doc(db, "ma_articles", slug), data);
+            // Insert it into the dossier
+            onSelect({ id: slug, slug, title: title.trim(), excerpt: excerpt.trim() || undefined });
+        } catch (e) {
+            console.error("Create artefact failed", e);
+            setError("Could not create the artefact. Please try again.");
+            setSaving(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center px-4">
             <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-            <div className="relative bg-white border border-stone-300 shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-stone-300 flex-shrink-0">
-                    <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-500">Pick artefact</p>
+            <div className="relative bg-white border border-stone-300 shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+                {/* Header + tabs */}
+                <div className="flex items-center justify-between px-6 pt-4 flex-shrink-0">
+                    <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-500">Add artefact</p>
                     <button type="button" onClick={onClose} className="text-stone-400 hover:text-stone-900">
                         <X size={16} />
                     </button>
                 </div>
-
-                <div className="p-4 border-b border-stone-300 flex-shrink-0">
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search by title or slug…"
-                        className="w-full border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:border-stone-600"
-                        autoFocus
-                    />
+                <div className="flex gap-1 px-6 pt-3 border-b border-stone-300 flex-shrink-0">
+                    {(["existing", "new"] as const).map((t) => (
+                        <button
+                            key={t}
+                            type="button"
+                            onClick={() => setTab(t)}
+                            className={`px-3 py-2 text-[10px] uppercase tracking-[0.2em] font-bold border-b-2 -mb-px transition-colors ${
+                                tab === t
+                                    ? "border-stone-900 text-stone-900"
+                                    : "border-transparent text-stone-400 hover:text-stone-700"
+                            }`}
+                        >
+                            {t === "existing" ? "Pick existing" : "Create new"}
+                        </button>
+                    ))}
                 </div>
 
-                <div className="flex-1 overflow-y-auto">
-                    {loading ? (
-                        <p className="text-center text-stone-300 text-sm py-10">Loading artefacts…</p>
-                    ) : filtered.length === 0 ? (
-                        <p className="text-center text-stone-300 text-sm py-10">No artefacts found</p>
-                    ) : (
-                        filtered.map((a) => (
-                            <button
-                                key={a.id}
-                                type="button"
-                                onClick={() => onSelect(a)}
-                                className="w-full text-left px-5 py-4 border-b border-stone-300 hover:bg-stone-50 transition-colors"
-                            >
-                                <p className="text-sm font-light">{a.title || "—"}</p>
-                                <p className="text-[10px] font-mono text-stone-400">{a.slug || a.id}</p>
-                                {a.excerpt && (
-                                    <p className="text-[11px] text-stone-400 mt-1 line-clamp-2">{a.excerpt}</p>
+                {/* Existing */}
+                {tab === "existing" && (
+                    <>
+                        <div className="p-4 border-b border-stone-300 flex-shrink-0">
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Search by title or slug…"
+                                className="w-full border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:border-stone-600"
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                            {loading ? (
+                                <p className="text-center text-stone-300 text-sm py-10">Loading artefacts…</p>
+                            ) : filtered.length === 0 ? (
+                                <p className="text-center text-stone-300 text-sm py-10">No artefacts found</p>
+                            ) : (
+                                filtered.map((a) => (
+                                    <button
+                                        key={a.id}
+                                        type="button"
+                                        onClick={() => onSelect(a)}
+                                        className="w-full text-left px-5 py-4 border-b border-stone-200 hover:bg-stone-50 transition-colors"
+                                    >
+                                        <p className="text-sm font-light">{a.title || "—"}</p>
+                                        <p className="text-[10px] font-mono text-stone-400">{a.slug || a.id}</p>
+                                        {a.excerpt && (
+                                            <p className="text-[11px] text-stone-400 mt-1 line-clamp-2">{a.excerpt}</p>
+                                        )}
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    </>
+                )}
+
+                {/* New */}
+                {tab === "new" && (
+                    <>
+                        <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                            <div className="space-y-1.5">
+                                <label className="block text-[8px] uppercase tracking-[0.4em] font-bold text-stone-500">
+                                    Title <span className="text-red-400">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    placeholder="Artefact title…"
+                                    className="w-full border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:border-stone-900"
+                                    autoFocus
+                                />
+                                {title.trim() && (
+                                    <p className="text-[10px] font-mono text-stone-400">
+                                        /artefacts/{slugify(title)}
+                                    </p>
                                 )}
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-[8px] uppercase tracking-[0.4em] font-bold text-stone-500">
+                                    Author
+                                </label>
+                                <input
+                                    type="text"
+                                    value={author}
+                                    onChange={(e) => setAuthor(e.target.value)}
+                                    className="w-full border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:border-stone-900"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-[8px] uppercase tracking-[0.4em] font-bold text-stone-500">
+                                    Excerpt
+                                </label>
+                                <textarea
+                                    value={excerpt}
+                                    onChange={(e) => setExcerpt(e.target.value)}
+                                    rows={2}
+                                    placeholder="Short summary (shown on the dossier card)…"
+                                    className="w-full border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:border-stone-900 resize-none"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-[8px] uppercase tracking-[0.4em] font-bold text-stone-500">
+                                    Content
+                                </label>
+                                <textarea
+                                    value={content}
+                                    onChange={(e) => setContent(e.target.value)}
+                                    rows={6}
+                                    placeholder="The artefact body (paragraphs separated by blank lines)…"
+                                    className="w-full border border-stone-300 px-3 py-2 text-sm font-mono focus:outline-none focus:border-stone-900 resize-none"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-[8px] uppercase tracking-[0.4em] font-bold text-stone-500">
+                                    Tags
+                                </label>
+                                <input
+                                    type="text"
+                                    value={tagsInput}
+                                    onChange={(e) => setTagsInput(e.target.value)}
+                                    placeholder="Comma-separated"
+                                    className="w-full border border-stone-300 px-3 py-2 font-mono text-sm focus:outline-none focus:border-stone-900"
+                                />
+                            </div>
+                            <label className="flex items-center gap-2 pt-1 cursor-pointer">
+                                <button
+                                    type="button"
+                                    onClick={() => setPublished((v) => !v)}
+                                    className={`flex items-center w-10 h-6 p-1 border transition-colors ${published ? "bg-stone-900 border-stone-900 justify-end" : "bg-white border-stone-300 justify-start"}`}
+                                >
+                                    <span className={`w-4 h-4 ${published ? "bg-white" : "bg-stone-300"}`} />
+                                </button>
+                                <span className="text-[11px] text-stone-600">
+                                    Publish immediately (visible on the public site)
+                                </span>
+                            </label>
+                            {error && <p className="text-[12px] text-red-500">{error}</p>}
+                        </div>
+                        <div className="px-5 py-4 border-t border-stone-300 flex-shrink-0 flex items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="text-[10px] uppercase tracking-[0.25em] font-bold text-stone-500 hover:text-stone-900 transition-colors"
+                            >
+                                Cancel
                             </button>
-                        ))
-                    )}
-                </div>
+                            <button
+                                type="button"
+                                onClick={createArtefact}
+                                disabled={saving || !title.trim()}
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-md bg-stone-900 text-white text-[10px] uppercase tracking-[0.25em] font-bold hover:bg-stone-700 transition-colors disabled:opacity-40"
+                            >
+                                {saving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                                Create &amp; add
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
@@ -753,8 +944,8 @@ export const DossierEditor = ({
                                 id: nanoid(),
                                 type: "artefact",
                                 artefactSlug: art.slug || art.id,
-                                artefactTitle: art.title,
-                                artefactExcerpt: art.excerpt,
+                                artefactTitle: art.title ?? "",
+                                artefactExcerpt: art.excerpt ?? "",
                             },
                         ]);
                         setIsDirty(true);

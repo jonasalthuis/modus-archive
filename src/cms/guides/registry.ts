@@ -6,6 +6,7 @@ import overviewDoc from "../../../docs/README.md";
 import adminGuideDoc from "../../../docs/admin-guide.md";
 import accessDoc from "../../../docs/access-and-invites.md";
 import contentDoc from "../../../docs/content-and-urls.md";
+import architectureDoc from "../../../docs/architecture.md";
 import securityDoc from "../../../docs/security.md";
 
 export interface Guide {
@@ -41,9 +42,15 @@ export const GUIDES: Guide[] = [
         content: contentDoc,
     },
     {
+        id: "architecture",
+        title: "Architecture & Ops",
+        description: "How the system fits together and where to look when something breaks.",
+        content: architectureDoc,
+    },
+    {
         id: "security",
         title: "Security",
-        description: "How the archive is protected, and the remaining console steps.",
+        description: "Every protection layer in depth, plus the remaining console steps.",
         content: securityDoc,
     },
 ];

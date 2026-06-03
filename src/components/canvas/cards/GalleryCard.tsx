@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Maximize2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import type { ImageGroup } from "@/types/model";
+import { BLUR_DATA_URL } from "@/lib/blur";
 
 export function GalleryCard({ group }: { group: ImageGroup }) {
     const total = group.images.length;
@@ -38,7 +39,7 @@ export function GalleryCard({ group }: { group: ImageGroup }) {
     return (
         <>
             {/* Card */}
-            <div className="bg-white border border-stone-200 select-none" style={{ width: 300 }}>
+            <div className="bg-white border border-stone-200 rounded-lg overflow-hidden shadow-[0_14px_40px_-12px_rgba(28,25,23,0.30)] select-none" style={{ width: 300 }}>
                 <div className="relative bg-stone-100 group" style={{ height: 260 }}>
                     <Image
                         src={img.url}
@@ -46,6 +47,8 @@ export function GalleryCard({ group }: { group: ImageGroup }) {
                         fill
                         className="object-cover"
                         sizes="300px"
+                        placeholder="blur"
+                        blurDataURL={BLUR_DATA_URL}
                         draggable={false}
                     />
                     {/* Expand → lightbox */}
@@ -80,9 +83,9 @@ export function GalleryCard({ group }: { group: ImageGroup }) {
                     )}
                 </div>
                 <div className="px-3 py-2 border-t border-stone-100 flex items-center justify-between">
-                    <p className="text-[9px] font-light text-stone-400 truncate">{img.caption ?? ""}</p>
+                    <p className="text-[10px] font-normal text-stone-600 truncate">{img.caption ?? ""}</p>
                     {total > 1 && (
-                        <p className="text-[8px] font-mono text-stone-300 flex-shrink-0 ml-2">
+                        <p className="text-[8px] font-mono text-stone-500 flex-shrink-0 ml-2">
                             {index + 1}&thinsp;/&thinsp;{total}
                         </p>
                     )}
@@ -114,7 +117,8 @@ export function GalleryCard({ group }: { group: ImageGroup }) {
                                 fill
                                 className="object-contain"
                                 sizes="90vw"
-                                unoptimized
+                                placeholder="blur"
+                                blurDataURL={BLUR_DATA_URL}
                             />
                         </div>
 

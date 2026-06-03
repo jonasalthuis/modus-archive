@@ -226,7 +226,7 @@ export function DataTable<T extends Record<string, unknown>>({
             </div>
 
             {/* ── Table ── */}
-            <div className="overflow-x-auto bg-white rounded-xl border border-stone-200 shadow-sm relative">
+            <div className="overflow-x-auto bg-white rounded-xl border border-stone-200 shadow-sm relative w-fit min-w-[28rem] max-w-full">
                 {loading ? (
                     <div className="py-20 text-center">
                         <p className="text-[9px] uppercase tracking-[0.5em] text-stone-400 animate-pulse">
