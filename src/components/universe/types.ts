@@ -1,6 +1,8 @@
 // Shared types for the archive "universe" experience (3 view modes).
 
-export type ViewMode = "universe" | "grid" | "clustered";
+// Two top-level modes. "explore" is the floating universe; when a grouping
+// attribute other than "none" is chosen it becomes the clustered view.
+export type ViewMode = "explore" | "grid";
 
 export type Vec3 = [number, number, number];
 
@@ -27,8 +29,10 @@ export interface UniverseModel {
     images?: UniverseImage[];
 }
 
-// Attributes the user can cluster ("group by") on.
+// Attributes the user can cluster ("group by") on. "none" = no clustering,
+// i.e. the free-floating universe.
 export type GroupAttr =
+    | "none"
     | "architect"
     | "leadMaker"
     | "modelType"

@@ -70,7 +70,14 @@ export function gridLayout(models: UniverseModel[]): {
     return { positions, cols, rows, width, height };
 }
 
-// ── Clustered: grouped floating clouds ──────────────────────────────────────
+// ── Clustered: organic grouped clouds ───────────────────────────────────────
+// Cluster centres are placed on a golden-angle spiral (organic, non-grid) with
+// seeded jitter, spread across the whole universe area. Cards within a cluster
+// use a sunflower (phyllotaxis) distribution so they're evenly spaced and only
+// overlap a little, rather than piling on top of one another.
+
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5)); // ≈ 2.39996 rad
+const CARD_SPACING = 2.55; // cards are 2.7 wide → barely overlapping
 
 export function clusteredLayout(
     models: UniverseModel[],
@@ -83,41 +90,48 @@ export function clusteredLayout(
         groups.get(k)!.push(m);
     }
 
-    // Largest groups first, so the busiest clusters land near the centre.
+    // Largest groups first → busiest clusters sit nearer the centre of the spiral.
     const keys = [...groups.keys()].sort(
         (a, b) => groups.get(b)!.length - groups.get(a)!.length,
     );
     const G = keys.length;
-    const cols = Math.max(1, Math.ceil(Math.sqrt(G)));
-    const rowsG = Math.ceil(G / cols);
-    const spacing = 17;
+
+    // Spread factor: scales the spiral so clusters fill the space without
+    // sitting on top of each other. Kept fairly compact so the framed view
+    // doesn't push the cards too far away.
+    const spread = 4.5 + Math.sqrt(G) * 0.85;
 
     const positions = new Map<string, Vec3>();
     const clusters: Cluster[] = [];
 
     keys.forEach((k, gi) => {
-        const col = gi % cols;
-        const row = Math.floor(gi / cols);
-        const cx = (col - (cols - 1) / 2) * spacing;
-        const cy = ((rowsG - 1) / 2 - row) * spacing * 0.72;
-        const cz = 0;
-
         const members = groups.get(k)!;
-        const radius = 2 + Math.min(5, Math.sqrt(members.length));
 
-        members.forEach((m) => {
-            const r = seededRand(m.id + "::" + k);
+        // Organic cluster centre: golden-angle spiral + seeded jitter + depth.
+        const jr = seededRand("center::" + k);
+        const angle = gi * GOLDEN_ANGLE;
+        const radius = spread * Math.sqrt(gi + 0.55);
+        const cx = Math.cos(angle) * radius + (jr() - 0.5) * 4;
+        const cy = Math.sin(angle) * radius * 0.82 + (jr() - 0.5) * 4;
+        const cz = (jr() - 0.5) * 8;
+
+        // Sunflower layout inside the cluster — even spacing, slight overlap.
+        members.forEach((m, j) => {
+            const jz = seededRand(m.id + "::" + k);
+            const r = CARD_SPACING * Math.sqrt(j + 0.5);
+            const a = j * GOLDEN_ANGLE;
             positions.set(m.id, [
-                cx + (r() - 0.5) * radius * 2,
-                cy + (r() - 0.5) * radius * 1.6,
-                cz + (r() - 0.5) * radius * 1.4,
+                cx + Math.cos(a) * r,
+                cy + Math.sin(a) * r,
+                cz + (jz() - 0.5) * 2.4,
             ]);
         });
 
+        const clusterRadius = CARD_SPACING * Math.sqrt(members.length) + 1.6;
         clusters.push({
             key: k,
             label: k,
-            center: [cx, cy + radius * 1.1 + 1.4, cz],
+            center: [cx, cy + clusterRadius, cz],
             count: members.length,
         });
     });
@@ -132,6 +146,8 @@ export function makeKeyOf(
     dossierMap?: Map<string, string[]>,
 ): (m: UniverseModel) => string {
     switch (attr) {
+        case "none":
+            return () => "All";
         case "architect":
             return (m) => norm(m.architect);
         case "leadMaker":
@@ -156,6 +172,7 @@ export function makeKeyOf(
 }
 
 export const GROUP_ATTRS: { key: GroupAttr; label: string }[] = [
+    { key: "none", label: "None" },
     { key: "architect", label: "Architect" },
     { key: "leadMaker", label: "Lead maker" },
     { key: "modelType", label: "Model type" },

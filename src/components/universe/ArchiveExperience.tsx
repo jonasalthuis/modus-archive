@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Maximize } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { Scene, type Target } from "./Scene";
+import { Scene, type Target, type CameraCommand } from "./Scene";
 import { GridControls } from "./GridControls";
 import { ClusterControls } from "./ClusterControls";
 import {
@@ -54,13 +55,10 @@ function toUniverse(id: string, d: Record<string, unknown>): UniverseModel {
             ? (d.materials.filter((x) => typeof x === "string") as string[])
             : undefined,
         location: str(d.location),
-        images: Array.isArray(d.images)
-            ? (d.images as UniverseModel["images"])
-            : undefined,
+        images: Array.isArray(d.images) ? (d.images as UniverseModel["images"]) : undefined,
     };
 }
 
-// Map each model id → the dossier titles that reference it (via modelImage items).
 interface DossierDoc {
     title?: string;
     items?: { type?: string; modelId?: string }[];
@@ -81,18 +79,14 @@ function buildDossierMap(docs: DossierDoc[]): Map<string, string[]> {
     return map;
 }
 
-// ── URL helpers ───────────────────────────────────────────────────────────────
-
-const VIEW_MODES: ViewMode[] = ["universe", "grid", "clustered"];
+const VIEW_MODES: ViewMode[] = ["explore", "grid"];
 
 function LoadingScreen({ label }: { label: string }) {
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-stone-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-white">
             <div className="space-y-3 text-center">
                 <div className="w-12 h-px bg-stone-300 mx-auto animate-pulse" />
-                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300">
-                    {label}
-                </p>
+                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300">{label}</p>
             </div>
         </div>
     );
@@ -107,19 +101,21 @@ export function ArchiveExperience() {
 
     const view: ViewMode = useMemo(() => {
         const v = searchParams.get("view") as ViewMode | null;
-        return v && VIEW_MODES.includes(v) ? v : "universe";
+        return v && VIEW_MODES.includes(v) ? v : "explore";
     }, [searchParams]);
 
     const group: GroupAttr = useMemo(
-        () => (searchParams.get("group") as GroupAttr) || "architect",
+        () => (searchParams.get("group") as GroupAttr) || "none",
         [searchParams],
     );
 
     const setGroup = useCallback(
         (g: GroupAttr) => {
             const params = new URLSearchParams(searchParams.toString());
-            params.set("group", g);
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+            if (g === "none") params.delete("group");
+            else params.set("group", g);
+            const qs = params.toString();
+            router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
         },
         [router, pathname, searchParams],
     );
@@ -128,6 +124,12 @@ export function ArchiveExperience() {
     const [dossierMap, setDossierMap] = useState<Map<string, string[]>>(new Map());
     const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
     const [loading, setLoading] = useState(true);
+
+    // Camera command — bump token to move the camera. Starts at "default".
+    const [cameraCmd, setCameraCmd] = useState<CameraCommand>({ type: "default", token: 0 });
+    const issue = useCallback((type: CameraCommand["type"]) => {
+        setCameraCmd((c) => ({ type, token: c.token + 1 }));
+    }, []);
 
     useEffect(() => {
         let alive = true;
@@ -140,14 +142,12 @@ export function ArchiveExperience() {
                     ),
                 ]);
                 if (!alive) return;
-
                 const all = modelsSnap.docs
                     .map((doc) => ({ raw: doc.data(), id: doc.id }))
                     .filter((x) => x.raw.inPrototype === true)
                     .map((x) => toUniverse(x.id, x.raw))
                     .sort((a, b) => (a.modelNumber ?? "").localeCompare(b.modelNumber ?? ""));
                 setModels(all);
-
                 if (dossierSnap) {
                     setDossierMap(buildDossierMap(dossierSnap.docs.map((d) => d.data() as DossierDoc)));
                 }
@@ -162,42 +162,60 @@ export function ArchiveExperience() {
         };
     }, []);
 
-    // Filtered set drives grid/clustered layouts; universe shows everything.
+    // Grid applies filters; explore shows everything.
     const filtered = useMemo(() => applyFilters(models, filters), [models, filters]);
 
-    const { targets, clusters, fitKey } = useMemo(() => {
+    const { targets, clusters } = useMemo(() => {
         const map = new Map<string, Target>();
-        const uni = universeLayout(models);
         let cl: Cluster[] = [];
-        let key = "universe";
 
         if (view === "grid") {
             const { positions } = gridLayout(filtered);
+            const uni = universeLayout(models);
             for (const m of models) {
                 const p = positions.get(m.id);
                 map.set(m.id, p ? { pos: p, visible: true } : { pos: uni.get(m.id)!, visible: false });
             }
-            key = `grid:${filtered.length}`;
-        } else if (view === "clustered") {
-            const { positions, clusters: c } = clusteredLayout(filtered, makeKeyOf(group, dossierMap));
-            cl = c;
-            for (const m of models) {
-                const p = positions.get(m.id);
-                map.set(m.id, p ? { pos: p, visible: true } : { pos: uni.get(m.id)!, visible: false });
-            }
-            key = `clustered:${group}:${filtered.length}`;
-        } else {
+        } else if (group === "none") {
+            const uni = universeLayout(models);
             for (const m of models) map.set(m.id, { pos: uni.get(m.id)!, visible: true });
+        } else {
+            const { positions, clusters: c } = clusteredLayout(models, makeKeyOf(group, dossierMap));
+            cl = c;
+            for (const m of models) map.set(m.id, { pos: positions.get(m.id)!, visible: true });
         }
-
-        return { targets: map, clusters: cl, fitKey: key };
+        return { targets: map, clusters: cl };
     }, [view, group, models, filtered, dossierMap]);
 
-    if (loading) return <LoadingScreen label="Loading collection…" />;
+    // Decide when the camera re-frames. Crucially, changing the grouping
+    // attribute (attribute → attribute) does NOT move the camera, so you can
+    // watch the cards migrate between clusters.
+    const prev = useRef<{ view: ViewMode; group: GroupAttr; gridCount: number } | null>(null);
+    useEffect(() => {
+        if (loading) return;
+        const gridCount = view === "grid" ? filtered.length : -1;
+        const p = prev.current;
 
+        if (!p) {
+            // Initial frame: explore+none keeps the default close view; otherwise fit.
+            if (view === "grid" || group !== "none") issue("fit");
+        } else if (view !== p.view) {
+            if (view === "grid") issue("fit");
+            else issue(group === "none" ? "default" : "fit");
+        } else if (view === "explore" && group !== p.group) {
+            if (group === "none") issue("default"); // back to the open universe
+            else if (p.group === "none") issue("fit"); // entering clustering → frame it
+            // attribute → attribute: leave the camera where it is
+        } else if (view === "grid" && gridCount !== p.gridCount) {
+            issue("fit");
+        }
+        prev.current = { view, group, gridCount };
+    }, [view, group, filtered.length, loading, issue]);
+
+    if (loading) return <LoadingScreen label="Loading collection…" />;
     if (models.length === 0) {
         return (
-            <div className="fixed inset-0 flex items-center justify-center bg-stone-50">
+            <div className="fixed inset-0 flex items-center justify-center bg-white">
                 <p className="text-[10px] uppercase tracking-[0.5em] font-bold text-stone-300">
                     No models published yet
                 </p>
@@ -205,10 +223,15 @@ export function ArchiveExperience() {
         );
     }
 
+    const hint =
+        view === "grid"
+            ? "Scroll to pan · Pinch to zoom · Click to open"
+            : "Drag to orbit · Shift-drag to pan · Scroll to zoom";
+
     return (
         <div className="fixed inset-0 bg-white">
             <Canvas
-                camera={{ position: [0, 0, 15], fov: 62, near: 0.1, far: 200 }}
+                camera={{ position: [0, 0, 16], fov: 62, near: 0.1, far: 300 }}
                 gl={{ antialias: true, alpha: false }}
                 dpr={[1, 2]}
             >
@@ -216,25 +239,32 @@ export function ArchiveExperience() {
                     models={models}
                     targets={targets}
                     mode={view}
+                    group={group}
                     clusters={clusters}
-                    fitKey={fitKey}
+                    cameraCmd={cameraCmd}
                 />
             </Canvas>
 
-            {/* Mode-specific header controls */}
             {view === "grid" && (
                 <GridControls models={models} filters={filters} onChange={setFilters} />
             )}
-            {view === "clustered" && <ClusterControls groupBy={group} onChange={setGroup} />}
+            {view === "explore" && <ClusterControls groupBy={group} onChange={setGroup} />}
 
-            {/* Hint overlay (floating modes only) */}
-            {view !== "grid" && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 pointer-events-none">
-                    <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-400 select-none">
-                        Drag to explore · Scroll to zoom · Click to open
-                    </p>
-                </div>
-            )}
+            {/* Zoom-all / fit button */}
+            <button
+                onClick={() => issue("fit")}
+                aria-label="Frame all models"
+                className="fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-white border border-stone-200 rounded-md px-3 h-[34px] text-[9px] uppercase tracking-[0.3em] font-bold text-stone-500 hover:border-stone-900 hover:text-stone-900 transition-colors"
+            >
+                <Maximize size={13} />
+                Fit all
+            </button>
+
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 pointer-events-none">
+                <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-400 select-none">
+                    {hint}
+                </p>
+            </div>
         </div>
     );
 }

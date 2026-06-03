@@ -4,7 +4,10 @@ import React, { useRef, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useRouter } from "next/navigation";
 import * as THREE from "three";
-import type { UniverseModel, Vec3, ViewMode } from "./types";
+import type { UniverseModel, Vec3 } from "./types";
+
+// "grid" = locked flat (no bob, no depth fog); "float" = drifting in space.
+type CardMode = "grid" | "float";
 
 // ── Shaders: distance fog + visibility fade ─────────────────────────────────
 
@@ -114,10 +117,13 @@ interface FloatingCardProps {
     model: UniverseModel;
     target: Vec3;
     visible: boolean;
-    mode: ViewMode;
+    mode: CardMode;
+    // Depth fade — nice for the open universe, but switched off in clustered /
+    // grid views so cards stay visible when the camera pulls back.
+    depthFog: boolean;
 }
 
-export function FloatingCard({ model, target, visible, mode }: FloatingCardProps) {
+export function FloatingCard({ model, target, visible, mode, depthFog }: FloatingCardProps) {
     const mesh = useRef<THREE.Mesh>(null);
     const matRef = useRef<THREE.ShaderMaterial>(null);
     const router = useRouter();
@@ -133,8 +139,8 @@ export function FloatingCard({ model, target, visible, mode }: FloatingCardProps
         () => ({
             uMap: { value: texture },
             uFade: { value: 0 },
-            uFogNear: { value: 22 },
-            uFogFar: { value: 46 },
+            uFogNear: { value: 55 },
+            uFogFar: { value: 130 },
         }),
         [texture],
     );
@@ -170,13 +176,14 @@ export function FloatingCard({ model, target, visible, mode }: FloatingCardProps
             u.value += (targetFade - u.value) * 0.12;
             m.visible = u.value < 0.97;
 
-            // Depth fade is only the universe aesthetic; disable it in grid /
-            // clustered so pulling the camera back doesn't fade everything out.
+            // Depth fade only in the open universe; off elsewhere so pulling the
+            // camera back (clustered / grid) doesn't fade everything out.
             const near = matRef.current.uniforms.uFogNear;
             const far = matRef.current.uniforms.uFogFar;
-            if (mode === "universe") {
-                near.value = 22;
-                far.value = 46;
+            if (depthFog) {
+                // Subtle, late depth fade — only the very far cards dim.
+                near.value = 55;
+                far.value = 130;
             } else {
                 near.value = 1e5;
                 far.value = 2e5;

@@ -14,9 +14,8 @@ const NAV_LINKS = [
 ];
 
 const VIEWS: { key: ViewMode; label: string }[] = [
-    { key: "universe", label: "Universe" },
+    { key: "explore", label: "Explore" },
     { key: "grid", label: "Grid" },
-    { key: "clustered", label: "Clustered" },
 ];
 
 // Segmented view toggle — reads/writes ?view= in the URL. Only shown on "/".
@@ -24,11 +23,11 @@ function ViewToggle() {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const current = (searchParams.get("view") as ViewMode) || "universe";
+    const current = (searchParams.get("view") as ViewMode) || "explore";
 
     const setView = (v: ViewMode) => {
         const params = new URLSearchParams(searchParams.toString());
-        if (v === "universe") params.delete("view");
+        if (v === "explore") params.delete("view");
         else params.set("view", v);
         const qs = params.toString();
         router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
