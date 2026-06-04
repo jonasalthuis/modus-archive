@@ -51,24 +51,18 @@ function ControlsConfig({ mode, group }: { mode: ViewMode; group: GroupAttr }) {
 
         // explore
         c.enableRotate = true;
-        c.enableZoom = true;
+        c.enableZoom = false; // wheel/pinch handled by TrackpadControls
         c.autoRotate = group === "none";
         c.autoRotateSpeed = 0.35;
         c.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
 
-        // Hold Shift to pan: disable rotation AND switch the left button to pan,
-        // so a Shift-drag clearly pans instead of orbiting.
+        // Hold Shift to pan: just disable orbit while held — ShiftDragPan does
+        // the actual panning, so it can't fight OrbitControls' own rotate/pan.
         const down = (e: KeyboardEvent) => {
-            if (e.key === "Shift") {
-                c.enableRotate = false;
-                c.mouseButtons.LEFT = THREE.MOUSE.PAN;
-            }
+            if (e.key === "Shift") c.enableRotate = false;
         };
         const up = (e: KeyboardEvent) => {
-            if (e.key === "Shift") {
-                c.enableRotate = true;
-                c.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
-            }
+            if (e.key === "Shift") c.enableRotate = true;
         };
         window.addEventListener("keydown", down);
         window.addEventListener("keyup", up);
@@ -76,17 +70,99 @@ function ControlsConfig({ mode, group }: { mode: ViewMode; group: GroupAttr }) {
             window.removeEventListener("keydown", down);
             window.removeEventListener("keyup", up);
             c.enableRotate = true;
-            c.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
         };
     }, [controls, mode, group]);
     return null;
 }
 
-// ── Trackpad controls (grid) — scroll pans any direction, pinch zooms ───────
-// Mirrors the cosmos.so feel: two-finger scroll translates the canvas in any
-// direction (incl. diagonal); pinch (ctrl+wheel) dollies the camera.
+// ── Trackpad controls — scroll pans any direction, pinch zooms ──────────────
+// cosmos.so feel, in both modes: two-finger scroll pans (with momentum — it
+// accelerates as you scroll and glides to a stop); pinch (ctrl+wheel) zooms.
+// A mouse wheel (large vertical-only steps) is treated as zoom so mouse users
+// can still zoom. Scroll direction is the natural / page-scroll direction.
 
-function TrackpadControls({ mode }: { mode: ViewMode }) {
+const PAN_RESPONSE = 0.16; // lower = heavier / more glide
+const ZOOM_RESPONSE = 0.22;
+
+function TrackpadControls() {
+    const { camera, controls, gl, size } = useThree();
+    const panRem = useRef(new THREE.Vector3()); // remaining world-space pan
+    const zoomRem = useRef(0); // remaining log-scale dolly
+
+    useEffect(() => {
+        const el = gl.domElement;
+        const cam = camera as THREE.PerspectiveCamera;
+
+        // Heuristic: a mouse wheel is a large, vertical-only step. Trackpad
+        // scrolls are smaller and/or carry a horizontal component.
+        const isMouseWheelZoom = (e: WheelEvent) =>
+            !e.ctrlKey && e.deltaX === 0 && (e.deltaMode !== 0 || Math.abs(e.deltaY) >= 50);
+
+        const onWheel = (e: WheelEvent) => {
+            const c = controls as unknown as OrbitLike | null;
+            if (!c) return;
+            e.preventDefault();
+
+            if (e.ctrlKey || isMouseWheelZoom(e)) {
+                zoomRem.current += e.deltaY * 0.01; // accumulate, applied smoothly
+                return;
+            }
+
+            // Two-finger scroll → momentum pan, natural (page-scroll) direction.
+            const dist = cam.position.distanceTo(c.target);
+            const fov = (cam.fov * Math.PI) / 180;
+            const worldPerPixel = (2 * dist * Math.tan(fov / 2)) / size.height;
+            const right = new THREE.Vector3().setFromMatrixColumn(cam.matrix, 0);
+            const up = new THREE.Vector3().setFromMatrixColumn(cam.matrix, 1);
+            panRem.current
+                .addScaledVector(right, e.deltaX * worldPerPixel)
+                .addScaledVector(up, -e.deltaY * worldPerPixel);
+        };
+
+        el.addEventListener("wheel", onWheel, { passive: false });
+        return () => el.removeEventListener("wheel", onWheel);
+    }, [camera, controls, gl, size]);
+
+    useFrame(() => {
+        const c = controls as unknown as OrbitLike | null;
+        if (!c) return;
+        const cam = camera as THREE.PerspectiveCamera;
+        let moved = false;
+
+        // Pan momentum: drain a fraction of the remaining offset each frame.
+        const pr = panRem.current;
+        if (pr.lengthSq() > 1e-7) {
+            const step = pr.clone().multiplyScalar(PAN_RESPONSE);
+            cam.position.add(step);
+            c.target.add(step);
+            pr.sub(step);
+            if (pr.lengthSq() < 1e-7) pr.set(0, 0, 0);
+            moved = true;
+        }
+
+        // Zoom momentum.
+        if (Math.abs(zoomRem.current) > 1e-4) {
+            const z = zoomRem.current * ZOOM_RESPONSE;
+            zoomRem.current -= z;
+            const dist = cam.position.distanceTo(c.target);
+            const newDist = THREE.MathUtils.clamp(dist * Math.exp(z), 4, 120);
+            const dir = new THREE.Vector3().subVectors(cam.position, c.target).normalize();
+            cam.position.copy(c.target).addScaledVector(dir, newDist);
+            if (Math.abs(zoomRem.current) < 1e-4) zoomRem.current = 0;
+            moved = true;
+        }
+
+        if (moved) c.update?.();
+    });
+
+    return null;
+}
+
+// ── Shift-drag pan (explore) — manual, so it can't fight OrbitControls ───────
+// In grid, any drag already pans (OrbitControls), so this is explore-only to
+// avoid double-panning.
+
+function ShiftDragPan({ mode }: { mode: ViewMode }) {
     const { camera, controls, gl, size } = useThree();
     const modeRef = useRef(mode);
     modeRef.current = mode;
@@ -94,39 +170,48 @@ function TrackpadControls({ mode }: { mode: ViewMode }) {
     useEffect(() => {
         const el = gl.domElement;
         const cam = camera as THREE.PerspectiveCamera;
+        let active = false;
+        let lastX = 0;
+        let lastY = 0;
 
-        const onWheel = (e: WheelEvent) => {
-            if (modeRef.current !== "grid") return; // explore: OrbitControls zoom
+        const onDown = (e: PointerEvent) => {
+            if (modeRef.current !== "explore" || !e.shiftKey || e.button !== 0) return;
+            active = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+        };
+        const onMove = (e: PointerEvent) => {
+            if (!active) return;
             const c = controls as unknown as OrbitLike | null;
             if (!c) return;
-            e.preventDefault();
-
-            const target = c.target;
-            const dist = cam.position.distanceTo(target);
-
-            if (e.ctrlKey) {
-                // Pinch → dolly the camera along its view direction.
-                const scale = Math.exp(e.deltaY * 0.01);
-                const newDist = THREE.MathUtils.clamp(dist * scale, 4, 120);
-                const dir = new THREE.Vector3().subVectors(cam.position, target).normalize();
-                cam.position.copy(target).addScaledVector(dir, newDist);
-            } else {
-                // Two-finger scroll → screen-space pan (grab feel, any direction).
-                const fov = (cam.fov * Math.PI) / 180;
-                const worldPerPixel = (2 * dist * Math.tan(fov / 2)) / size.height;
-                const right = new THREE.Vector3().setFromMatrixColumn(cam.matrix, 0);
-                const up = new THREE.Vector3().setFromMatrixColumn(cam.matrix, 1);
-                const move = new THREE.Vector3()
-                    .addScaledVector(right, -e.deltaX * worldPerPixel)
-                    .addScaledVector(up, e.deltaY * worldPerPixel);
-                cam.position.add(move);
-                target.add(move);
-            }
+            const dx = e.clientX - lastX;
+            const dy = e.clientY - lastY;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            const dist = cam.position.distanceTo(c.target);
+            const fov = (cam.fov * Math.PI) / 180;
+            const wpp = (2 * dist * Math.tan(fov / 2)) / size.height;
+            const right = new THREE.Vector3().setFromMatrixColumn(cam.matrix, 0);
+            const up = new THREE.Vector3().setFromMatrixColumn(cam.matrix, 1);
+            const move = new THREE.Vector3()
+                .addScaledVector(right, -dx * wpp)
+                .addScaledVector(up, dy * wpp);
+            cam.position.add(move);
+            c.target.add(move);
             c.update?.();
         };
+        const onUp = () => {
+            active = false;
+        };
 
-        el.addEventListener("wheel", onWheel, { passive: false });
-        return () => el.removeEventListener("wheel", onWheel);
+        el.addEventListener("pointerdown", onDown);
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+        return () => {
+            el.removeEventListener("pointerdown", onDown);
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+        };
     }, [camera, controls, gl, size]);
 
     return null;
@@ -258,7 +343,8 @@ export function Scene({ models, targets, mode, group, clusters, cameraCmd }: Sce
             />
 
             <ControlsConfig mode={mode} group={group} />
-            <TrackpadControls mode={mode} />
+            <TrackpadControls />
+            <ShiftDragPan mode={mode} />
             <CameraRig targets={targets} cameraCmd={cameraCmd} />
 
             {models.map((m) => {

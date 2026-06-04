@@ -10,12 +10,12 @@ export function SidePanel({ children }: { children: React.ReactNode }) {
     const [open, setOpen] = useState(true);
 
     return (
-        <div className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center">
+        <div className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-1.5">
             <div
                 className={`transition-all duration-300 ease-out ${
                     open
                         ? "opacity-100 translate-x-0"
-                        : "opacity-0 translate-x-full pointer-events-none"
+                        : "opacity-0 translate-x-[calc(100%+1.5rem)] pointer-events-none"
                 }`}
             >
                 {children}

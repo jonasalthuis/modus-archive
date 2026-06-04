@@ -111,6 +111,40 @@ function makeCardTexture(model: UniverseModel): THREE.CanvasTexture {
 
 const GEOM = new THREE.PlaneGeometry(2.7, 2.0);
 
+// ── Soft drop shadow (grid only) ────────────────────────────────────────────
+// A larger, blurred dark quad sits just behind each card; the card covers the
+// centre so only the soft margin reads as a drop shadow.
+
+const SHADOW_GEOM = new THREE.PlaneGeometry(2.7 * 1.3, 2.0 * 1.42);
+
+let SHADOW_TEX: THREE.CanvasTexture | null = null;
+function shadowTexture(): THREE.CanvasTexture {
+    if (SHADOW_TEX) return SHADOW_TEX;
+    const W = 256;
+    const H = 192;
+    const cv = document.createElement("canvas");
+    cv.width = W;
+    cv.height = H;
+    const ctx = cv.getContext("2d")!;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.shadowColor = "rgba(0,0,0,0.55)";
+    ctx.shadowBlur = 30;
+    const m = 50;
+    const r = 5;
+    ctx.beginPath();
+    ctx.moveTo(m + r, m);
+    ctx.arcTo(W - m, m, W - m, H - m, r);
+    ctx.arcTo(W - m, H - m, m, H - m, r);
+    ctx.arcTo(m, H - m, m, m, r);
+    ctx.arcTo(m, m, W - m, m, r);
+    ctx.closePath();
+    ctx.fill();
+    SHADOW_TEX = new THREE.CanvasTexture(cv);
+    SHADOW_TEX.needsUpdate = true;
+    return SHADOW_TEX;
+}
+
 // ── Card ────────────────────────────────────────────────────────────────────
 
 interface FloatingCardProps {
@@ -126,8 +160,11 @@ interface FloatingCardProps {
 export function FloatingCard({ model, target, visible, mode, depthFog }: FloatingCardProps) {
     const mesh = useRef<THREE.Mesh>(null);
     const matRef = useRef<THREE.ShaderMaterial>(null);
+    const shadowMat = useRef<THREE.MeshBasicMaterial>(null);
     const router = useRouter();
     const [hovered, setHovered] = useState(false);
+
+    const shadowTex = useMemo(() => shadowTexture(), []);
 
     const texture = useMemo<THREE.Texture>(() => {
         const url = model.images?.find((i) => i.isStarred)?.url ?? model.images?.[0]?.url;
@@ -189,6 +226,13 @@ export function FloatingCard({ model, target, visible, mode, depthFog }: Floatin
                 far.value = 2e5;
             }
         }
+
+        // Drop shadow only in grid view (and only for visible cards).
+        if (shadowMat.current) {
+            const targetOp = mode === "grid" && visible ? 0.5 : 0;
+            shadowMat.current.opacity += (targetOp - shadowMat.current.opacity) * 0.12;
+            shadowMat.current.visible = shadowMat.current.opacity > 0.01;
+        }
     });
 
     const onClick = (e: { stopPropagation: () => void }) => {
@@ -225,6 +269,18 @@ export function FloatingCard({ model, target, visible, mode, depthFog }: Floatin
                 side={THREE.DoubleSide}
                 depthWrite={false}
             />
+
+            {/* soft drop shadow, just behind the card (grid only) */}
+            <mesh geometry={SHADOW_GEOM} position={[0.04, -0.12, -0.06]} raycast={() => null}>
+                <meshBasicMaterial
+                    ref={shadowMat}
+                    map={shadowTex}
+                    transparent
+                    opacity={0}
+                    depthWrite={false}
+                    toneMapped={false}
+                />
+            </mesh>
         </mesh>
     );
 }

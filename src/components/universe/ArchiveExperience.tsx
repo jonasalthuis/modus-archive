@@ -9,9 +9,12 @@ import { db } from "@/lib/firebase";
 import { Scene, type Target, type CameraCommand } from "./Scene";
 import { GridControls } from "./GridControls";
 import { ClusterControls } from "./ClusterControls";
+import { ScaleDock } from "./ScaleDock";
+import { ControlsHelp } from "./ControlsHelp";
 import {
     applyFilters,
     clusteredLayout,
+    distinctScales,
     gridLayout,
     makeKeyOf,
     universeLayout,
@@ -164,6 +167,7 @@ export function ArchiveExperience() {
 
     // Grid applies filters; explore shows everything.
     const filtered = useMemo(() => applyFilters(models, filters), [models, filters]);
+    const scales = useMemo(() => distinctScales(models), [models]);
 
     const { targets, clusters } = useMemo(() => {
         const map = new Map<string, Target>();
@@ -223,11 +227,6 @@ export function ArchiveExperience() {
         );
     }
 
-    const hint =
-        view === "grid"
-            ? "Scroll to pan · Pinch to zoom · Click to open"
-            : "Drag to orbit · Shift-drag to pan · Scroll to zoom";
-
     return (
         <div className="fixed inset-0 bg-white">
             <Canvas
@@ -250,6 +249,18 @@ export function ArchiveExperience() {
             )}
             {view === "explore" && <ClusterControls groupBy={group} onChange={setGroup} />}
 
+            {/* Bottom-docked scale filter (grid only) */}
+            {view === "grid" && (
+                <ScaleDock
+                    scales={scales}
+                    selected={filters.scales}
+                    onChange={(next) => setFilters((f) => ({ ...f, scales: next }))}
+                />
+            )}
+
+            {/* Controls help (bottom-left) */}
+            <ControlsHelp mode={view} />
+
             {/* Zoom-all / fit button */}
             <button
                 onClick={() => issue("fit")}
@@ -259,12 +270,6 @@ export function ArchiveExperience() {
                 <Maximize size={13} />
                 Fit all
             </button>
-
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 pointer-events-none">
-                <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-400 select-none">
-                    {hint}
-                </p>
-            </div>
         </div>
     );
 }

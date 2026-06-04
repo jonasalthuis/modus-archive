@@ -3,8 +3,7 @@
 import React, { useMemo } from "react";
 import { Search } from "lucide-react";
 import { SidePanel } from "./SidePanel";
-import { ScaleSlider } from "./ScaleSlider";
-import { distinctValues, distinctScales } from "./layouts";
+import { distinctValues } from "./layouts";
 import type { UniverseModel, Filters } from "./types";
 
 // Grid-mode controls — a compact vertical panel on the right: search, dropdown
@@ -55,13 +54,12 @@ export function GridControls({
     const modelTypes = useMemo(() => distinctValues(models, (m) => m.modelType), [models]);
     const buildingTypes = useMemo(() => distinctValues(models, (m) => m.buildingType), [models]);
     const statuses = useMemo(() => distinctValues(models, (m) => m.buildingStatus), [models]);
-    const scales = useMemo(() => distinctScales(models), [models]);
 
     const set = (patch: Partial<Filters>) => onChange({ ...filters, ...patch });
 
     return (
         <SidePanel>
-            <div className="w-60 bg-white/90 backdrop-blur border border-stone-200 border-r-0 rounded-l-lg p-4 flex flex-col gap-4">
+            <div className="w-60 bg-white/90 backdrop-blur border border-stone-200 rounded-lg p-4 flex flex-col gap-4 shadow-sm">
                 {/* search */}
                 <div className="flex items-center gap-2 border border-stone-200 rounded-md px-2.5 py-2 focus-within:border-stone-900 transition-colors">
                     <Search size={13} className="text-stone-400 shrink-0" />
@@ -76,16 +74,6 @@ export function GridControls({
                 <Dropdown label="Type" value={filters.modelType} options={modelTypes} onChange={(v) => set({ modelType: v })} />
                 <Dropdown label="Building" value={filters.buildingType} options={buildingTypes} onChange={(v) => set({ buildingType: v })} />
                 <Dropdown label="Status" value={filters.buildingStatus} options={statuses} onChange={(v) => set({ buildingStatus: v })} />
-
-                {scales.length > 0 && (
-                    <div className="border-t border-stone-100 pt-3">
-                        <ScaleSlider
-                            scales={scales}
-                            selected={filters.scales}
-                            onChange={(next) => set({ scales: next })}
-                        />
-                    </div>
-                )}
             </div>
         </SidePanel>
     );
