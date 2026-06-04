@@ -2,6 +2,9 @@
     "name": "modus-archive",
     "version": "0.1.0",
     "private": true,
+    "engines": {
+        "pnpm": "10.15.0"
+    },
     "scripts": {
         "dev": "next dev",
         "build": "next build",
