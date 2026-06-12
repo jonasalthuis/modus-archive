@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -10,6 +10,7 @@ import type { UniverseModel, Vec3, ViewMode, GroupAttr, Cluster } from "./types"
 export interface Target {
     pos: Vec3;
     visible: boolean;
+    dimmed?: boolean; // greyed-out (filtered but still shown)
 }
 
 // A camera command — bump `token` to trigger a move. "default" returns to the
@@ -32,9 +33,9 @@ interface OrbitLike {
 
 // ── Controls config — depends on mode + grouping ────────────────────────────
 // Grid: rotate off, left-drag pans. Explore: rotate on, hold Shift to pan,
-// auto-rotate only when there's no active grouping (pure universe).
+// auto-rotate only when there's no active grouping (pure universe) and not paused.
 
-function ControlsConfig({ mode, group }: { mode: ViewMode; group: GroupAttr }) {
+function ControlsConfig({ mode, group, paused }: { mode: ViewMode; group: GroupAttr; paused: boolean }) {
     const { controls } = useThree();
     useEffect(() => {
         const c = controls as unknown as OrbitLike | null;
@@ -52,8 +53,8 @@ function ControlsConfig({ mode, group }: { mode: ViewMode; group: GroupAttr }) {
         // explore
         c.enableRotate = true;
         c.enableZoom = false; // wheel/pinch handled by TrackpadControls
-        c.autoRotate = group === "none";
-        c.autoRotateSpeed = 0.35;
+        c.autoRotate = group === "none" && !paused;
+        c.autoRotateSpeed = 0.18;
         c.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
 
         // Hold Shift to pan: just disable orbit while held — ShiftDragPan does
@@ -71,7 +72,7 @@ function ControlsConfig({ mode, group }: { mode: ViewMode; group: GroupAttr }) {
             window.removeEventListener("keyup", up);
             c.enableRotate = true;
         };
-    }, [controls, mode, group]);
+    }, [controls, mode, group, paused]);
     return null;
 }
 
@@ -309,6 +310,44 @@ function CameraRig({
     return null;
 }
 
+// ── Cluster hover outline ────────────────────────────────────────────────────
+// A faint rounded-rectangle line loop drawn around the card bounds of a cluster
+// when its label is hovered.
+
+type ClusterBounds = { x1: number; y1: number; x2: number; y2: number; z: number };
+
+function buildRoundedRectPoints(b: ClusterBounds, r: number, segs: number): THREE.Vector3[] {
+    const { x1, y1, x2, y2, z } = b;
+    const cr = Math.min(r, (x2 - x1) / 2, (y2 - y1) / 2);
+    const pts: THREE.Vector3[] = [];
+    const arc = (cx: number, cy: number, a0: number, a1: number) => {
+        for (let i = 0; i <= segs; i++) {
+            const a = a0 + ((a1 - a0) * i) / segs;
+            pts.push(new THREE.Vector3(cx + cr * Math.cos(a), cy + cr * Math.sin(a), z));
+        }
+    };
+    arc(x1 + cr, y2 - cr, Math.PI, Math.PI / 2);   // top-left
+    arc(x2 - cr, y2 - cr, Math.PI / 2, 0);          // top-right
+    arc(x2 - cr, y1 + cr, 0, -Math.PI / 2);         // bottom-right
+    arc(x1 + cr, y1 + cr, -Math.PI / 2, -Math.PI);  // bottom-left
+    pts.push(pts[0].clone()); // close
+    return pts;
+}
+
+function ClusterOutline({ bounds }: { bounds: ClusterBounds }) {
+    const geo = useMemo(() => {
+        const pts = buildRoundedRectPoints(bounds, 2.2, 12);
+        return new THREE.BufferGeometry().setFromPoints(pts);
+    }, [bounds]);
+
+    return (
+        // @ts-expect-error – R3F lowercase JSX element
+        <line geometry={geo}>
+            <lineBasicMaterial color="#a8a29e" transparent opacity={0.35} />
+        </line>
+    );
+}
+
 // ── Scene ────────────────────────────────────────────────────────────────────
 
 export interface SceneProps {
@@ -318,12 +357,23 @@ export interface SceneProps {
     group: GroupAttr;
     clusters: Cluster[];
     cameraCmd: CameraCommand;
+    paused: boolean;
 }
 
-export function Scene({ models, targets, mode, group, clusters, cameraCmd }: SceneProps) {
+export function Scene({ models, targets, mode, group, clusters, cameraCmd, paused }: SceneProps) {
     const showLabels = mode === "explore" && group !== "none";
     // Depth fog is only the open-universe aesthetic (explore + no grouping).
     const depthFog = mode === "explore" && group === "none";
+    const [hoveredCluster, setHoveredCluster] = useState<string | null>(null);
+
+    // Reverse map: modelId → clusterKey (rebuilt when clusters change)
+    const modelClusterMap = useMemo(() => {
+        const map = new Map<string, string>();
+        for (const c of clusters) {
+            for (const id of c.modelIds) map.set(id, c.key);
+        }
+        return map;
+    }, [clusters]);
 
     return (
         <>
@@ -342,7 +392,7 @@ export function Scene({ models, targets, mode, group, clusters, cameraCmd }: Sce
                 panSpeed={0.9}
             />
 
-            <ControlsConfig mode={mode} group={group} />
+            <ControlsConfig mode={mode} group={group} paused={paused} />
             <TrackpadControls />
             <ShiftDragPan mode={mode} />
             <CameraRig targets={targets} cameraCmd={cameraCmd} />
@@ -357,29 +407,39 @@ export function Scene({ models, targets, mode, group, clusters, cameraCmd }: Sce
                         model={m}
                         target={t.pos}
                         visible={t.visible}
+                        dimmed={t.dimmed ?? false}
                         mode={mode === "grid" ? "grid" : "float"}
                         depthFog={depthFog}
+                        clusterKey={modelClusterMap.get(m.id)}
+                        onClusterHover={setHoveredCluster}
                     />
                 );
             })}
 
             {showLabels &&
                 clusters.map((c) => (
-                    <Html
-                        key={c.key}
-                        position={c.center}
-                        center
-                        distanceFactor={26}
-                        style={{ pointerEvents: "none" }}
-                        zIndexRange={[10, 0]}
-                    >
-                        <div className="flex items-center gap-2 whitespace-nowrap select-none">
-                            <span className="text-[15px] font-light tracking-tight text-stone-800">
-                                {c.label}
-                            </span>
-                            <span className="font-mono text-[11px] text-stone-400">{c.count}</span>
-                        </div>
-                    </Html>
+                    <React.Fragment key={c.key}>
+                        <Html
+                            position={c.center}
+                            center
+                            distanceFactor={26}
+                            zIndexRange={[10, 0]}
+                        >
+                            <div
+                                onMouseEnter={() => setHoveredCluster(c.key)}
+                                onMouseLeave={() => setHoveredCluster(null)}
+                                className="flex items-center gap-1.5 whitespace-nowrap select-none cursor-default bg-white/90 backdrop-blur-sm border border-stone-300 rounded px-2 py-0.5"
+                            >
+                                <span className="text-[13px] font-medium tracking-tight text-stone-900">
+                                    {c.label}
+                                </span>
+                                <span className="font-mono text-[10px] text-stone-400">{c.count}</span>
+                            </div>
+                        </Html>
+                        {hoveredCluster === c.key && (
+                            <ClusterOutline bounds={c.bounds} />
+                        )}
+                    </React.Fragment>
                 ))}
         </>
     );

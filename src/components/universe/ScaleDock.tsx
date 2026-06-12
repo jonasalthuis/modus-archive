@@ -31,7 +31,18 @@ export function ScaleDock({
                     <span className="text-[9px] uppercase tracking-[0.45em] font-bold text-stone-300">
                         Filter by scale
                     </span>
-                    <span className="font-mono text-sm text-stone-900 tabular-nums">{label}</span>
+                    <div className="flex items-baseline gap-3">
+                        <span className="font-mono text-sm text-stone-900 tabular-nums">{label}</span>
+                        {current !== 0 && (
+                            <button
+                                onClick={() => onChange([])}
+                                aria-label="Reset scale filter"
+                                className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-400 hover:text-stone-900 transition-colors"
+                            >
+                                All
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="relative h-10">

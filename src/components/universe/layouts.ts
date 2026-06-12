@@ -71,17 +71,31 @@ export function gridLayout(models: UniverseModel[]): {
 }
 
 // ── Clustered: organic grouped clouds ───────────────────────────────────────
-// Cluster centres are placed on a golden-angle spiral (organic, non-grid) with
-// seeded jitter, spread across the whole universe area. Cards within a cluster
-// use a sunflower (phyllotaxis) distribution so they're evenly spaced and only
-// overlap a little, rather than piling on top of one another.
+// "spiral" (name-based): golden-angle spiral, sorted alphabetically.
+// "numeric" (scale/decade): flat grid, sorted by numeric value, left→right top→bottom.
+// Clusters are well-separated in x/y and compressed toward z=0.
 
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5)); // ≈ 2.39996 rad
-const CARD_SPACING = 2.55; // cards are 2.7 wide → barely overlapping
+const CARD_SPACING = 1.95; // tighter packing — dense clusters, minimal visual gap
+const CARD_HALF_W = 1.35; // half of card width (2.7)
+const CARD_HALF_H = 1.0;  // half of card height (2.0)
+const BOUNDS_PAD = 0.8;    // extra padding around cluster bounds
+
+export type ClusterSortMode = "alpha" | "numeric";
+
+function parseNumericKey(k: string): number {
+    // Scale strings like "1:200" → 200
+    const scaleMatch = k.match(/1\s*[:/]\s*(\d+(?:\.\d+)?)/);
+    if (scaleMatch) return parseFloat(scaleMatch[1]);
+    // Decade strings like "1980s" → 1980; plain numbers
+    const n = parseFloat(k.replace(/[^\d.]/g, ""));
+    return isNaN(n) ? 999999 : n;
+}
 
 export function clusteredLayout(
     models: UniverseModel[],
     keyOf: (m: UniverseModel) => string,
+    sortMode: ClusterSortMode = "alpha",
 ): { positions: Map<string, Vec3>; clusters: Cluster[] } {
     const groups = new Map<string, UniverseModel[]>();
     for (const m of models) {
@@ -90,51 +104,94 @@ export function clusteredLayout(
         groups.get(k)!.push(m);
     }
 
-    // Largest groups first → busiest clusters sit nearer the centre of the spiral.
-    const keys = [...groups.keys()].sort(
-        (a, b) => groups.get(b)!.length - groups.get(a)!.length,
-    );
+    // Sort keys: "Unknown" always last, then by mode
+    const keys = [...groups.keys()].sort((a, b) => {
+        if (a === "Unknown") return 1;
+        if (b === "Unknown") return -1;
+        if (sortMode === "numeric") return parseNumericKey(a) - parseNumericKey(b);
+        return a.localeCompare(b); // alpha
+    });
     const G = keys.length;
 
-    // Spread factor: scales the spiral so clusters fill the space without
-    // sitting on top of each other. Kept fairly compact so the framed view
-    // doesn't push the cards too far away.
-    const spread = 4.5 + Math.sqrt(G) * 0.85;
+    // Compute max cluster radius for dynamic spacing
+    const maxN = Math.max(...keys.map((k) => groups.get(k)!.length));
+    const maxR = CARD_SPACING * Math.sqrt(maxN) + 2;
 
     const positions = new Map<string, Vec3>();
     const clusters: Cluster[] = [];
 
-    keys.forEach((k, gi) => {
-        const members = groups.get(k)!;
+    if (sortMode === "numeric") {
+        // Grid layout: left→right, top→bottom, flat (z≈0)
+        const numCols = Math.max(2, Math.ceil(Math.sqrt(G * 1.4)));
+        const gx = Math.max(maxR * 1.8, 10); // gap between cluster centres
+        const gy = Math.max(maxR * 1.6, 9);
+        const totalRows = Math.ceil(G / numCols);
 
-        // Organic cluster centre: golden-angle spiral + seeded jitter + depth.
-        const jr = seededRand("center::" + k);
-        const angle = gi * GOLDEN_ANGLE;
-        const radius = spread * Math.sqrt(gi + 0.55);
-        const cx = Math.cos(angle) * radius + (jr() - 0.5) * 4;
-        const cy = Math.sin(angle) * radius * 0.82 + (jr() - 0.5) * 4;
-        const cz = (jr() - 0.5) * 8;
+        keys.forEach((k, gi) => {
+            const members = groups.get(k)!;
+            const col = gi % numCols;
+            const row = Math.floor(gi / numCols);
+            const cx = (col - (numCols - 1) / 2) * gx;
+            const cy = -(row - (totalRows - 1) / 2) * gy;
+            const cz = 0;
 
-        // Sunflower layout inside the cluster — even spacing, slight overlap.
-        members.forEach((m, j) => {
-            const jz = seededRand(m.id + "::" + k);
-            const r = CARD_SPACING * Math.sqrt(j + 0.5);
-            const a = j * GOLDEN_ANGLE;
-            positions.set(m.id, [
-                cx + Math.cos(a) * r,
-                cy + Math.sin(a) * r,
-                cz + (jz() - 0.5) * 2.4,
-            ]);
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            members.forEach((m, j) => {
+                const r = CARD_SPACING * Math.sqrt(j + 0.5);
+                const a = j * GOLDEN_ANGLE;
+                const px = cx + Math.cos(a) * r;
+                const py = cy + Math.sin(a) * r;
+                positions.set(m.id, [px, py, cz]);
+                minX = Math.min(minX, px); maxX = Math.max(maxX, px);
+                minY = Math.min(minY, py); maxY = Math.max(maxY, py);
+            });
+
+            const clusterRadius = CARD_SPACING * Math.sqrt(members.length) + 1.6;
+            const bounds = {
+                x1: minX - CARD_HALF_W - BOUNDS_PAD,
+                y1: minY - CARD_HALF_H - BOUNDS_PAD,
+                x2: maxX + CARD_HALF_W + BOUNDS_PAD,
+                y2: maxY + CARD_HALF_H + BOUNDS_PAD,
+                z: cz,
+            };
+            clusters.push({ key: k, label: k, center: [cx, cy + clusterRadius, cz], count: members.length, modelIds: members.map((m) => m.id), bounds });
         });
+    } else {
+        // Spiral layout: golden-angle, wide x/y, compressed z
+        const spread = 5.5 + Math.sqrt(G) * 1.0;
 
-        const clusterRadius = CARD_SPACING * Math.sqrt(members.length) + 1.6;
-        clusters.push({
-            key: k,
-            label: k,
-            center: [cx, cy + clusterRadius, cz],
-            count: members.length,
+        keys.forEach((k, gi) => {
+            const members = groups.get(k)!;
+            const jr = seededRand("center::" + k);
+            const angle = gi * GOLDEN_ANGLE;
+            const radius = spread * Math.sqrt(gi + 0.55);
+            const cx = Math.cos(angle) * radius + (jr() - 0.5) * 2.0;
+            const cy = Math.sin(angle) * radius * 0.82 + (jr() - 0.5) * 2.0;
+            const cz = (jr() - 0.5) * 1.5; // much less depth variation
+
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            members.forEach((m, j) => {
+                const jz = seededRand(m.id + "::" + k);
+                const r = CARD_SPACING * Math.sqrt(j + 0.5);
+                const a = j * GOLDEN_ANGLE;
+                const px = cx + Math.cos(a) * r;
+                const py = cy + Math.sin(a) * r;
+                positions.set(m.id, [px, py, cz + (jz() - 0.5) * 0.8]);
+                minX = Math.min(minX, px); maxX = Math.max(maxX, px);
+                minY = Math.min(minY, py); maxY = Math.max(maxY, py);
+            });
+
+            const clusterRadius = CARD_SPACING * Math.sqrt(members.length) + 1.6;
+            const bounds = {
+                x1: minX - CARD_HALF_W - BOUNDS_PAD,
+                y1: minY - CARD_HALF_H - BOUNDS_PAD,
+                x2: maxX + CARD_HALF_W + BOUNDS_PAD,
+                y2: maxY + CARD_HALF_H + BOUNDS_PAD,
+                z: cz,
+            };
+            clusters.push({ key: k, label: k, center: [cx, cy + clusterRadius, cz], count: members.length, modelIds: members.map((m) => m.id), bounds });
         });
-    });
+    }
 
     return { positions, clusters };
 }
@@ -171,18 +228,19 @@ export function makeKeyOf(
     }
 }
 
-export const GROUP_ATTRS: { key: GroupAttr; label: string }[] = [
-    { key: "none", label: "None" },
-    { key: "architect", label: "Architect" },
-    { key: "leadMaker", label: "Lead maker" },
-    { key: "modelType", label: "Model type" },
-    { key: "buildingType", label: "Building type" },
-    { key: "buildingStatus", label: "Building status" },
-    { key: "decade", label: "Decade" },
-    { key: "scale", label: "Scale" },
-    { key: "material", label: "Material" },
-    { key: "location", label: "Location" },
-    { key: "dossier", label: "Dossier" },
+// "none" is intentionally excluded — it's the default ungrouped state,
+// represented by a "Clear" button in the UI rather than a list entry.
+export const GROUP_ATTRS: { key: GroupAttr; label: string; sortMode: ClusterSortMode }[] = [
+    { key: "architect", label: "Architect", sortMode: "alpha" },
+    { key: "leadMaker", label: "Lead maker", sortMode: "alpha" },
+    { key: "modelType", label: "Model type", sortMode: "alpha" },
+    { key: "buildingType", label: "Building type", sortMode: "alpha" },
+    { key: "buildingStatus", label: "Building status", sortMode: "alpha" },
+    { key: "decade", label: "Decade", sortMode: "numeric" },
+    { key: "scale", label: "Scale", sortMode: "numeric" },
+    { key: "material", label: "Material", sortMode: "alpha" },
+    { key: "location", label: "Location", sortMode: "alpha" },
+    { key: "dossier", label: "Dossier", sortMode: "alpha" },
 ];
 
 // ── Scale parsing + distinct values ─────────────────────────────────────────
@@ -214,6 +272,43 @@ export function distinctValues(
         if (v) set.add(v);
     }
     return [...set].sort();
+}
+
+// ── Sorting ─────────────────────────────────────────────────────────────────
+
+export type SortAttr = "default" | "scale" | "year" | "architect" | "leadMaker";
+
+export const SORT_ATTRS: { key: SortAttr; label: string }[] = [
+    { key: "default", label: "Model no." },
+    { key: "year", label: "Year" },
+    { key: "scale", label: "Scale" },
+    { key: "architect", label: "Architect" },
+    { key: "leadMaker", label: "Lead maker" },
+];
+
+export function sortModels(models: UniverseModel[], sort: SortAttr): UniverseModel[] {
+    if (sort === "default") return [...models];
+    return [...models].sort((a, b) => {
+        switch (sort) {
+            case "scale": {
+                const pa = parseScale(a.scale) ?? Infinity;
+                const pb = parseScale(b.scale) ?? Infinity;
+                return pa !== pb ? pa - pb : (a.modelNumber ?? "").localeCompare(b.modelNumber ?? "");
+            }
+            case "year":
+                return (a.year ?? 9999) !== (b.year ?? 9999)
+                    ? (a.year ?? 9999) - (b.year ?? 9999)
+                    : (a.modelNumber ?? "").localeCompare(b.modelNumber ?? "");
+            case "architect":
+                return (a.architect ?? "").localeCompare(b.architect ?? "") ||
+                    (a.modelNumber ?? "").localeCompare(b.modelNumber ?? "");
+            case "leadMaker":
+                return (a.leadMaker ?? "").localeCompare(b.leadMaker ?? "") ||
+                    (a.modelNumber ?? "").localeCompare(b.modelNumber ?? "");
+            default:
+                return 0;
+        }
+    });
 }
 
 // ── Filtering ───────────────────────────────────────────────────────────────

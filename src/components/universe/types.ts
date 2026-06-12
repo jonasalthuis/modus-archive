@@ -49,6 +49,9 @@ export interface Cluster {
     label: string;
     center: Vec3;
     count: number;
+    modelIds: string[]; // IDs of every card in this cluster
+    // Bounding box of the cluster's card positions (card centres ± half-card size + padding)
+    bounds: { x1: number; y1: number; x2: number; y2: number; z: number };
 }
 
 // Filters driven by the grid-mode header controls. Applied in every mode.

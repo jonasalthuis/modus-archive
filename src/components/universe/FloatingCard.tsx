@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useMemo, useState } from "react";
+import React, { useLayoutEffect, useRef, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useRouter } from "next/navigation";
 import * as THREE from "three";
@@ -24,7 +24,8 @@ const VERT = /* glsl */ `
 
 const FRAG = /* glsl */ `
   uniform sampler2D uMap;
-  uniform float uFade;     // 0 = visible, 1 = filtered out
+  uniform float uFade;     // 0 = visible, 1 = fully faded out
+  uniform float uDim;      // 0 = full colour, 1 = greyed/dimmed (filtered but shown)
   uniform float uFogNear;  // eye-space depth where the fade begins
   uniform float uFogFar;   // …and where it's fully gone
   varying vec2 vUv;
@@ -32,7 +33,12 @@ const FRAG = /* glsl */ `
   void main() {
     vec4 tex = texture2D(uMap, vUv);
     float fog = 1.0 - smoothstep(uFogNear, uFogFar, vEyeZ);
-    gl_FragColor = vec4(tex.rgb, tex.a * fog * (1.0 - uFade));
+    // Desaturate + reduce opacity when dimmed
+    float lum = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
+    vec3 grey = vec3(lum);
+    vec3 rgb = mix(tex.rgb, grey, uDim * 0.85);
+    float a = tex.a * fog * (1.0 - uFade) * mix(1.0, 0.22, uDim);
+    gl_FragColor = vec4(rgb, a);
   }
 `;
 
@@ -151,13 +157,14 @@ interface FloatingCardProps {
     model: UniverseModel;
     target: Vec3;
     visible: boolean;
+    dimmed: boolean; // greyed-out (filtered but still shown in grid)
     mode: CardMode;
-    // Depth fade — nice for the open universe, but switched off in clustered /
-    // grid views so cards stay visible when the camera pulls back.
     depthFog: boolean;
+    clusterKey?: string;
+    onClusterHover?: (key: string | null) => void;
 }
 
-export function FloatingCard({ model, target, visible, mode, depthFog }: FloatingCardProps) {
+export function FloatingCard({ model, target, visible, dimmed, mode, depthFog, clusterKey, onClusterHover }: FloatingCardProps) {
     const mesh = useRef<THREE.Mesh>(null);
     const matRef = useRef<THREE.ShaderMaterial>(null);
     const shadowMat = useRef<THREE.MeshBasicMaterial>(null);
@@ -168,7 +175,11 @@ export function FloatingCard({ model, target, visible, mode, depthFog }: Floatin
 
     const texture = useMemo<THREE.Texture>(() => {
         const url = model.images?.find((i) => i.isStarred)?.url ?? model.images?.[0]?.url;
-        if (url) return new THREE.TextureLoader().load(url);
+        if (url) {
+            const loader = new THREE.TextureLoader();
+            loader.crossOrigin = 'anonymous';
+            return loader.load(url);
+        }
         return makeCardTexture(model);
     }, [model]);
 
@@ -176,6 +187,7 @@ export function FloatingCard({ model, target, visible, mode, depthFog }: Floatin
         () => ({
             uMap: { value: texture },
             uFade: { value: 0 },
+            uDim: { value: 0 },
             uFogNear: { value: 55 },
             uFogFar: { value: 130 },
         }),
@@ -185,9 +197,23 @@ export function FloatingCard({ model, target, visible, mode, depthFog }: Floatin
     const phase = useMemo(() => Math.random() * Math.PI * 2, []);
     const speed = useMemo(() => 0.09 + Math.random() * 0.08, []);
 
-    // Keep latest target/visible in refs so the frame loop reads fresh values.
+    // Keep latest target/visible/dimmed in refs so the frame loop reads fresh values.
     const targetRef = useRef(target);
     targetRef.current = target;
+    const visibleRef = useRef(visible);
+    visibleRef.current = visible;
+    const dimmedRef = useRef(dimmed);
+    dimmedRef.current = dimmed;
+
+    // Set initial mesh position synchronously before first paint so cards
+    // don't flash from [0,0,0] on mount. useFrame eases all subsequent moves.
+    const initialTarget = useRef(target);
+    useLayoutEffect(() => {
+        if (mesh.current) {
+            mesh.current.position.set(...initialTarget.current);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useFrame(({ clock }) => {
         const m = mesh.current;
@@ -201,24 +227,28 @@ export function FloatingCard({ model, target, visible, mode, depthFog }: Floatin
         m.position.y += (ty + bob - m.position.y) * 0.08;
         m.position.z += (tz - m.position.z) * 0.08;
 
-        // Hover scale.
-        const targetScale = hovered && visible ? 1.07 : 1.0;
+        // Hover scale — don't scale up dimmed cards.
+        const targetScale = hovered && visibleRef.current && !dimmedRef.current ? 1.07 : 1.0;
         const cur = m.scale.x;
         m.scale.setScalar(cur + (targetScale - cur) * 0.1);
 
-        // Visibility fade — and drop out of raycasting once nearly gone.
         if (matRef.current) {
-            const u = matRef.current.uniforms.uFade;
-            const targetFade = visible ? 0 : 1;
-            u.value += (targetFade - u.value) * 0.12;
-            m.visible = u.value < 0.97;
+            // Visibility fade — drop out of raycasting once nearly gone.
+            const uFade = matRef.current.uniforms.uFade;
+            const targetFade = visibleRef.current ? 0 : 1;
+            uFade.value += (targetFade - uFade.value) * 0.12;
+            m.visible = uFade.value < 0.97;
+
+            // Dim (greyscale + transparent) for filtered-but-shown cards.
+            const uDim = matRef.current.uniforms.uDim;
+            const targetDim = dimmedRef.current ? 1 : 0;
+            uDim.value += (targetDim - uDim.value) * 0.10;
 
             // Depth fade only in the open universe; off elsewhere so pulling the
             // camera back (clustered / grid) doesn't fade everything out.
             const near = matRef.current.uniforms.uFogNear;
             const far = matRef.current.uniforms.uFogFar;
             if (depthFog) {
-                // Subtle, late depth fade — only the very far cards dim.
                 near.value = 55;
                 far.value = 130;
             } else {
@@ -227,9 +257,9 @@ export function FloatingCard({ model, target, visible, mode, depthFog }: Floatin
             }
         }
 
-        // Drop shadow only in grid view (and only for visible cards).
+        // Drop shadow only in grid view (and only for visible, non-dimmed cards).
         if (shadowMat.current) {
-            const targetOp = mode === "grid" && visible ? 0.5 : 0;
+            const targetOp = mode === "grid" && visibleRef.current && !dimmedRef.current ? 0.5 : 0;
             shadowMat.current.opacity += (targetOp - shadowMat.current.opacity) * 0.12;
             shadowMat.current.visible = shadowMat.current.opacity > 0.01;
         }
@@ -245,16 +275,17 @@ export function FloatingCard({ model, target, visible, mode, depthFog }: Floatin
         e.stopPropagation();
         setHovered(true);
         document.body.style.cursor = "pointer";
+        onClusterHover?.(clusterKey ?? null);
     };
     const onOut = () => {
         setHovered(false);
         document.body.style.cursor = "";
+        onClusterHover?.(null);
     };
 
     return (
         <mesh
             ref={mesh}
-            position={target}
             geometry={GEOM}
             onClick={onClick}
             onPointerOver={onOver}
