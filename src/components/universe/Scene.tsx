@@ -13,11 +13,13 @@ export interface Target {
     dimmed?: boolean; // greyed-out (filtered but still shown)
 }
 
-// A camera command — bump `token` to trigger a move. "default" returns to the
-// explore framing; "fit" frames the bounding box of all visible cards.
+// A camera command — bump `token` to trigger a move.
+// "default" returns to explore framing; "fit" frames all visible cards;
+// "focus" zooms to a specific card position.
 export interface CameraCommand {
-    type: "default" | "fit";
+    type: "default" | "fit" | "focus";
     token: number;
+    focusPos?: Vec3; // used when type === "focus"
 }
 
 interface OrbitLike {
@@ -25,6 +27,7 @@ interface OrbitLike {
     enabled: boolean;
     enableRotate: boolean;
     enableZoom: boolean;
+    enablePan: boolean;
     autoRotate: boolean;
     autoRotateSpeed: number;
     mouseButtons: { LEFT: number; MIDDLE: number; RIGHT: number };
@@ -35,11 +38,25 @@ interface OrbitLike {
 // Grid: rotate off, left-drag pans. Explore: rotate on, hold Shift to pan,
 // auto-rotate only when there's no active grouping (pure universe) and not paused.
 
-function ControlsConfig({ mode, group, paused }: { mode: ViewMode; group: GroupAttr; paused: boolean }) {
+function ControlsConfig({ mode, group, paused, locked }: { mode: ViewMode; group: GroupAttr; paused: boolean; locked: boolean }) {
     const { controls } = useThree();
     useEffect(() => {
         const c = controls as unknown as OrbitLike | null;
         if (!c?.mouseButtons) return;
+
+        // When a card is focused, disable all orbit interaction.
+        if (locked) {
+            c.enableRotate = false;
+            c.enableZoom = false;
+            c.enablePan = false;
+            c.autoRotate = false;
+            c.update?.();
+            return () => {
+                c.enableRotate = true;
+                c.enableZoom = false; // TrackpadControls handles zoom
+                c.enablePan = true;
+            };
+        }
 
         if (mode === "grid") {
             c.enableRotate = false;
@@ -72,7 +89,7 @@ function ControlsConfig({ mode, group, paused }: { mode: ViewMode; group: GroupA
             window.removeEventListener("keyup", up);
             c.enableRotate = true;
         };
-    }, [controls, mode, group, paused]);
+    }, [controls, mode, group, paused, locked]);
     return null;
 }
 
@@ -259,6 +276,8 @@ function CameraRig({
         toPos: THREE.Vector3;
         fromTar: THREE.Vector3;
         toTar: THREE.Vector3;
+        duration: number;
+        easing: "inout" | "out";
     } | null>(null);
 
     useEffect(() => {
@@ -268,6 +287,8 @@ function CameraRig({
 
         let toTar = new THREE.Vector3(0, 0, 0);
         let toPos = new THREE.Vector3(0, 0, 16);
+        let duration = 0.7;
+        let easing: "inout" | "out" = "inout";
 
         if (cameraCmd.type === "fit") {
             const fit = fitToBox(targets, cam, aspect, 6);
@@ -275,6 +296,12 @@ function CameraRig({
                 toTar = fit.center;
                 toPos = fit.pos;
             }
+        } else if (cameraCmd.type === "focus" && cameraCmd.focusPos) {
+            const [fx, fy, fz] = cameraCmd.focusPos;
+            toTar = new THREE.Vector3(fx, fy, fz);
+            toPos = new THREE.Vector3(fx, fy, fz + 3.8);
+            duration = 0.45;
+            easing = "out";
         }
 
         anim.current = {
@@ -284,6 +311,8 @@ function CameraRig({
             toPos,
             fromTar: c?.target ? c.target.clone() : new THREE.Vector3(),
             toTar,
+            duration,
+            easing,
         };
         if (c) c.enabled = false;
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -293,8 +322,10 @@ function CameraRig({
         const c = controls as unknown as OrbitLike | null;
         const a = anim.current;
         if (!a?.active) return;
-        a.t = Math.min(1, a.t + delta / 0.7);
-        const e = a.t < 0.5 ? 2 * a.t * a.t : 1 - Math.pow(-2 * a.t + 2, 2) / 2;
+        a.t = Math.min(1, a.t + delta / a.duration);
+        const e = a.easing === "out"
+            ? 1 - Math.pow(1 - a.t, 3)
+            : a.t < 0.5 ? 2 * a.t * a.t : 1 - Math.pow(-2 * a.t + 2, 2) / 2;
         camera.position.lerpVectors(a.fromPos, a.toPos, e);
         if (c?.target) c.target.lerpVectors(a.fromTar, a.toTar, e);
         camera.lookAt(c?.target ?? a.toTar);
@@ -358,9 +389,11 @@ export interface SceneProps {
     clusters: Cluster[];
     cameraCmd: CameraCommand;
     paused: boolean;
+    focusedId: string | null;
+    onFocus: (model: UniverseModel, pos: Vec3) => void;
 }
 
-export function Scene({ models, targets, mode, group, clusters, cameraCmd, paused }: SceneProps) {
+export function Scene({ models, targets, mode, group, clusters, cameraCmd, paused, focusedId, onFocus }: SceneProps) {
     const showLabels = mode === "explore" && group !== "none";
     // Depth fog is only the open-universe aesthetic (explore + no grouping).
     const depthFog = mode === "explore" && group === "none";
@@ -392,7 +425,7 @@ export function Scene({ models, targets, mode, group, clusters, cameraCmd, pause
                 panSpeed={0.9}
             />
 
-            <ControlsConfig mode={mode} group={group} paused={paused} />
+            <ControlsConfig mode={mode} group={group} paused={paused} locked={focusedId !== null} />
             <TrackpadControls />
             <ShiftDragPan mode={mode} />
             <CameraRig targets={targets} cameraCmd={cameraCmd} />
@@ -408,10 +441,12 @@ export function Scene({ models, targets, mode, group, clusters, cameraCmd, pause
                         target={t.pos}
                         visible={t.visible}
                         dimmed={t.dimmed ?? false}
+                        focused={m.id === focusedId}
                         mode={mode === "grid" ? "grid" : "float"}
                         depthFog={depthFog}
                         clusterKey={modelClusterMap.get(m.id)}
                         onClusterHover={setHoveredCluster}
+                        onFocus={onFocus}
                     />
                 );
             })}

@@ -2,7 +2,6 @@
 
 import React, { useLayoutEffect, useRef, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useRouter } from "next/navigation";
 import * as THREE from "three";
 import type { UniverseModel, Vec3 } from "./types";
 
@@ -158,17 +157,18 @@ interface FloatingCardProps {
     target: Vec3;
     visible: boolean;
     dimmed: boolean; // greyed-out (filtered but still shown in grid)
+    focused?: boolean; // this card is the currently focused one
     mode: CardMode;
     depthFog: boolean;
     clusterKey?: string;
     onClusterHover?: (key: string | null) => void;
+    onFocus: (model: UniverseModel, pos: Vec3) => void;
 }
 
-export function FloatingCard({ model, target, visible, dimmed, mode, depthFog, clusterKey, onClusterHover }: FloatingCardProps) {
+export function FloatingCard({ model, target, visible, dimmed, focused = false, mode, depthFog, clusterKey, onClusterHover, onFocus }: FloatingCardProps) {
     const mesh = useRef<THREE.Mesh>(null);
     const matRef = useRef<THREE.ShaderMaterial>(null);
     const shadowMat = useRef<THREE.MeshBasicMaterial>(null);
-    const router = useRouter();
     const [hovered, setHovered] = useState(false);
 
     const shadowTex = useMemo(() => shadowTexture(), []);
@@ -197,13 +197,15 @@ export function FloatingCard({ model, target, visible, dimmed, mode, depthFog, c
     const phase = useMemo(() => Math.random() * Math.PI * 2, []);
     const speed = useMemo(() => 0.09 + Math.random() * 0.08, []);
 
-    // Keep latest target/visible/dimmed in refs so the frame loop reads fresh values.
+    // Keep latest target/visible/dimmed/focused in refs so the frame loop reads fresh values.
     const targetRef = useRef(target);
     targetRef.current = target;
     const visibleRef = useRef(visible);
     visibleRef.current = visible;
     const dimmedRef = useRef(dimmed);
     dimmedRef.current = dimmed;
+    const focusedRef = useRef(focused);
+    focusedRef.current = focused;
 
     // Set initial mesh position synchronously before first paint so cards
     // don't flash from [0,0,0] on mount. useFrame eases all subsequent moves.
@@ -227,8 +229,11 @@ export function FloatingCard({ model, target, visible, dimmed, mode, depthFog, c
         m.position.y += (ty + bob - m.position.y) * 0.08;
         m.position.z += (tz - m.position.z) * 0.08;
 
-        // Hover scale — don't scale up dimmed cards.
-        const targetScale = hovered && visibleRef.current && !dimmedRef.current ? 1.07 : 1.0;
+        // Focused card scales up slightly; hover also scales (unless dimmed).
+        const targetScale =
+            focusedRef.current ? 1.05
+            : hovered && visibleRef.current && !dimmedRef.current ? 1.07
+            : 1.0;
         const cur = m.scale.x;
         m.scale.setScalar(cur + (targetScale - cur) * 0.1);
 
@@ -268,7 +273,7 @@ export function FloatingCard({ model, target, visible, dimmed, mode, depthFog, c
     const onClick = (e: { stopPropagation: () => void }) => {
         if (!visible) return;
         e.stopPropagation();
-        router.push(`/models/${model.id}`);
+        onFocus(model, target);
     };
     const onOver = (e: { stopPropagation: () => void }) => {
         if (!visible) return;

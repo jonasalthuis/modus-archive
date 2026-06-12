@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Canvas } from "@react-three/fiber";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Maximize, Pause, Play, RotateCcw } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Maximize, Pause, Play, RotateCcw, X } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { Scene, type Target, type CameraCommand } from "./Scene";
 import { GridControls } from "./GridControls";
@@ -29,6 +29,7 @@ import {
     type Filters,
     type GroupAttr,
     type UniverseModel,
+    type Vec3,
     type ViewMode,
 } from "./types";
 
@@ -120,6 +121,73 @@ function TooltipButton({
     );
 }
 
+// ── Card focus overlay — slides up from bottom when a card is selected ────────
+
+function CardFocusOverlay({
+    model,
+    locale,
+    onClose,
+    onNavigate,
+}: {
+    model: UniverseModel | null;
+    locale: string;
+    onClose: () => void;
+    onNavigate: (id: string) => void;
+}) {
+    const visible = model !== null;
+
+    return (
+        <>
+            {/* X close button — top right */}
+            <div
+                className={`fixed top-6 right-6 z-50 transition-all duration-200 ${
+                    visible ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
+            >
+                <button
+                    onClick={onClose}
+                    aria-label="Close"
+                    className="flex items-center justify-center w-[34px] h-[34px] bg-white border border-stone-200 rounded-md hover:border-stone-900 hover:text-stone-900 transition-colors text-stone-400"
+                >
+                    <X size={13} />
+                </button>
+            </div>
+
+            {/* Info panel — slides up from bottom */}
+            <div
+                onClick={(e) => e.stopPropagation()}
+                className={`fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 transition-transform duration-300 ease-out ${
+                    visible ? "translate-y-0" : "translate-y-full"
+                }`}
+            >
+                <div className="px-8 py-5 flex items-center justify-between gap-8">
+                    <div className="min-w-0 flex-1">
+                        <p className="font-mono text-[11px] text-stone-400 mb-1.5 tracking-wide">
+                            {model?.modelNumber}
+                        </p>
+                        <h2 className="text-[18px] font-light text-stone-900 leading-tight truncate mb-1">
+                            {model?.title ?? "—"}
+                        </h2>
+                        <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-400">
+                            {[model?.architect, model?.year, model?.scale]
+                                .filter(Boolean)
+                                .join(" · ")}
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={() => model && onNavigate(model.id)}
+                        className="flex-shrink-0 flex items-center gap-2.5 px-5 py-2.5 bg-stone-900 text-white text-[9px] uppercase tracking-[0.3em] font-bold hover:bg-stone-700 transition-colors"
+                    >
+                        View full record
+                        <ArrowRight size={10} />
+                    </button>
+                </div>
+            </div>
+        </>
+    );
+}
+
 function LoadingScreen({ label }: { label: string }) {
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-white">
@@ -172,6 +240,36 @@ export function ArchiveExperience() {
     const issue = useCallback((type: CameraCommand["type"]) => {
         setCameraCmd((c) => ({ type, token: c.token + 1 }));
     }, []);
+    const issueFocus = useCallback((pos: Vec3) => {
+        setCameraCmd((c) => ({ type: "focus", token: c.token + 1, focusPos: pos }));
+    }, []);
+
+    // Focused card state.
+    const [focusedModel, setFocusedModel] = useState<UniverseModel | null>(null);
+    const preFocusPaused = useRef(false);
+
+    const locale = useMemo(() => pathname.split("/")[1] || "en", [pathname]);
+
+    const handleFocus = useCallback(
+        (model: UniverseModel, pos: Vec3) => {
+            if (focusedModel?.id === model.id) {
+                // clicking already-focused card → navigate to full page
+                router.push(`/${locale}/models/${model.id}`);
+                return;
+            }
+            preFocusPaused.current = paused;
+            setFocusedModel(model);
+            setPaused(true);
+            issueFocus(pos);
+        },
+        [focusedModel, paused, router, locale, issueFocus],
+    );
+
+    const handleDismiss = useCallback(() => {
+        setFocusedModel(null);
+        setPaused(preFocusPaused.current);
+        issue("fit");
+    }, [issue]);
 
     useEffect(() => {
         let alive = true;
@@ -221,7 +319,8 @@ export function ArchiveExperience() {
         [view, filters],
     );
 
-    const { targets, clusters } = useMemo(() => {
+    // Layout computation — expensive, only re-runs when layout-related deps change.
+    const { baseTargets, clusters } = useMemo(() => {
         const map = new Map<string, Target>();
         let cl: Cluster[] = [];
 
@@ -257,8 +356,18 @@ export function ArchiveExperience() {
             cl = c;
             for (const m of models) map.set(m.id, { pos: positions.get(m.id)!, visible: true });
         }
-        return { targets: map, clusters: cl };
+        return { baseTargets: map, clusters: cl };
     }, [view, group, sortedModels, filtered, models, dossierMap, hasFilter, hideFiltered]);
+
+    // Apply focus dim-override cheaply without recomputing layouts.
+    const targets = useMemo(() => {
+        if (!focusedModel) return baseTargets;
+        const map = new Map(baseTargets);
+        map.forEach((t, id) => {
+            if (id !== focusedModel.id) map.set(id, { ...t, dimmed: true });
+        });
+        return map;
+    }, [baseTargets, focusedModel]);
 
     // Camera re-frame logic.
     // Grid: re-frame on view change, hideFiltered toggle, or compact-grid size change.
@@ -290,6 +399,25 @@ export function ArchiveExperience() {
         prev.current = { view, group, hideFiltered, filteredCount: filtered.length };
     }, [view, group, hideFiltered, filtered.length, loading, issue]);
 
+    // Dismiss focus when view changes.
+    useEffect(() => {
+        setFocusedModel(null);
+    }, [view]);
+
+    // Dismiss focus on scroll/pinch zoom-out.
+    useEffect(() => {
+        if (!focusedModel) return;
+        const handler = (e: WheelEvent) => {
+            const isZoomOut = e.ctrlKey ? e.deltaY > 0 : e.deltaX === 0 && e.deltaY >= 40;
+            if (isZoomOut) {
+                e.preventDefault();
+                handleDismiss();
+            }
+        };
+        window.addEventListener("wheel", handler, { capture: true, passive: false });
+        return () => window.removeEventListener("wheel", handler, { capture: true } as AddEventListenerOptions);
+    }, [focusedModel, handleDismiss]);
+
     if (loading) return <LoadingScreen label="Loading collection…" />;
     if (models.length === 0) {
         return (
@@ -300,6 +428,8 @@ export function ArchiveExperience() {
             </div>
         );
     }
+
+    const isFocused = focusedModel !== null;
 
     return (
         <div className="fixed inset-0 bg-white">
@@ -316,16 +446,22 @@ export function ArchiveExperience() {
                     clusters={clusters}
                     cameraCmd={cameraCmd}
                     paused={paused}
+                    focusedId={focusedModel?.id ?? null}
+                    onFocus={handleFocus}
                 />
             </Canvas>
 
-            {view === "grid" && (
+            {/* Click-away backdrop when a card is focused */}
+            {isFocused && (
+                <div className="fixed inset-0 z-30" onClick={handleDismiss} />
+            )}
+
+            {view === "grid" && !isFocused && (
                 <GridControls
                     models={models}
                     filters={filters}
                     onChange={(f) => {
                         setFilters(f);
-                        // If all filters cleared, exit hideFiltered mode automatically.
                         const anyActive =
                             !!f.text.trim() ||
                             !!f.modelType ||
@@ -336,11 +472,11 @@ export function ArchiveExperience() {
                     }}
                 />
             )}
-            {view === "grid" && <SortControls sort={sort} onChange={setSort} />}
-            {view === "explore" && <ClusterControls groupBy={group} onChange={setGroup} />}
+            {view === "grid" && !isFocused && <SortControls sort={sort} onChange={setSort} />}
+            {view === "explore" && !isFocused && <ClusterControls groupBy={group} onChange={setGroup} />}
 
-            {/* Bottom-docked scale filter (grid only) */}
-            {view === "grid" && (
+            {/* Bottom-docked scale filter (grid only, hidden when focused) */}
+            {view === "grid" && !isFocused && (
                 <ScaleDock
                     scales={scales}
                     selected={filters.scales}
@@ -352,47 +488,52 @@ export function ArchiveExperience() {
             )}
 
             {/* Controls help (bottom-left) */}
-            <ControlsHelp mode={view} />
+            {!isFocused && <ControlsHelp mode={view} />}
 
-            {/* Bottom-right action bar */}
-            <div className="fixed bottom-6 right-6 z-40 flex items-end gap-2">
-                {/* Hide / show filtered — grid mode, only when a filter is active */}
-                {view === "grid" && hasFilter && (
+            {/* Bottom-right action bar — hidden when a card is focused */}
+            {!isFocused && (
+                <div className="fixed bottom-6 right-6 z-40 flex items-end gap-2">
+                    {view === "grid" && hasFilter && (
+                        <TooltipButton
+                            icon={hideFiltered ? <Eye size={13} /> : <EyeOff size={13} />}
+                            label={hideFiltered ? "Show all" : "Hide filtered"}
+                            onClick={() => setHideFiltered((h) => !h)}
+                            active={hideFiltered}
+                        />
+                    )}
+                    {view === "explore" && (
+                        <>
+                            <TooltipButton
+                                icon={<RotateCcw size={13} />}
+                                label="Reset view"
+                                onClick={() => {
+                                    issue("default");
+                                    setPaused(true);
+                                }}
+                            />
+                            <TooltipButton
+                                icon={paused ? <Play size={13} /> : <Pause size={13} />}
+                                label={paused ? "Resume" : "Pause"}
+                                onClick={() => setPaused((p) => !p)}
+                                active={paused}
+                            />
+                        </>
+                    )}
                     <TooltipButton
-                        icon={hideFiltered ? <Eye size={13} /> : <EyeOff size={13} />}
-                        label={hideFiltered ? "Show all" : "Hide filtered"}
-                        onClick={() => setHideFiltered((h) => !h)}
-                        active={hideFiltered}
+                        icon={<Maximize size={13} />}
+                        label="Fit all"
+                        onClick={() => issue("fit")}
                     />
-                )}
+                </div>
+            )}
 
-                {/* Reset + Pause/Play — explore mode only */}
-                {view === "explore" && (
-                    <>
-                        <TooltipButton
-                            icon={<RotateCcw size={13} />}
-                            label="Reset view"
-                            onClick={() => {
-                                issue("default");
-                                setPaused(true);
-                            }}
-                        />
-                        <TooltipButton
-                            icon={paused ? <Play size={13} /> : <Pause size={13} />}
-                            label={paused ? "Resume" : "Pause"}
-                            onClick={() => setPaused((p) => !p)}
-                            active={paused}
-                        />
-                    </>
-                )}
-
-                {/* Fit all — always */}
-                <TooltipButton
-                    icon={<Maximize size={13} />}
-                    label="Fit all"
-                    onClick={() => issue("fit")}
-                />
-            </div>
+            {/* Card focus overlay — always rendered for smooth slide animation */}
+            <CardFocusOverlay
+                model={focusedModel}
+                locale={locale}
+                onClose={handleDismiss}
+                onNavigate={(id) => router.push(`/${locale}/models/${id}`)}
+            />
         </div>
     );
 }
