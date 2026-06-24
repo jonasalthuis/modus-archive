@@ -27,7 +27,7 @@ function rows(mode: ViewMode, device: "trackpad" | "mouse"): Row[] {
 function Section({ title, data }: { title: string; data: Row[] }) {
     return (
         <div>
-            <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-300 mb-2.5">
+            <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-500 mb-2.5">
                 {title}
             </p>
             <dl className="space-y-1.5">

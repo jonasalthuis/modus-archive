@@ -23,7 +23,7 @@ function Dropdown({
     if (options.length === 0) return null;
     return (
         <label className="flex flex-col gap-1">
-            <span className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-300">
+            <span className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-500">
                 {label}
             </span>
             <select

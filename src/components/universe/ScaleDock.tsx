@@ -28,7 +28,7 @@ export function ScaleDock({
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-[min(94vw,680px)]">
             <div className="bg-white/95 backdrop-blur border border-stone-200 border-b-0 rounded-t-xl px-8 pt-4 pb-6 shadow-[0_-6px_24px_rgba(0,0,0,0.05)]">
                 <div className="flex items-baseline justify-between mb-4">
-                    <span className="text-[9px] uppercase tracking-[0.45em] font-bold text-stone-300">
+                    <span className="text-[9px] uppercase tracking-[0.45em] font-bold text-stone-500">
                         Filter by scale
                     </span>
                     <div className="flex items-baseline gap-3">
@@ -61,14 +61,14 @@ export function ScaleDock({
                             <div
                                 key={s}
                                 className="absolute top-0 flex flex-col items-center -translate-x-1/2 pointer-events-none"
-                                style={{ left: `${(i / max) * 100}%` }}
+                                style={{ left: `calc(${(i / max) * 100}% + ${(7 - (i / max) * 14).toFixed(1)}px)` }}
                             >
                                 <span
                                     className={`w-px ${active ? "h-3 bg-stone-900" : "h-2 bg-stone-300"} ${passed && !active ? "bg-stone-400" : ""}`}
                                 />
                                 <span
                                     className={`mt-2 font-mono text-[8px] tracking-tight whitespace-nowrap ${
-                                        active ? "text-stone-900 font-bold" : "text-stone-300"
+                                        active ? "text-stone-900 font-bold" : "text-stone-400"
                                     }`}
                                 >
                                     {s === "All" ? "ALL" : s}

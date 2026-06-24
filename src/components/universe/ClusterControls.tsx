@@ -19,7 +19,7 @@ export function ClusterControls({
     return (
         <SidePanel>
             <div className="w-48 bg-white/90 backdrop-blur border border-stone-200 rounded-lg p-3 shadow-sm">
-                <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-300 mb-2 px-1">
+                <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-500 mb-2 px-1">
                     Group by
                 </p>
                 <div className="flex flex-col gap-1">
