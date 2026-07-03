@@ -56,7 +56,7 @@ export function ScaleDock({
     }
 
     return (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[min(94vw,680px)]">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[min(94vw,900px)]">
             <div className="bg-white/50 backdrop-blur-xl border border-stone-200 rounded-xl px-8 pt-4 pb-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                     <span className="text-[9px] uppercase tracking-[0.45em] font-bold text-stone-500">
