@@ -344,7 +344,16 @@ const GateScreen = ({ label, message }: { label: string; message: string }) => (
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const CMSEngine = ({ name: _name, config: _config }: { name?: string; config?: unknown }) => {
     const { user, status, role } = useAuth();
-    const [activeView, setActiveView] = useState<ActiveView>("dashboard");
+    const [activeView, setActiveView] = useState<ActiveView>(() => {
+        if (typeof window === "undefined") return "dashboard";
+        const saved = localStorage.getItem("nma_admin_view") as ActiveView | null;
+        return saved || "dashboard";
+    });
+
+    const setActiveViewPersisted = (view: ActiveView) => {
+        setActiveView(view);
+        try { localStorage.setItem("nma_admin_view", view); } catch { /* private browsing */ }
+    };
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [sidebarWidth, setSidebarWidth] = useState(224);
     const isResizing = useRef(false);
@@ -385,23 +394,23 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
     const openDossierEditor = (id: string | null) => {
         setDossierEditorId(id);
         setDossierEditorOpen(true);
-        setActiveView("dossiers");
+        setActiveViewPersisted("dossiers");
     };
     const closeDossierEditor = () => setDossierEditorOpen(false);
 
     // "New content" menu actions
-    const newModel = () => setActiveView("add-model");
+    const newModel = () => setActiveViewPersisted("add-model");
     const newArtefact = () => {
         setArtefactCreateNonce((n) => n + 1);
-        setActiveView("artefacts");
+        setActiveViewPersisted("artefacts");
     };
     const newDossier = () => openDossierEditor(null);
-    const importModels = () => setActiveView("import-models");
+    const importModels = () => setActiveViewPersisted("import-models");
 
     // Open the Knowledge Center at a specific guide/section (used by the ? help icons)
     const openGuide = (guide: string, anchor?: string) => {
         setGuideTarget((t) => ({ guide, anchor, nonce: t.nonce + 1 }));
-        setActiveView("guides");
+        setActiveViewPersisted("guides");
     };
     const helpFor = (key: string) => () => openGuide(HELP_TARGETS[key].guide, HELP_TARGETS[key].anchor);
 
@@ -459,7 +468,7 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
     const renderView = () => {
         switch (effectiveView) {
             case "dashboard":
-                return <DashboardView onNavigate={setActiveView} />;
+                return <DashboardView onNavigate={setActiveViewPersisted} />;
             case "models":
                 return (
                     <GenericCollection
@@ -482,10 +491,10 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
                 );
             case "add-model":
                 return (
-                    <AddModelPanel onSave={() => setActiveView("models")} onCancel={() => setActiveView("models")} />
+                    <AddModelPanel onSave={() => setActiveViewPersisted("models")} onCancel={() => setActiveViewPersisted("models")} />
                 );
             case "import-models":
-                return <ImportModelsPanel onDone={() => setActiveView("models")} />;
+                return <ImportModelsPanel onDone={() => setActiveViewPersisted("models")} />;
             case "artefacts":
                 return (
                     <GenericCollection
@@ -537,7 +546,7 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
                     user={user}
                     role={role}
                     collapsed={sidebarCollapsed}
-                    onNavigate={setActiveView}
+                    onNavigate={setActiveViewPersisted}
                     onSignOut={handleSignOut}
                     onNewModel={newModel}
                     onNewArtefact={newArtefact}
