@@ -90,10 +90,10 @@ export function SearchBar({
                 <button
                     onClick={() => setOpen(true)}
                     aria-label="Open search"
-                    className="flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-xl border border-stone-200 rounded-xl text-stone-400 hover:text-stone-900 transition-colors text-[9px] uppercase tracking-[0.3em] font-bold"
+                    className="flex items-center gap-2 px-3 h-[34px] bg-white/70 backdrop-blur-xl border border-stone-200 rounded-md text-stone-400 hover:text-stone-900 hover:border-stone-900 hover:bg-stone-900 hover:text-white transition-colors duration-300 text-[10px] uppercase tracking-[0.4em] font-bold select-none"
                 >
                     <Search size={12} />
-                    {pinnedTerms.length > 0 && <span className="text-stone-500">{pinnedTerms.length} pinned</span>}
+                    {pinnedTerms.length > 0 && <span>{pinnedTerms.length} pinned</span>}
                     <ChevronDown size={12} />
                 </button>
             </div>
@@ -103,45 +103,43 @@ export function SearchBar({
     return (
         <div ref={wrapperRef} className="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-[min(calc(100vw-400px),560px)]">
             {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-            <div className="bg-white/50 backdrop-blur-xl border border-stone-200 rounded-xl px-6 py-3 shadow-sm cursor-text" onClick={() => inputRef.current?.focus()}>
-                <div className="flex items-center gap-2 flex-wrap">
-                    {pinnedTerms.map(term => (
-                        <span key={term} className="inline-flex items-center gap-1 px-2.5 py-1 bg-stone-900 text-white text-[9px] font-bold uppercase tracking-[0.2em] rounded-md flex-shrink-0">
-                            {term}
-                            <button onClick={() => unpin(term)} className="hover:text-stone-300 transition-colors"><X size={9} /></button>
-                        </span>
-                    ))}
-                    {pinnedTerms.length > 0 && <div className="w-px h-4 bg-stone-200 self-center flex-shrink-0" />}
+            <div className="bg-white/70 backdrop-blur-xl border border-stone-200 rounded-md h-[34px] px-3 cursor-text flex items-center gap-2 overflow-hidden" onClick={() => inputRef.current?.focus()}>
+                {pinnedTerms.map(term => (
+                    <span key={term} className="inline-flex items-center gap-1 px-2 h-5 bg-stone-900 text-white text-[8px] font-bold uppercase tracking-[0.2em] rounded flex-shrink-0">
+                        {term}
+                        <button onClick={() => unpin(term)} className="hover:text-stone-300 transition-colors"><X size={8} /></button>
+                    </span>
+                ))}
+                {pinnedTerms.length > 0 && <div className="w-px h-4 bg-stone-200 flex-shrink-0" />}
 
-                    <Search size={12} className="text-stone-500 flex-shrink-0" />
+                <Search size={12} className="text-stone-500 flex-shrink-0" />
 
-                    <input
-                        ref={inputRef}
-                        value={text}
-                        onChange={e => { updateSearch(e.target.value, pinnedTerms); setShowSuggestions(true); }}
-                        onFocus={() => text.length >= 2 && setShowSuggestions(true)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={pinnedTerms.length > 0 ? "Add filter…" : "Search collection"}
-                        autoComplete="off"
-                        spellCheck={false}
-                        className="flex-1 min-w-[60px] text-[10px] tracking-[0.15em] font-bold text-stone-800 placeholder:text-stone-500 placeholder:font-normal placeholder:tracking-[0.1em] bg-transparent outline-none"
-                    />
+                <input
+                    ref={inputRef}
+                    value={text}
+                    onChange={e => { updateSearch(e.target.value, pinnedTerms); setShowSuggestions(true); }}
+                    onFocus={() => text.length >= 2 && setShowSuggestions(true)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={pinnedTerms.length > 0 ? "Add filter…" : "Search collection"}
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="flex-1 min-w-[60px] text-[10px] tracking-[0.15em] font-bold text-stone-800 placeholder:text-stone-500 placeholder:font-normal placeholder:tracking-[0.1em] bg-transparent outline-none"
+                />
 
-                    {text.trim() && (
-                        <button onClick={pin} title="Pin (Enter)" className="text-stone-400 hover:text-stone-900 transition-colors flex-shrink-0"><Pin size={12} /></button>
-                    )}
-                    {text && (
-                        <button onClick={() => updateSearch("", pinnedTerms)} className="text-stone-400 hover:text-stone-900 transition-colors flex-shrink-0"><X size={12} /></button>
-                    )}
-                    <button onClick={() => setOpen(false)} className="text-stone-400 hover:text-stone-800 transition-colors flex-shrink-0 ml-1"><ChevronUp size={13} /></button>
-                </div>
+                {text.trim() && (
+                    <button onClick={pin} title="Pin (Enter)" className="text-stone-400 hover:text-stone-900 transition-colors flex-shrink-0"><Pin size={12} /></button>
+                )}
+                {text && (
+                    <button onClick={() => updateSearch("", pinnedTerms)} className="text-stone-400 hover:text-stone-900 transition-colors flex-shrink-0"><X size={12} /></button>
+                )}
+                <button onClick={() => setOpen(false)} className="text-stone-400 hover:text-stone-800 transition-colors flex-shrink-0"><ChevronUp size={13} /></button>
             </div>
 
             {showSuggestions && suggestions.length > 0 && (
-                <div className="mt-1.5 bg-white/55 backdrop-blur-xl border border-stone-200 rounded-xl overflow-hidden shadow-sm">
+                <div className="mt-1.5 bg-white/70 backdrop-blur-xl border border-stone-200 rounded-md overflow-hidden">
                     {suggestions.map(s => (
                         <button key={s} onMouseDown={e => { e.preventDefault(); selectSuggestion(s); }}
-                            className="w-full text-left px-5 py-2.5 text-[10px] text-stone-600 hover:bg-stone-50 transition-colors flex items-center gap-3 border-b border-stone-100 last:border-b-0">
+                            className="w-full text-left px-4 py-2 text-[10px] text-stone-600 hover:bg-stone-50 transition-colors flex items-center gap-3 border-b border-stone-100 last:border-b-0">
                             <Search size={10} className="text-stone-300 flex-shrink-0" />
                             <span className="truncate">{s}</span>
                         </button>
