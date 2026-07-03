@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { getArchivePromises } from "@/lib/archivePrefetch";
@@ -730,11 +730,13 @@ export function ArchiveExperience() {
 
             {/* Search bar — grid only, hidden when focused */}
             {view === "grid" && !isFocused && (
-                <SearchBar
-                    allSuggestions={allSuggestions}
-                    collapseToken={collapseToken}
-                    expandToken={expandToken}
-                />
+                <Suspense fallback={null}>
+                    <SearchBar
+                        allSuggestions={allSuggestions}
+                        collapseToken={collapseToken}
+                        expandToken={expandToken}
+                    />
+                </Suspense>
             )}
 
             {view === "grid" && !isFocused && (
