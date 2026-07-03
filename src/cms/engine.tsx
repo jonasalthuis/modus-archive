@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { signOut as firebaseSignOut, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth, VerifyEmailScreen, type Role } from "@/lib/auth";
@@ -138,6 +139,7 @@ const Sidebar = ({
     onNewArtefact,
     onNewDossier,
     onImportModels,
+    onToggleCollapse,
 }: {
     activeView: ActiveView;
     user: User;
@@ -149,6 +151,7 @@ const Sidebar = ({
     onNewArtefact: () => void;
     onNewDossier: () => void;
     onImportModels: () => void;
+    onToggleCollapse: () => void;
 }) => {
 
     const allowedNavIds = navIdsForRole(role);
@@ -234,8 +237,20 @@ const Sidebar = ({
                 })}
             </nav>
 
+            {/* Collapse toggle */}
+            <div className={`pt-2 pb-1 border-t border-gray-200 ${collapsed ? "px-2" : "px-3"}`}>
+                <button
+                    onClick={onToggleCollapse}
+                    title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    className={`w-full flex items-center rounded-md text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-colors ${collapsed ? "justify-center py-2.5" : "gap-2 px-2 py-2"}`}
+                >
+                    {collapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+                    {!collapsed && <span className="text-[9px] uppercase tracking-[0.3em] font-bold">Collapse</span>}
+                </button>
+            </div>
+
             {/* New content */}
-            <div className={`pt-3 pb-2 border-t border-gray-200 ${collapsed ? "px-2" : "px-3"}`}>
+            <div className={`pt-2 pb-2 border-t border-gray-200 ${collapsed ? "px-2" : "px-3"}`}>
                 {collapsed ? (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -359,6 +374,7 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
         window.addEventListener("mouseup", onUp);
     }, [sidebarWidth]);
     const [dossierEditorId, setDossierEditorId] = useState<string | null>(null);
+    const [dossierEditorOpen, setDossierEditorOpen] = useState(false);
     // Bumped to signal the Artefacts collection to open its create form
     const [artefactCreateNonce, setArtefactCreateNonce] = useState(0);
     const [guideTarget, setGuideTarget] = useState<{ guide: string; anchor?: string; nonce: number }>({
@@ -368,8 +384,10 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
 
     const openDossierEditor = (id: string | null) => {
         setDossierEditorId(id);
-        setActiveView("dossier-editor");
+        setDossierEditorOpen(true);
+        setActiveView("dossiers");
     };
+    const closeDossierEditor = () => setDossierEditorOpen(false);
 
     // "New content" menu actions
     const newModel = () => setActiveView("add-model");
@@ -488,14 +506,6 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
                         onAddNew={() => openDossierEditor(null)}
                     />
                 );
-            case "dossier-editor":
-                return (
-                    <DossierEditor
-                        dossierId={dossierEditorId}
-                        onBack={() => setActiveView("dossiers")}
-                        onHelp={helpFor("dossiers")}
-                    />
-                );
             case "users":
                 return <GenericCollection schema={schemas.users} contentLeft={cl} onHelp={helpFor("users")} />;
             case "invites":
@@ -533,6 +543,7 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
                     onNewArtefact={newArtefact}
                     onNewDossier={newDossier}
                     onImportModels={importModels}
+                    onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
                 />
 
                 {/* Resize handle — only when expanded */}
@@ -544,27 +555,34 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
                 )}
             </div>
 
-            {/* Collapse / expand button — floats at sidebar edge */}
-            <button
-                onClick={() => setSidebarCollapsed((v) => !v)}
-                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                className="absolute top-6 z-30 flex items-center justify-center w-7 h-7 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-400 transition-all duration-200"
-                style={{ left: (sidebarCollapsed ? 56 : sidebarWidth) - 14 }}
-            >
-                {sidebarCollapsed ? <PanelLeftOpen size={13} /> : <PanelLeftClose size={13} />}
-            </button>
-            <main className={`flex-1 min-h-0 ${effectiveView === "dossier-editor" ? "flex flex-col overflow-hidden" : "overflow-y-auto"}`}>
-                {effectiveView === "dossier-editor"
-                    ? renderView()
-                    : (
-                        <div className="p-6 max-w-[1400px] mx-auto">
-                            <div className="bg-white rounded-xl shadow-[0_2px_20px_rgba(0,0,0,0.08)] px-8 py-8">
-                                {renderView()}
-                            </div>
-                        </div>
-                    )
-                }
+            <main className="flex-1 min-h-0 overflow-y-auto">
+                <div className="p-6 max-w-[1400px] mx-auto">
+                    <div className="bg-white rounded-xl shadow-[0_2px_20px_rgba(0,0,0,0.08)] px-8 py-8">
+                        {renderView()}
+                    </div>
+                </div>
             </main>
+
+            {/* Dossier editor — floating panel portal */}
+            {dossierEditorOpen && typeof window !== "undefined" && createPortal(
+                <>
+                    <div
+                        className="fixed inset-0 bg-gray-900/30 z-40 animate-in fade-in duration-200"
+                        onClick={closeDossierEditor}
+                    />
+                    <div
+                        className="fixed z-50 bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)] flex flex-col font-sans rounded-xl overflow-hidden animate-in slide-in-from-right-4 fade-in duration-200"
+                        style={{ top: 16, bottom: 16, left: cl + 16, right: 16 }}
+                    >
+                        <DossierEditor
+                            dossierId={dossierEditorId}
+                            onBack={closeDossierEditor}
+                            onHelp={helpFor("dossiers")}
+                        />
+                    </div>
+                </>,
+                document.body
+            )}
         </div>
     );
 };
