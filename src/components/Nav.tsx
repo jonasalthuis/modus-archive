@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Menu as MenuIcon, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ViewMode } from "./universe/types";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth";
 
 // Links shown in the MENU dropdown only — Dossiers/Artefacts have top-level buttons.
 const MENU_LINKS = [
@@ -62,6 +65,7 @@ const NAV_BTN =
 
 export function Nav() {
     const pathname = usePathname();
+    const { user } = useAuth();
     const [open, setOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const [archiveHref, setArchiveHref] = useState("/");
@@ -192,6 +196,14 @@ export function Nav() {
                         >
                             Admin
                         </Link>
+                        {user && (
+                            <button
+                                onClick={() => signOut(auth)}
+                                className="w-full text-left block px-5 py-3 text-[10px] uppercase tracking-[0.3em] font-bold text-stone-300 hover:text-red-500 hover:bg-stone-50 transition-colors duration-150"
+                            >
+                                Sign out
+                            </button>
+                        )}
                     </nav>
                 </div>
             </div>
