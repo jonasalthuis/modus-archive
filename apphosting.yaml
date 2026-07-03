@@ -53,10 +53,5 @@ env:
     availability:
       - RUNTIME
 
-  # Firebase App Check (reCAPTCHA v3). The site key is public (it ships in client JS),
-  # so it's safe to commit. The matching secret key lives only in the Firebase Console.
-  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-    value: 6LeylggtAAAAAG-MveWmhTQqSGryp14TjEV7OsXR
-    availability:
-      - BUILD
-      - RUNTIME
+  # NEXT_PUBLIC_RECAPTCHA_SITE_KEY omitted — App Check skips gracefully when absent.
+  # Re-enable once token verification is working (currently 0% verified in console).
