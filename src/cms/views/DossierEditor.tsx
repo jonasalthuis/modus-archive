@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc, serverTimestamp, arrayUnion, arrayRemove, writeBatch } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 import { slugify } from "../components/GenericEditor";
 import {
     DndContext,
@@ -44,6 +45,8 @@ import {
     Plus,
     Loader2,
     Search,
+    Upload,
+    Check,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -532,6 +535,324 @@ const ModelImagePicker = ({
     );
 };
 
+// ── CoverImagePicker ──────────────────────────────────────────────────────────
+
+type CoverTab = "models" | "artefacts" | "upload";
+
+interface ArtefactImageEntry {
+    id: string;
+    title?: string;
+    images?: string[];
+}
+
+const CoverImagePicker = ({
+    onSelect,
+    onClose,
+}: {
+    onSelect: (url: string) => void;
+    onClose: () => void;
+}) => {
+    const [tab, setTab] = useState<CoverTab>("models");
+
+    // ── Models tab ──
+    const [models, setModels] = useState<ModelEntry[]>([]);
+    const [modelsLoading, setModelsLoading] = useState(false);
+    const [modelsLoaded, setModelsLoaded] = useState(false);
+    const [modelSearch, setModelSearch] = useState("");
+    const [selectedModel, setSelectedModel] = useState<ModelEntry | null>(null);
+
+    // ── Artefacts tab ──
+    const [artefacts, setArtefacts] = useState<ArtefactImageEntry[]>([]);
+    const [artefactsLoading, setArtefactsLoading] = useState(false);
+    const [artefactsLoaded, setArtefactsLoaded] = useState(false);
+    const [artefactSearch, setArtefactSearch] = useState("");
+    const [selectedArtefact, setSelectedArtefact] = useState<ArtefactImageEntry | null>(null);
+
+    // ── Upload tab ──
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadFile, setUploadFile] = useState<File | null>(null);
+    const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadError, setUploadError] = useState("");
+
+    // Lazy-load on tab switch
+    useEffect(() => {
+        if (tab === "models" && !modelsLoaded) {
+            setModelsLoading(true);
+            getDocs(collection(db, "ma_models")).then((snap) => {
+                const withImages = snap.docs
+                    .map((d) => ({ id: d.id, ...d.data() }) as ModelEntry)
+                    .filter((m) => Array.isArray(m.images) && m.images!.length > 0)
+                    .sort((a, b) => (a.id < b.id ? -1 : 1));
+                setModels(withImages);
+                setModelsLoading(false);
+                setModelsLoaded(true);
+            });
+        }
+        if (tab === "artefacts" && !artefactsLoaded) {
+            setArtefactsLoading(true);
+            getDocs(collection(db, "ma_artefacts")).then((snap) => {
+                const withImages = snap.docs
+                    .map((d) => ({ id: d.id, ...d.data() }) as ArtefactImageEntry)
+                    .filter((a) => Array.isArray(a.images) && a.images!.length > 0);
+                setArtefacts(withImages);
+                setArtefactsLoading(false);
+                setArtefactsLoaded(true);
+            });
+        }
+    }, [tab, modelsLoaded, artefactsLoaded]);
+
+    const filteredModels = models.filter((m) => {
+        if (!modelSearch.trim()) return true;
+        const q = modelSearch.toLowerCase();
+        return (m.id || "").includes(q) || (m.title || "").toLowerCase().includes(q) || (m.architect || "").toLowerCase().includes(q);
+    });
+
+    const filteredArtefacts = artefacts.filter((a) => {
+        if (!artefactSearch.trim()) return true;
+        const q = artefactSearch.toLowerCase();
+        return (a.id || "").includes(q) || (a.title || "").toLowerCase().includes(q);
+    });
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploadFile(file);
+        setUploadError("");
+        const reader = new FileReader();
+        reader.onload = (ev) => setUploadPreview(ev.target?.result as string);
+        reader.readAsDataURL(file);
+    };
+
+    const handleUpload = async () => {
+        if (!uploadFile) return;
+        setUploading(true);
+        setUploadProgress(0);
+        setUploadError("");
+        try {
+            const timestamp = Date.now();
+            const ext = uploadFile.name.split(".").pop() || "jpg";
+            const storagePath = `dossiers/covers/${timestamp}-${uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+            const storageRef = ref(storage, storagePath);
+            const task = uploadBytesResumable(storageRef, uploadFile);
+            await new Promise<void>((resolve, reject) => {
+                task.on(
+                    "state_changed",
+                    (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+                    reject,
+                    resolve,
+                );
+            });
+            const downloadUrl = await getDownloadURL(task.snapshot.ref);
+            onSelect(downloadUrl);
+        } catch {
+            setUploadError("Upload failed — please try again.");
+            setUploading(false);
+        }
+    };
+
+    const TABS: { id: CoverTab; label: string }[] = [
+        { id: "models", label: "Model images" },
+        { id: "artefacts", label: "Artefact images" },
+        { id: "upload", label: "Upload new" },
+    ];
+
+    return (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+            <div className="relative bg-white border border-gray-200 shadow-2xl rounded-xl w-full max-w-3xl max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
+
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 pt-4 pb-0 flex-shrink-0">
+                    <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-gray-600">Cover image</p>
+                    <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-900 transition-colors"><X size={16} /></button>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex gap-1 px-6 pt-3 border-b border-gray-200 flex-shrink-0">
+                    {TABS.map((t) => (
+                        <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => { setSelectedModel(null); setSelectedArtefact(null); setTab(t.id); }}
+                            className={`px-3 py-2 text-[10px] uppercase tracking-[0.2em] font-bold border-b-2 -mb-px transition-colors ${tab === t.id ? "border-gray-900 text-gray-900" : "border-transparent text-gray-500 hover:text-gray-800"}`}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto">
+
+                    {/* ── Models tab ── */}
+                    {tab === "models" && (
+                        <>
+                            {!selectedModel && (
+                                <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
+                                    <div className="flex items-center gap-2 border border-gray-200 rounded-md px-3 py-2 focus-within:border-gray-900 transition-colors">
+                                        <Search size={13} className="text-gray-400 flex-shrink-0" />
+                                        <input autoFocus type="text" value={modelSearch} onChange={(e) => setModelSearch(e.target.value)}
+                                            placeholder="Search by number, title, architect…"
+                                            className="flex-1 text-sm focus:outline-none placeholder:text-gray-400" />
+                                        {modelSearch && <button type="button" onClick={() => setModelSearch("")}><X size={12} className="text-gray-400" /></button>}
+                                    </div>
+                                </div>
+                            )}
+                            {modelsLoading && <p className="text-center text-[9px] uppercase tracking-[0.4em] font-bold text-gray-400 animate-pulse py-16">Loading…</p>}
+                            {!modelsLoading && !selectedModel && (
+                                filteredModels.length === 0
+                                    ? <p className="text-center text-sm text-gray-400 py-16">No models with images</p>
+                                    : <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 p-4">
+                                        {filteredModels.map((m) => (
+                                            <button key={m.id} type="button" onClick={() => setSelectedModel(m)}
+                                                className="group flex flex-col text-left border border-gray-200 rounded-lg overflow-hidden hover:border-gray-900 transition-colors">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={m.images![0]} alt={m.title || m.id} className="w-full aspect-square object-cover" />
+                                                <div className="px-2 py-1.5">
+                                                    <p className="font-mono text-[8px] text-gray-400">{m.id}</p>
+                                                    <p className="text-[10px] font-light text-gray-700 truncate">{m.title || "—"}</p>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                            )}
+                            {!modelsLoading && selectedModel && (
+                                <div>
+                                    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
+                                        <button type="button" onClick={() => setSelectedModel(null)} className="text-gray-400 hover:text-gray-900"><ArrowLeft size={14} /></button>
+                                        <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-600">{selectedModel.id} — {selectedModel.title}</p>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 p-4">
+                                        {(selectedModel.images || []).map((url, i) => (
+                                            <button key={i} type="button" onClick={() => onSelect(url)}
+                                                className="aspect-square border border-gray-200 hover:border-gray-900 overflow-hidden transition-colors rounded-lg">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={url} alt="" className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {/* ── Artefacts tab ── */}
+                    {tab === "artefacts" && (
+                        <>
+                            {!selectedArtefact && (
+                                <div className="px-4 py-3 border-b border-gray-200">
+                                    <div className="flex items-center gap-2 border border-gray-200 rounded-md px-3 py-2 focus-within:border-gray-900 transition-colors">
+                                        <Search size={13} className="text-gray-400 flex-shrink-0" />
+                                        <input autoFocus type="text" value={artefactSearch} onChange={(e) => setArtefactSearch(e.target.value)}
+                                            placeholder="Search artefacts…"
+                                            className="flex-1 text-sm focus:outline-none placeholder:text-gray-400" />
+                                        {artefactSearch && <button type="button" onClick={() => setArtefactSearch("")}><X size={12} className="text-gray-400" /></button>}
+                                    </div>
+                                </div>
+                            )}
+                            {artefactsLoading && <p className="text-center text-[9px] uppercase tracking-[0.4em] font-bold text-gray-400 animate-pulse py-16">Loading…</p>}
+                            {!artefactsLoading && !selectedArtefact && (
+                                filteredArtefacts.length === 0
+                                    ? <p className="text-center text-sm text-gray-400 py-16">No artefacts with images</p>
+                                    : <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 p-4">
+                                        {filteredArtefacts.map((a) => (
+                                            <button key={a.id} type="button" onClick={() => setSelectedArtefact(a)}
+                                                className="group flex flex-col text-left border border-gray-200 rounded-lg overflow-hidden hover:border-gray-900 transition-colors">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={a.images![0]} alt={a.title || a.id} className="w-full aspect-square object-cover" />
+                                                <div className="px-2 py-1.5">
+                                                    <p className="text-[10px] font-light text-gray-700 truncate">{a.title || a.id}</p>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                            )}
+                            {!artefactsLoading && selectedArtefact && (
+                                <div>
+                                    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
+                                        <button type="button" onClick={() => setSelectedArtefact(null)} className="text-gray-400 hover:text-gray-900"><ArrowLeft size={14} /></button>
+                                        <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-600">{selectedArtefact.title || selectedArtefact.id}</p>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 p-4">
+                                        {(selectedArtefact.images || []).map((url, i) => (
+                                            <button key={i} type="button" onClick={() => onSelect(url)}
+                                                className="aspect-square border border-gray-200 hover:border-gray-900 overflow-hidden transition-colors rounded-lg">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={url} alt="" className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {/* ── Upload tab ── */}
+                    {tab === "upload" && (
+                        <div className="p-6 space-y-5">
+                            <p className="text-[10px] text-gray-500 leading-relaxed">
+                                Upload an image directly for this dossier. It will be stored in Firebase Storage under <span className="font-mono">dossiers/covers/</span>.
+                            </p>
+
+                            {!uploadFile ? (
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="w-full h-40 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    <Upload size={22} />
+                                    <span className="text-[9px] uppercase tracking-[0.3em] font-bold">Choose image</span>
+                                    <span className="text-xs text-gray-400">JPG, PNG, WebP</span>
+                                </button>
+                            ) : (
+                                <div className="space-y-4">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    {uploadPreview && <img src={uploadPreview} alt="Preview" className="w-full max-h-48 object-cover rounded-lg border border-gray-200" />}
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-[10px] font-mono text-gray-500 truncate max-w-[60%]">{uploadFile.name}</p>
+                                        <button type="button" onClick={() => { setUploadFile(null); setUploadPreview(null); }}
+                                            className="text-[9px] uppercase tracking-[0.2em] font-bold text-gray-400 hover:text-gray-900 transition-colors">
+                                            Change
+                                        </button>
+                                    </div>
+
+                                    {uploading ? (
+                                        <div className="space-y-2">
+                                            <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                <div className="h-full bg-gray-900 transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                                            </div>
+                                            <p className="text-[9px] text-gray-400 text-center">{uploadProgress}%</p>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={handleUpload}
+                                            className="w-full flex items-center justify-center gap-2 py-3 bg-gray-900 text-white text-[9px] uppercase tracking-[0.3em] font-bold rounded-md hover:bg-gray-800 transition-colors"
+                                        >
+                                            <Upload size={13} /> Upload &amp; set as cover
+                                        </button>
+                                    )}
+                                    {uploadError && <p className="text-[11px] text-red-500">{uploadError}</p>}
+                                </div>
+                            )}
+
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleFileChange}
+                            />
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // ── ArtefactPicker modal ──────────────────────────────────────────────────────
 
 interface ArtefactDoc {
@@ -761,6 +1082,7 @@ export const DossierEditor = ({
     const [showSaveConfirm, setShowSaveConfirm] = useState(false);
     const [showArtefactPicker, setShowArtefactPicker] = useState(false);
     const [showImagePicker, setShowImagePicker] = useState(false);
+    const [showCoverPicker, setShowCoverPicker] = useState(false);
     const [tagsInput, setTagsInput] = useState("");
     const [activePanel, setActivePanel] = useState<"editor" | "preview">("editor");
     const [activeDragPaletteType, setActiveDragPaletteType] = useState<DossierItemType | null>(null);
@@ -947,6 +1269,12 @@ export const DossierEditor = ({
             {showImagePicker && (
                 <ModelImagePicker onClose={() => { pickerTarget.current = null; setShowImagePicker(false); }} onSelect={handleImageSelected} />
             )}
+            {showCoverPicker && (
+                <CoverImagePicker
+                    onClose={() => setShowCoverPicker(false)}
+                    onSelect={(url) => { updateMeta("coverImage", url); setShowCoverPicker(false); }}
+                />
+            )}
 
             {/* ── Top bar ── */}
             <div className="flex-shrink-0 flex items-center gap-4 px-5 h-14 border-b border-gray-200 bg-white z-10">
@@ -1071,14 +1399,45 @@ export const DossierEditor = ({
 
                                 <div className="flex gap-4 items-start">
                                     <div className="flex-1 space-y-1.5">
-                                        <label className="block text-[8px] uppercase tracking-[0.4em] font-bold text-gray-500">Cover image URL</label>
-                                        <input
-                                            type="text"
-                                            value={meta.coverImage}
-                                            onChange={(e) => updateMeta("coverImage", e.target.value)}
-                                            placeholder="https://…"
-                                            className="w-full border border-gray-200 rounded-md px-4 py-3 font-mono text-xs focus:outline-none focus:border-gray-900 transition-colors"
-                                        />
+                                        <label className="block text-[8px] uppercase tracking-[0.4em] font-bold text-gray-500">Cover image</label>
+                                        {meta.coverImage ? (
+                                            <div className="relative group">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={meta.coverImage}
+                                                    alt="Cover"
+                                                    className="w-full h-28 object-cover rounded-md border border-gray-200"
+                                                />
+                                                <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-md">
+                                                    <button
+                                                        type="button"
+                                                        onPointerDown={(e) => e.stopPropagation()}
+                                                        onClick={() => setShowCoverPicker(true)}
+                                                        className="px-3 py-1.5 bg-white text-[8px] uppercase tracking-[0.2em] font-bold text-gray-900 rounded hover:bg-gray-100 transition-colors"
+                                                    >
+                                                        Change
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onPointerDown={(e) => e.stopPropagation()}
+                                                        onClick={() => updateMeta("coverImage", "")}
+                                                        className="px-3 py-1.5 bg-white text-[8px] uppercase tracking-[0.2em] font-bold text-red-500 rounded hover:bg-red-50 transition-colors"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onPointerDown={(e) => e.stopPropagation()}
+                                                onClick={() => setShowCoverPicker(true)}
+                                                className="w-full h-16 border border-dashed border-gray-200 rounded-md flex items-center justify-center gap-2 text-gray-400 hover:border-gray-500 hover:text-gray-600 transition-colors"
+                                            >
+                                                <ImageIcon size={14} />
+                                                <span className="text-[8px] uppercase tracking-[0.3em] font-bold">Pick cover image</span>
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="flex-shrink-0 space-y-1.5 pt-0.5">
                                         <p className="text-[8px] uppercase tracking-[0.4em] font-bold text-gray-500">Published</p>

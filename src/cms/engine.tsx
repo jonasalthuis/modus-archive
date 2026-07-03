@@ -577,7 +577,7 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
                         <DossierEditor
                             dossierId={dossierEditorId}
                             onBack={closeDossierEditor}
-                            onHelp={helpFor("dossiers")}
+                            onHelp={() => { closeDossierEditor(); helpFor("dossiers")(); }}
                         />
                     </div>
                 </>,
