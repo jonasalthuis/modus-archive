@@ -7,7 +7,7 @@ import { db } from "@/lib/firebase";
 import { GenericEditor } from "./GenericEditor";
 import { DataTable } from "./DataTable";
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
-import { Plus, Trash2, X, AlertTriangle, Save, Maximize2, Minimize2, HelpCircle } from "lucide-react";
+import { Plus, Trash2, X, AlertTriangle, Save, Maximize2, Minimize2, HelpCircle, ExternalLink } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,6 +28,8 @@ interface Schema {
     name: string;
     path: string;
     properties: Record<string, SchemaProperty>;
+    /** e.g. "/dossiers/{slug}" — {slug} replaced with the doc's slug field */
+    siteUrlTemplate?: string;
 }
 
 type DocRecord = Record<string, unknown> & { id: string };
@@ -42,14 +44,14 @@ export interface QuickFilter {
 const DiscardWarningModal = ({ onDiscard, onKeepEditing }: { onDiscard: () => void; onKeepEditing: () => void }) => (
     <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
         <div className="absolute inset-0 bg-black/40" onClick={onKeepEditing} />
-        <div className="relative bg-white border border-stone-300 shadow-2xl p-8 max-w-sm w-full space-y-6 animate-in fade-in zoom-in-95 duration-150">
+        <div className="relative bg-white border border-gray-300 shadow-2xl rounded-xl p-8 max-w-sm w-full space-y-6 animate-in fade-in zoom-in-95 duration-150">
             <div className="space-y-3">
                 <div className="flex items-center gap-2">
                     <AlertTriangle size={14} className="text-amber-500 flex-shrink-0" />
-                    <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-500">Unsaved changes</p>
+                    <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-gray-600">Unsaved changes</p>
                 </div>
                 <h3 className="text-lg font-light">Discard changes?</h3>
-                <p className="text-[12px] text-stone-500 leading-relaxed">
+                <p className="text-[12px] text-gray-600 leading-relaxed">
                     You have unsaved changes. If you close this panel now, all edits will be lost and cannot be
                     recovered.
                 </p>
@@ -57,7 +59,7 @@ const DiscardWarningModal = ({ onDiscard, onKeepEditing }: { onDiscard: () => vo
             <div className="flex gap-3 pt-2">
                 <button
                     onClick={onKeepEditing}
-                    className="flex-1 py-3 border border-stone-300 text-[10px] uppercase tracking-[0.25em] font-bold text-stone-600 hover:border-stone-900 hover:text-stone-900 transition-colors"
+                    className="flex-1 py-3 border border-gray-400 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-700 hover:border-gray-900 hover:text-gray-900 transition-colors"
                 >
                     Keep editing
                 </button>
@@ -107,10 +109,10 @@ function buildColumns(properties: Record<string, SchemaProperty>): ColumnDef<Doc
                     const val = Boolean(row.original[key]);
                     return (
                         <span
-                            className={`inline-flex items-center gap-1.5 text-[10px] font-bold ${val ? "text-stone-900" : "text-stone-300"}`}
+                            className={`inline-flex items-center gap-1.5 text-[10px] font-bold ${val ? "text-emerald-700" : "text-red-400"}`}
                         >
                             <span
-                                className={`w-1.5 h-1.5 inline-block flex-shrink-0 ${val ? "bg-stone-900" : "bg-stone-200"}`}
+                                className={`w-1.5 h-1.5 inline-block rounded-full flex-shrink-0 ${val ? "bg-emerald-500" : "bg-red-400"}`}
                             />
                             {val ? "Yes" : "No"}
                         </span>
@@ -127,9 +129,9 @@ function buildColumns(properties: Record<string, SchemaProperty>): ColumnDef<Doc
                 cell: ({ getValue }: { getValue: () => unknown }) => {
                     const n = getValue() as number;
                     return n > 0 ? (
-                        <span className="font-mono text-[10px] text-stone-700">{n}</span>
+                        <span className="font-mono text-[10px] text-gray-800">{n}</span>
                     ) : (
-                        <span className="font-mono text-[10px] text-stone-300">0</span>
+                        <span className="font-mono text-[10px] text-gray-400">0</span>
                     );
                 },
             } as ColumnDef<DocRecord, unknown>;
@@ -143,7 +145,7 @@ function buildColumns(properties: Record<string, SchemaProperty>): ColumnDef<Doc
                 cell: ({ row }: { row: { original: DocRecord } }) => {
                     const has = Boolean(row.original[key]);
                     return (
-                        <span className={`text-[11px] ${has ? "text-stone-700" : "text-stone-300"}`}>
+                        <span className={`text-[11px] ${has ? "text-gray-800" : "text-gray-400"}`}>
                             {has ? "♫" : "—"}
                         </span>
                     );
@@ -159,11 +161,11 @@ function buildColumns(properties: Record<string, SchemaProperty>): ColumnDef<Doc
                 cell: ({ getValue }: { getValue: () => unknown }) => {
                     const val = String(getValue() || "");
                     return val ? (
-                        <span className="text-[10px] text-stone-500 truncate block" title={val}>
+                        <span className="text-[10px] text-gray-600 truncate block" title={val}>
                             {val}
                         </span>
                     ) : (
-                        <span className="text-stone-300">—</span>
+                        <span className="text-gray-400">—</span>
                     );
                 },
             } as ColumnDef<DocRecord, unknown>;
@@ -177,11 +179,11 @@ function buildColumns(properties: Record<string, SchemaProperty>): ColumnDef<Doc
                 cell: ({ getValue }: { getValue: () => unknown }) => {
                     const val = getValue() as string;
                     return val ? (
-                        <span className="text-[8px] uppercase tracking-[0.2em] font-bold text-stone-600 bg-stone-100 px-1.5 py-0.5 inline-block whitespace-nowrap">
+                        <span className="text-[8px] uppercase tracking-[0.2em] font-bold text-gray-700 bg-gray-200 px-1.5 py-0.5 inline-block whitespace-nowrap">
                             {val}
                         </span>
                     ) : (
-                        <span className="text-stone-300">—</span>
+                        <span className="text-gray-400">—</span>
                     );
                 },
             } as ColumnDef<DocRecord, unknown>;
@@ -195,9 +197,9 @@ function buildColumns(properties: Record<string, SchemaProperty>): ColumnDef<Doc
                 cell: ({ getValue }: { getValue: () => unknown }) => {
                     const val = getValue() as number;
                     return val ? (
-                        <span className="font-mono text-[11px] text-stone-600">{val}</span>
+                        <span className="font-mono text-[11px] text-gray-700">{val}</span>
                     ) : (
-                        <span className="text-stone-300">—</span>
+                        <span className="text-gray-400">—</span>
                     );
                 },
             } as ColumnDef<DocRecord, unknown>;
@@ -211,13 +213,13 @@ function buildColumns(properties: Record<string, SchemaProperty>): ColumnDef<Doc
                 accessorFn: (row: DocRecord) => String(row[key] || ""),
                 cell: ({ getValue }: { getValue: () => unknown }) => {
                     const val = getValue() as string;
-                    if (!val) return <span className="text-stone-300">—</span>;
+                    if (!val) return <span className="text-gray-400">—</span>;
                     // Format YYYY-MM-DD → DD Mon YYYY
                     const d = new Date(val + "T00:00:00");
                     const formatted = isNaN(d.getTime())
                         ? val
                         : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-                    return <span className="font-mono text-[10px] text-stone-600">{formatted}</span>;
+                    return <span className="font-mono text-[10px] text-gray-700">{formatted}</span>;
                 },
             } as ColumnDef<DocRecord, unknown>;
         }
@@ -229,11 +231,11 @@ function buildColumns(properties: Record<string, SchemaProperty>): ColumnDef<Doc
             cell: ({ getValue }: { getValue: () => unknown }) => {
                 const val = String(getValue() || "");
                 return val ? (
-                    <span className="text-[11px] text-stone-700 truncate block" title={val}>
+                    <span className="text-[11px] text-gray-800 truncate block" title={val}>
                         {val}
                     </span>
                 ) : (
-                    <span className="text-stone-300">—</span>
+                    <span className="text-gray-400">—</span>
                 );
             },
         } as ColumnDef<DocRecord, unknown>;
@@ -250,6 +252,7 @@ export const GenericCollection = ({
     onAddNew: onAddNewOverride,
     onHelp,
     autoCreateNonce,
+    contentLeft = 0,
 }: {
     schema: Schema;
     quickFilters?: QuickFilter[];
@@ -262,6 +265,8 @@ export const GenericCollection = ({
     onHelp?: () => void;
     /** When this number changes, open the create form (used by the New content menu) */
     autoCreateNonce?: number;
+    /** Pixel offset from viewport left where main content starts (sidebar width) — used to position the expanded panel */
+    contentLeft?: number;
 }) => {
     const [docs, setDocs] = useState<DocRecord[]>([]);
     const [loading, setLoading] = useState(true);
@@ -364,7 +369,7 @@ export const GenericCollection = ({
                         <div>
                             <h2 className="text-2xl font-light uppercase tracking-widest">{schema.name}</h2>
                             {!loading && (
-                                <p className="text-[9px] font-mono text-stone-400 mt-1">
+                                <p className="text-[9px] font-mono text-gray-500 mt-1">
                                     {activeFilter !== null
                                         ? `${visibleDocs.length} of ${docs.length} records`
                                         : `${docs.length} records total`}
@@ -375,7 +380,7 @@ export const GenericCollection = ({
                             <button
                                 onClick={onHelp}
                                 title={`How to use ${schema.name} →`}
-                                className="text-stone-300 hover:text-stone-900 transition-colors mt-0.5"
+                                className="text-gray-400 hover:text-gray-900 transition-colors mt-0.5"
                                 aria-label="Open guide"
                             >
                                 <HelpCircle size={16} />
@@ -384,7 +389,7 @@ export const GenericCollection = ({
                     </div>
                     <button
                         onClick={() => (onAddNewOverride ? onAddNewOverride() : setIsCreating(true))}
-                        className="bg-black text-white px-4 py-2.5 uppercase text-[10px] font-bold tracking-widest hover:bg-stone-800 flex items-center gap-2 transition-colors"
+                        className="bg-black text-white px-4 py-2.5 uppercase text-[10px] font-bold tracking-widest hover:bg-gray-800 flex items-center gap-2 transition-colors"
                     >
                         <Plus size={13} /> Add new
                     </button>
@@ -397,8 +402,8 @@ export const GenericCollection = ({
                             onClick={() => setActiveFilter(null)}
                             className={`px-3 py-1.5 text-[9px] uppercase tracking-[0.25em] font-bold border transition-all ${
                                 activeFilter === null
-                                    ? "bg-stone-900 text-white border-stone-900"
-                                    : "border-stone-300 text-stone-500 hover:border-stone-900 hover:text-stone-900"
+                                    ? "bg-gray-900 text-white border-gray-900"
+                                    : "border-gray-400 text-gray-600 hover:border-gray-900 hover:text-gray-900"
                             }`}
                         >
                             All {!loading && <span className="ml-1 opacity-60">{docs.length}</span>}
@@ -411,8 +416,8 @@ export const GenericCollection = ({
                                     onClick={() => setActiveFilter(activeFilter === i ? null : i)}
                                     className={`px-3 py-1.5 text-[9px] uppercase tracking-[0.25em] font-bold border transition-all ${
                                         activeFilter === i
-                                            ? "bg-stone-900 text-white border-stone-900"
-                                            : "border-stone-300 text-stone-500 hover:border-stone-900 hover:text-stone-900"
+                                            ? "bg-gray-900 text-white border-gray-900"
+                                            : "border-gray-400 text-gray-600 hover:border-gray-900 hover:text-gray-900"
                                     }`}
                                 >
                                     {qf.label} {!loading && <span className="ml-1 opacity-60">{count}</span>}
@@ -442,7 +447,7 @@ export const GenericCollection = ({
             {isEditorOpen && createPortal(
                 <>
                     {/* Backdrop — clicking it triggers the discard check */}
-                    <div className="fixed inset-0 bg-stone-900/30 z-40 animate-in fade-in duration-200" onClick={attemptClose} />
+                    <div className="fixed inset-0 bg-gray-900/30 z-40 animate-in fade-in duration-200" onClick={attemptClose} />
 
                     {/* Discard warning modal */}
                     {showDiscardWarning && (
@@ -452,48 +457,81 @@ export const GenericCollection = ({
                         />
                     )}
 
-                    {/* Panel — slide-over or fullscreen depending on state */}
+                    {/* Panel — floating, detached from edges, rounded */}
                     <div
-                        className={`fixed top-0 right-0 bottom-0 bg-white z-50 shadow-2xl flex flex-col font-sans animate-in slide-in-from-right duration-200 ${
-                            isFullscreen ? "left-0 w-full" : "w-[720px] max-w-[95vw]"
-                        }`}
+                        className="fixed z-50 bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)] flex flex-col font-sans rounded-xl overflow-hidden transition-all duration-300 ease-in-out animate-in slide-in-from-right-4 fade-in duration-200"
+                        style={isFullscreen
+                            ? { top: 16, bottom: 16, left: contentLeft + 16, right: 16 }
+                            : { top: 16, bottom: 16, right: 16, width: "40vw" }
+                        }
                     >
                         {/* Panel header */}
-                        <div className="flex items-center justify-between px-8 py-5 border-b border-stone-300 flex-shrink-0">
-                            <div className="min-w-0 flex-1 mr-4">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-stone-600">
+                        <div className="px-8 pt-5 pb-4 border-b border-gray-200 flex-shrink-0">
+                            {/* Top row: label + controls */}
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-gray-400">
                                         {isCreating ? "New record" : "Edit record"}
                                     </p>
                                     {isDirty && (
                                         <span className="flex items-center gap-1 text-[8px] uppercase tracking-[0.2em] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5">
-                                            <span className="w-1 h-1 bg-amber-500 rounded-none inline-block" />
+                                            <span className="w-1 h-1 bg-amber-500 inline-block" />
                                             Unsaved
                                         </span>
                                     )}
                                 </div>
-                                <h3 className="text-base font-medium mt-0.5 truncate text-stone-900">{panelTitle}</h3>
-                                {editingDoc && (
-                                    <p className="text-[9px] font-mono text-stone-500 mt-0.5">
-                                        id: {editingDoc.id as string}
+                                <div className="flex items-center gap-1">
+                                    {/* View live page */}
+                                    {editingDoc && schema.siteUrlTemplate && (() => {
+                                        const url = schema.siteUrlTemplate
+                                            .replace("{id}", editingDoc.id as string)
+                                            .replace("{slug}", (editingDoc.slug as string) || "");
+                                        return url.includes("undefined") || url.endsWith("/") ? null : (
+                                            <a
+                                                href={url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-2 hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-900"
+                                                title="Open live page"
+                                            >
+                                                <ExternalLink size={14} />
+                                            </a>
+                                        );
+                                    })()}
+                                    <button
+                                        onClick={() => setIsFullscreen((v) => !v)}
+                                        className="p-2 hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-900"
+                                        title={isFullscreen ? "Exit fullscreen" : "Expand"}
+                                    >
+                                        {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                                    </button>
+                                    <button
+                                        onClick={attemptClose}
+                                        className="p-2 hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-900"
+                                        title={isDirty ? "Close (unsaved changes)" : "Close"}
+                                    >
+                                        <X size={15} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Title block — archival style */}
+                            <div className="space-y-1 min-w-0">
+                                {editingDoc && (editingDoc.modelNumber as string) && (
+                                    <p className="font-mono text-[10px] text-gray-400 tracking-widest">
+                                        {editingDoc.modelNumber as string}
                                     </p>
                                 )}
-                            </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                                <button
-                                    onClick={() => setIsFullscreen((v) => !v)}
-                                    className="p-2 hover:bg-stone-100 transition-colors"
-                                    title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-                                >
-                                    {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-                                </button>
-                                <button
-                                    onClick={attemptClose}
-                                    className="p-2 hover:bg-stone-100 transition-colors"
-                                    title={isDirty ? "Close (you have unsaved changes)" : "Close"}
-                                >
-                                    <X size={16} />
-                                </button>
+                                <h3 className="text-xl font-light leading-tight text-gray-900 truncate">
+                                    {panelTitle}
+                                </h3>
+                                {editingDoc && (
+                                    <p className="text-[10px] text-gray-400 font-light tracking-wide">
+                                        {[editingDoc.architect as string, editingDoc.year as string]
+                                            .filter(Boolean)
+                                            .join(" · ") || `id: ${editingDoc.id as string}`}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
@@ -510,7 +548,7 @@ export const GenericCollection = ({
                         </div>
 
                         {/* Sticky footer — Save + Delete */}
-                        <div className="border-t border-stone-300 px-8 py-4 flex-shrink-0 flex items-center justify-between gap-4 bg-white">
+                        <div className="border-t border-gray-400 px-8 py-4 flex-shrink-0 flex items-center justify-between gap-4 bg-white">
                             {/* Delete (edit mode only) */}
                             <div>
                                 {editingDoc && (
@@ -529,7 +567,7 @@ export const GenericCollection = ({
                                 <button
                                     type="button"
                                     onClick={attemptClose}
-                                    className="px-5 py-2.5 text-[10px] uppercase tracking-[0.25em] font-bold text-stone-500 hover:text-stone-900 transition-colors"
+                                    className="px-5 py-2.5 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-600 hover:text-gray-900 transition-colors"
                                 >
                                     Cancel
                                 </button>
@@ -538,8 +576,8 @@ export const GenericCollection = ({
                                     form="generic-editor-form"
                                     className={`px-6 py-2.5 text-[10px] uppercase tracking-[0.25em] font-bold flex items-center gap-2 transition-all ${
                                         isDirty
-                                            ? "bg-stone-900 text-white hover:bg-stone-700"
-                                            : "bg-stone-200 text-stone-500 cursor-default"
+                                            ? "bg-gray-900 text-white hover:bg-gray-800"
+                                            : "bg-gray-300 text-gray-600 cursor-default"
                                     }`}
                                     title={!isDirty ? "No changes to save" : undefined}
                                 >

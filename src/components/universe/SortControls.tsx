@@ -1,25 +1,30 @@
 "use client";
 
 import React from "react";
+import { ArrowUpDown } from "lucide-react";
 import { SidePanel } from "./SidePanel";
 import { SORT_ATTRS } from "./layouts";
 import type { SortAttr } from "./layouts";
 
-// Grid-mode "sort by" picker — left-side collapsible panel.
-
 export function SortControls({
     sort,
     onChange,
+    collapseToken = 0,
+    expandToken = 0,
 }: {
     sort: SortAttr;
     onChange: (s: SortAttr) => void;
+    collapseToken?: number;
+    expandToken?: number;
 }) {
     return (
-        <SidePanel side="left">
-            <div className="w-44 bg-white/90 backdrop-blur border border-stone-200 rounded-lg p-3 shadow-sm">
-                <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-500 mb-2 px-1">
-                    Sort by
-                </p>
+        <SidePanel side="left" collapseToken={collapseToken} expandToken={expandToken} icon={<ArrowUpDown size={12} />}>
+            <div className="w-44 bg-white/50 backdrop-blur-xl border border-stone-200 rounded-lg p-3 shadow-sm">
+                {/* pl-6 clears the internal collapse arrow that sits at left-2.5 */}
+                <div className="flex items-center gap-2 mb-2 pl-6">
+                    <ArrowUpDown size={11} className="text-stone-500" />
+                    <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-500">Sort by</p>
+                </div>
                 <div className="flex flex-col gap-1">
                     {SORT_ATTRS.map((attr) => {
                         const active = sort === attr.key;

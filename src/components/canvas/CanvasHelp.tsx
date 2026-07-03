@@ -2,27 +2,23 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { HelpCircle } from "lucide-react";
-import type { ViewMode } from "./types";
 
 type Row = [string, string];
 
-function rows(mode: ViewMode, device: "trackpad" | "mouse"): Row[] {
-    const drag: Row = mode === "grid" ? ["Drag", "Pan"] : ["Drag", "Orbit"];
-    if (device === "trackpad") {
-        return mode === "grid"
-            ? [drag, ["Two-finger scroll", "Pan"], ["Pinch", "Zoom"], ["Click", "Open model"]]
-            : [
-                  drag,
-                  ["Two-finger scroll", "Pan"],
-                  ["Pinch", "Zoom"],
-                  ["Shift + drag", "Pan"],
-                  ["Click", "Open model"],
-              ];
-    }
-    return mode === "grid"
-        ? [drag, ["Scroll", "Zoom"], ["Click", "Open model"]]
-        : [drag, ["Shift + drag", "Pan"], ["Scroll", "Zoom"], ["Click", "Open model"]];
-}
+const TRACKPAD_ROWS: Row[] = [
+    ["Drag (canvas)", "Pan"],
+    ["Drag (card)", "Move card"],
+    ["Pinch", "Zoom"],
+    ["Two-finger scroll", "Pan"],
+    ["Click card", "Bring to front"],
+];
+
+const MOUSE_ROWS: Row[] = [
+    ["Drag (canvas)", "Pan"],
+    ["Drag (card)", "Move card"],
+    ["Scroll", "Zoom"],
+    ["Click card", "Bring to front"],
+];
 
 function Section({ title, data }: { title: string; data: Row[] }) {
     return (
@@ -44,7 +40,7 @@ function Section({ title, data }: { title: string; data: Row[] }) {
     );
 }
 
-export function ControlsHelp({ mode }: { mode: ViewMode }) {
+export function CanvasHelp() {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -58,15 +54,14 @@ export function ControlsHelp({ mode }: { mode: ViewMode }) {
 
     return (
         <div ref={ref} className="fixed bottom-4 left-4 z-40">
-            {/* popover */}
             <div
-                className={`absolute bottom-full mb-2 left-0 w-64 origin-bottom-left transition-all duration-200 ${
+                className={`absolute bottom-full mb-2 left-0 origin-bottom-left transition-all duration-200 ${
                     open ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
                 }`}
             >
-                <div className="bg-white/50 backdrop-blur-xl border border-stone-200 rounded-lg p-4 grid grid-cols-2 gap-6 shadow-sm w-[300px]">
-                    <Section title="Trackpad" data={rows(mode, "trackpad")} />
-                    <Section title="Mouse" data={rows(mode, "mouse")} />
+                <div className="bg-white/50 backdrop-blur-xl border border-stone-200 rounded-lg p-4 grid grid-cols-2 gap-6 shadow-sm w-[320px]">
+                    <Section title="Trackpad" data={TRACKPAD_ROWS} />
+                    <Section title="Mouse" data={MOUSE_ROWS} />
                 </div>
             </div>
 
@@ -76,7 +71,7 @@ export function ControlsHelp({ mode }: { mode: ViewMode }) {
                 className={`flex items-center justify-center w-[34px] h-[34px] rounded-md border transition-colors ${
                     open
                         ? "bg-stone-900 text-white border-stone-900"
-                        : "bg-white text-stone-400 border-stone-200 hover:text-stone-900 hover:border-stone-900"
+                        : "bg-white/70 backdrop-blur-xl text-stone-400 border-stone-200 hover:text-stone-900 hover:border-stone-900"
                 }`}
             >
                 <HelpCircle size={15} />

@@ -76,7 +76,9 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
         if (fileInputRef.current) fileInputRef.current.value = "";
     }
 
-    function setImportance(index: number, importance: 1 | 2 | 3) {
+    function setImportance(index: number, level: 1 | 2 | 3) {
+        // Clicking the active level deselects it (undefined = no rating)
+        const importance: 1 | 2 | 3 | undefined = images[index]?.importance === level ? undefined : level;
         const updated = images.map((img, i) => (i === index ? { ...img, importance } : img));
         onChange(updated);
     }
@@ -126,10 +128,10 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
                     {images.map((img, i) => (
                         <div
                             key={img.url}
-                            className={`relative border group ${img.isStarred ? "border-stone-900" : "border-stone-300"}`}
+                            className={`relative border group ${img.isStarred ? "border-gray-900" : "border-gray-400"}`}
                         >
                             {/* Thumbnail */}
-                            <div className="aspect-[4/3] relative overflow-hidden bg-stone-100">
+                            <div className="aspect-[4/3] relative overflow-hidden bg-gray-200">
                                 <Image
                                     src={img.url}
                                     alt={img.caption || `Image ${i + 1}`}
@@ -144,7 +146,7 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
                             <div className="p-2 bg-white space-y-2">
                                 {/* Importance */}
                                 <div className="flex items-center gap-1">
-                                    <span className="text-[9px] uppercase tracking-widest text-stone-400 mr-1">
+                                    <span className="text-[9px] uppercase tracking-widest text-gray-500 mr-1">
                                         Imp.
                                     </span>
                                     {([1, 2, 3] as const).map((level) => (
@@ -154,8 +156,8 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
                                             onClick={() => setImportance(i, level)}
                                             className={`w-6 h-6 text-[10px] font-bold border transition-colors ${
                                                 img.importance === level
-                                                    ? "bg-stone-900 text-white border-stone-900"
-                                                    : "text-stone-400 border-stone-300 hover:border-stone-900"
+                                                    ? "bg-gray-900 text-white border-gray-900"
+                                                    : "text-gray-500 border-gray-400 hover:border-gray-900"
                                             }`}
                                         >
                                             {level}
@@ -169,7 +171,7 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
                                     placeholder="Caption..."
                                     value={img.caption || ""}
                                     onChange={(e) => updateCaption(i, e.target.value)}
-                                    className="w-full text-[10px] px-2 py-1 border border-stone-300 focus:border-stone-900 outline-none font-mono"
+                                    className="w-full text-[10px] px-2 py-1 border border-gray-400 focus:border-gray-900 outline-none font-mono"
                                 />
 
                                 {/* Star + Delete */}
@@ -179,7 +181,7 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
                                         onClick={() => setStar(i)}
                                         title="Set as hero photo"
                                         className={`flex items-center gap-1 text-[9px] uppercase tracking-widest font-bold transition-colors ${
-                                            img.isStarred ? "text-stone-900" : "text-stone-300 hover:text-stone-900"
+                                            img.isStarred ? "text-gray-900" : "text-gray-400 hover:text-gray-900"
                                         }`}
                                     >
                                         <Star size={11} fill={img.isStarred ? "currentColor" : "none"} />
@@ -188,7 +190,7 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
                                     <button
                                         type="button"
                                         onClick={() => removeImage(i)}
-                                        className="text-stone-300 hover:text-red-500 transition-colors"
+                                        className="text-gray-400 hover:text-red-500 transition-colors"
                                         title="Remove image"
                                     >
                                         <Trash2 size={12} />
@@ -198,7 +200,7 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
 
                             {/* Starred indicator */}
                             {img.isStarred && (
-                                <div className="absolute top-2 left-2 bg-stone-900 text-white text-[8px] uppercase tracking-widest px-1.5 py-0.5 font-bold">
+                                <div className="absolute top-2 left-2 bg-gray-900 text-white text-[8px] uppercase tracking-widest px-1.5 py-0.5 font-bold">
                                     Hero
                                 </div>
                             )}
@@ -218,16 +220,16 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
             />
 
             {uploading ? (
-                <div className="border border-stone-300 p-4">
+                <div className="border border-gray-400 p-4">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-2 h-2 bg-stone-900 animate-pulse" />
-                        <span className="text-[10px] uppercase tracking-widest font-bold text-stone-500">
+                        <div className="w-2 h-2 bg-gray-900 animate-pulse" />
+                        <span className="text-[10px] uppercase tracking-widest font-bold text-gray-600">
                             Uploading... {uploadProgress}%
                         </span>
                     </div>
-                    <div className="w-full bg-stone-100 h-px">
+                    <div className="w-full bg-gray-200 h-px">
                         <div
-                            className="bg-stone-900 h-px transition-all duration-300"
+                            className="bg-gray-900 h-px transition-all duration-300"
                             style={{ width: `${uploadProgress}%` }}
                         />
                     </div>
@@ -242,7 +244,7 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
                         }
                         fileInputRef.current?.click();
                     }}
-                    className="flex items-center gap-2 border border-dashed border-stone-300 hover:border-stone-900 text-stone-400 hover:text-stone-900 transition-colors px-4 py-3 text-[10px] uppercase tracking-widest font-bold w-full justify-center"
+                    className="flex items-center gap-2 border border-dashed border-gray-400 hover:border-gray-900 text-gray-500 hover:text-gray-900 transition-colors px-4 py-3 text-[10px] uppercase tracking-widest font-bold w-full justify-center"
                 >
                     <Upload size={13} />
                     Add Images
@@ -252,7 +254,7 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
             {error && <p className="text-red-500 text-[10px] uppercase tracking-widest font-bold">{error}</p>}
 
             {images.length === 0 && !uploading && (
-                <p className="text-stone-300 text-[10px] uppercase tracking-widest text-center py-2">
+                <p className="text-gray-400 text-[10px] uppercase tracking-widest text-center py-2">
                     No images yet — upload to link photos to this model
                 </p>
             )}

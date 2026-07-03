@@ -42,6 +42,10 @@ service cloud.firestore {
       allow read: if resource.data.isVisible == true || isStaff();
       allow write: if isStaff();
     }
+    match /ma_artefacts/{document} {
+      allow read: if resource.data.isVisible == true || isStaff();
+      allow write: if isStaff();
+    }
 
     // ── Users ─────────────────────────────────────────────────────────────
     // A user may read their own record (needed to resolve their role on login);

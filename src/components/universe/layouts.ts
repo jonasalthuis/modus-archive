@@ -32,10 +32,10 @@ const norm = (s?: string): string => (s && s.trim() ? s.trim() : "Unknown");
 
 // ── Universe: loose floating scatter ────────────────────────────────────────
 
-export function universeLayout(models: UniverseModel[]): Map<string, Vec3> {
+export function universeLayout(models: UniverseModel[], sessionSeed = ""): Map<string, Vec3> {
     const out = new Map<string, Vec3>();
     for (const m of models) {
-        const r = seededRand(m.id);
+        const r = seededRand(m.id + sessionSeed);
         out.set(m.id, [
             (r() - 0.5) * 38,
             (r() - 0.5) * 24,
@@ -123,8 +123,9 @@ export function clusteredLayout(
     if (sortMode === "numeric") {
         // Grid layout: left→right, top→bottom, flat (z≈0)
         const numCols = Math.max(2, Math.ceil(Math.sqrt(G * 1.4)));
-        const gx = Math.max(maxR * 1.8, 10); // gap between cluster centres
-        const gy = Math.max(maxR * 1.6, 9);
+        // Ensure edge-to-edge gap of at least (2 * CARD_HALF_W + 3 units) between largest clusters
+        const gx = Math.max(maxR * 2.5, 12); // gap between cluster centres
+        const gy = Math.max(maxR * 2.2, 11);
         const totalRows = Math.ceil(G / numCols);
 
         keys.forEach((k, gi) => {
@@ -157,17 +158,30 @@ export function clusteredLayout(
             clusters.push({ key: k, label: k, center: [cx, cy + clusterRadius, cz], count: members.length, modelIds: members.map((m) => m.id), bounds });
         });
     } else {
-        // Spiral layout: golden-angle, wide x/y, compressed z
-        const spread = 5.5 + Math.sqrt(G) * 1.0;
+        // Spiral layout: golden-angle phyllotaxis, compressed z.
+        // Compute the minimum spread that keeps every cluster pair non-overlapping.
+        const cRadii = keys.map(k => CARD_SPACING * Math.sqrt(groups.get(k)!.length) + 2.2);
+        const unitCx = keys.map((_, gi) => Math.cos(gi * GOLDEN_ANGLE) * Math.sqrt(gi + 0.55));
+        const unitCy = keys.map((_, gi) => Math.sin(gi * GOLDEN_ANGLE) * Math.sqrt(gi + 0.55) * 0.82);
+
+        const MIN_EDGE_GAP = 3.0; // minimum world-unit gap between cluster edges
+        let spread = Math.max(8.0, Math.sqrt(G) * 3.0);
+        for (let i = 0; i < G; i++) {
+            for (let j = i + 1; j < G; j++) {
+                const dx = unitCx[i] - unitCx[j];
+                const dy = unitCy[i] - unitCy[j];
+                const unitDist = Math.sqrt(dx * dx + dy * dy);
+                if (unitDist < 1e-6) continue;
+                spread = Math.max(spread, (cRadii[i] + cRadii[j] + MIN_EDGE_GAP) / unitDist);
+            }
+        }
 
         keys.forEach((k, gi) => {
             const members = groups.get(k)!;
             const jr = seededRand("center::" + k);
-            const angle = gi * GOLDEN_ANGLE;
-            const radius = spread * Math.sqrt(gi + 0.55);
-            const cx = Math.cos(angle) * radius + (jr() - 0.5) * 2.0;
-            const cy = Math.sin(angle) * radius * 0.82 + (jr() - 0.5) * 2.0;
-            const cz = (jr() - 0.5) * 1.5; // much less depth variation
+            const cx = unitCx[gi] * spread;
+            const cy = unitCy[gi] * spread;
+            const cz = (jr() - 0.5) * 1.5;
 
             let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
             members.forEach((m, j) => {
@@ -276,15 +290,53 @@ export function distinctValues(
 
 // ── Sorting ─────────────────────────────────────────────────────────────────
 
-export type SortAttr = "default" | "scale" | "year" | "architect" | "leadMaker";
+export type SortAttr = "default" | "scale" | "year" | "architect" | "leadMaker" | "modelType" | "buildingType" | "buildingStatus" | "location";
 
 export const SORT_ATTRS: { key: SortAttr; label: string }[] = [
-    { key: "default", label: "Model no." },
-    { key: "year", label: "Year" },
-    { key: "scale", label: "Scale" },
-    { key: "architect", label: "Architect" },
-    { key: "leadMaker", label: "Lead maker" },
+    { key: "default",       label: "Model no." },
+    { key: "year",          label: "Year" },
+    { key: "scale",         label: "Scale" },
+    { key: "architect",     label: "Architect" },
+    { key: "leadMaker",     label: "Lead maker" },
+    { key: "modelType",     label: "Model type" },
+    { key: "buildingType",  label: "Building type" },
+    { key: "buildingStatus", label: "Status" },
+    { key: "location",      label: "Location" },
 ];
+
+// Label displayed per section in the sorted grid
+function getSortSectionLabel(m: UniverseModel, sort: SortAttr): string {
+    switch (sort) {
+        case "year":           return m.year ? `${Math.floor(m.year / 10) * 10}s` : "Unknown";
+        case "scale":          return m.scale?.trim() || "Unknown";
+        case "architect":      return m.architect?.trim() || "Unknown";
+        case "leadMaker":      return m.leadMaker?.trim() || "Unknown";
+        case "modelType":      return m.modelType?.trim() || "Unknown";
+        case "buildingType":   return m.buildingType?.trim() || "Unknown";
+        case "buildingStatus": return m.buildingStatus?.trim() || "Unknown";
+        case "location":       return m.location?.trim() || "Unknown";
+        default: return "";
+    }
+}
+
+// Returns the first model id in each distinct sort-key group (for section label rendering).
+export function computeSections(
+    models: UniverseModel[],
+    sort: SortAttr,
+    cols: number,
+): { id: string; label: string; row: number; col: number }[] {
+    if (sort === "default") return [];
+    const out: { id: string; label: string; row: number; col: number }[] = [];
+    let prev = "";
+    for (let i = 0; i < models.length; i++) {
+        const k = getSortSectionLabel(models[i], sort);
+        if (k !== prev) {
+            out.push({ id: models[i].id, label: k, row: Math.floor(i / cols), col: i % cols });
+            prev = k;
+        }
+    }
+    return out;
+}
 
 export function sortModels(models: UniverseModel[], sort: SortAttr): UniverseModel[] {
     if (sort === "default") return [...models];
@@ -305,6 +357,18 @@ export function sortModels(models: UniverseModel[], sort: SortAttr): UniverseMod
             case "leadMaker":
                 return (a.leadMaker ?? "").localeCompare(b.leadMaker ?? "") ||
                     (a.modelNumber ?? "").localeCompare(b.modelNumber ?? "");
+            case "modelType":
+                return (a.modelType ?? "").localeCompare(b.modelType ?? "") ||
+                    (a.modelNumber ?? "").localeCompare(b.modelNumber ?? "");
+            case "buildingType":
+                return (a.buildingType ?? "").localeCompare(b.buildingType ?? "") ||
+                    (a.modelNumber ?? "").localeCompare(b.modelNumber ?? "");
+            case "buildingStatus":
+                return (a.buildingStatus ?? "").localeCompare(b.buildingStatus ?? "") ||
+                    (a.modelNumber ?? "").localeCompare(b.modelNumber ?? "");
+            case "location":
+                return (a.location ?? "").localeCompare(b.location ?? "") ||
+                    (a.modelNumber ?? "").localeCompare(b.modelNumber ?? "");
             default:
                 return 0;
         }
@@ -319,11 +383,47 @@ export function applyFilters(models: UniverseModel[], f: Filters): UniverseModel
         if (f.modelType && norm(m.modelType) !== f.modelType) return false;
         if (f.buildingType && norm(m.buildingType) !== f.buildingType) return false;
         if (f.buildingStatus && norm(m.buildingStatus) !== f.buildingStatus) return false;
+        if (f.leadMaker && norm(m.leadMaker) !== f.leadMaker) return false;
+        if (f.material && !(m.materials ?? []).some((mat) => mat.trim() === f.material)) return false;
+        if (f.decade) {
+            const mDecade = m.year ? `${Math.floor(m.year / 10) * 10}s` : "Unknown";
+            if (mDecade !== f.decade) return false;
+        }
         if (f.scales.length && !(m.scale && f.scales.includes(m.scale.trim()))) return false;
-        if (q) {
-            const hay = `${m.title ?? ""} ${m.architect ?? ""} ${m.modelNumber ?? ""}`.toLowerCase();
-            if (!hay.includes(q)) return false;
+
+        // Build haystack once for text-based checks
+        const needsHay = q || f.pinnedTerms.length > 0;
+        if (needsHay) {
+            const hay = [
+                m.title, m.architect, m.modelNumber, m.location,
+                m.buildingType, m.modelType, m.buildingStatus, m.leadMaker,
+                ...(m.materials ?? []),
+            ].filter(Boolean).join(" ").toLowerCase();
+            if (q && !hay.includes(q)) return false;
+            for (const pin of f.pinnedTerms) {
+                const p = pin.trim().toLowerCase();
+                if (p && !hay.includes(p)) return false;
+            }
         }
         return true;
     });
+}
+
+export function distinctDecades(models: UniverseModel[]): string[] {
+    const set = new Set<string>();
+    for (const m of models) {
+        if (m.year) set.add(`${Math.floor(m.year / 10) * 10}s`);
+    }
+    return [...set].sort();
+}
+
+export function distinctMaterials(models: UniverseModel[]): string[] {
+    const set = new Set<string>();
+    for (const m of models) {
+        for (const mat of m.materials ?? []) {
+            const v = mat.trim();
+            if (v) set.add(v);
+        }
+    }
+    return [...set].sort();
 }

@@ -72,16 +72,16 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
         <div className="space-y-4">
             {/* Current audio */}
             {url ? (
-                <div className="flex items-center gap-4 bg-white border border-stone-300 p-4">
+                <div className="flex items-center gap-4 bg-white border border-gray-400 p-4">
                     <button
                         type="button"
                         onClick={togglePlay}
-                        className="w-8 h-8 bg-stone-900 text-white flex items-center justify-center hover:bg-stone-700 transition-colors flex-shrink-0"
+                        className="w-8 h-8 bg-gray-900 text-white flex items-center justify-center hover:bg-gray-800 transition-colors flex-shrink-0"
                     >
                         {playing ? <Pause size={14} /> : <Play size={14} />}
                     </button>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-mono text-stone-400 truncate">{url}</p>
+                        <p className="text-[10px] font-mono text-gray-500 truncate">{url}</p>
                         <audio ref={audioRef} src={url} onEnded={() => setPlaying(false)} className="hidden" />
                     </div>
                     <button
@@ -90,7 +90,7 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
                             onChange(null);
                             setPlaying(false);
                         }}
-                        className="p-1 hover:text-red-500 transition-colors text-stone-400 flex-shrink-0"
+                        className="p-1 hover:text-red-500 transition-colors text-gray-500 flex-shrink-0"
                         title="Remove audio"
                     >
                         <Trash2 size={14} />
@@ -104,13 +104,13 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
                     onDrop={handleDrop}
                     onDragOver={(e) => e.preventDefault()}
                     onClick={() => inputRef.current?.click()}
-                    className="border border-dashed border-stone-300 p-8 text-center cursor-pointer hover:border-stone-900 hover:bg-stone-50 transition-all"
+                    className="border border-dashed border-gray-400 p-8 text-center cursor-pointer hover:border-gray-900 hover:bg-gray-100 transition-all"
                 >
-                    <Upload size={20} className="mx-auto mb-3 text-stone-300" />
-                    <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-stone-400">
+                    <Upload size={20} className="mx-auto mb-3 text-gray-400" />
+                    <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-500">
                         Drop audio file or click to upload
                     </p>
-                    <p className="text-[9px] text-stone-300 mt-1">MP3, WAV, M4A, AIFF</p>
+                    <p className="text-[9px] text-gray-400 mt-1">MP3, WAV, M4A, AIFF</p>
                     <input
                         ref={inputRef}
                         type="file"
@@ -128,7 +128,7 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
                 <button
                     type="button"
                     onClick={() => inputRef.current?.click()}
-                    className="text-[10px] uppercase tracking-[0.2em] font-bold text-stone-400 hover:text-stone-900 transition-colors flex items-center gap-2"
+                    className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-2"
                 >
                     <Upload size={12} /> Replace audio
                 </button>
@@ -148,13 +148,13 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
             {/* Upload progress */}
             {uploading && (
                 <div className="space-y-2">
-                    <div className="h-px bg-stone-300 w-full overflow-hidden">
+                    <div className="h-px bg-gray-400 w-full overflow-hidden">
                         <div
-                            className="h-full bg-stone-900 transition-all duration-200"
+                            className="h-full bg-gray-900 transition-all duration-200"
                             style={{ width: `${progress}%` }}
                         />
                     </div>
-                    <p className="text-[10px] font-mono text-stone-400">Uploading… {progress}%</p>
+                    <p className="text-[10px] font-mono text-gray-500">Uploading… {progress}%</p>
                 </div>
             )}
         </div>

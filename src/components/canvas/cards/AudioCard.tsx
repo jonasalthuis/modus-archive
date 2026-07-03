@@ -21,13 +21,13 @@ export function AudioCard() {
 
     return (
         <div
-            className="bg-white border border-stone-200 rounded-lg shadow-[0_14px_40px_-12px_rgba(28,25,23,0.30)] p-5 select-none"
+            className="bg-white border border-gray-200 rounded-lg p-5 select-none"
             style={{ width: 240 }}
         >
-            <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-600 mb-3 flex items-center gap-2">
+            <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-500 mb-3 flex items-center gap-2">
                 <span
                     className={`w-1.5 h-1.5 inline-block flex-shrink-0 ${
-                        playing ? "bg-stone-900 animate-pulse" : "bg-stone-300"
+                        playing ? "bg-gray-900 animate-pulse" : "bg-gray-300"
                     }`}
                 />
                 Voice Narrative
@@ -38,7 +38,7 @@ export function AudioCard() {
                         e.stopPropagation();
                         toggle();
                     }}
-                    className="w-10 h-10 border border-stone-900 flex items-center justify-center text-stone-900 hover:bg-stone-900 hover:text-white transition-colors"
+                    className="w-10 h-10 border border-gray-900 flex items-center justify-center text-gray-900 hover:bg-gray-900 hover:text-white transition-colors"
                     aria-label={playing ? "Pause" : "Play"}
                 >
                     {playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}

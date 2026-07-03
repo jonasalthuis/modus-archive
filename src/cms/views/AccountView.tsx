@@ -15,8 +15,8 @@ import { Save, Key, Mail, LogOut } from "lucide-react";
 const signOut = () => auth.signOut();
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-stone-300 pb-6 last:border-0">
-        <label className="text-[10px] uppercase tracking-[0.3em] font-bold text-stone-400 pt-3">{label}</label>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-gray-400 pb-6 last:border-0">
+        <label className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-500 pt-3">{label}</label>
         <div className="md:col-span-2">{children}</div>
     </div>
 );
@@ -24,7 +24,7 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
 const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
     <input
         {...props}
-        className="w-full bg-white border border-stone-300 focus:border-black outline-none px-4 py-3 text-sm font-light transition-colors disabled:bg-stone-50 disabled:text-stone-300"
+        className="w-full bg-white border border-gray-400 focus:border-black outline-none px-4 py-3 text-sm font-light transition-colors disabled:bg-gray-100 disabled:text-gray-400"
     />
 );
 
@@ -42,8 +42,8 @@ const Btn = ({
     type?: "button" | "submit";
 }) => {
     const styles = {
-        primary: "bg-stone-900 text-white hover:bg-stone-700",
-        ghost: "border border-stone-300 text-stone-600 hover:border-stone-900 hover:text-stone-900",
+        primary: "bg-gray-900 text-white hover:bg-gray-800",
+        ghost: "border border-gray-400 text-gray-700 hover:border-gray-900 hover:text-gray-900",
         danger: "border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-400",
     };
     return (
@@ -129,17 +129,17 @@ export const AccountView = ({ user }: { user: User }) => {
     return (
         <div className="space-y-12 animate-in fade-in duration-500 max-w-2xl">
             {/* Header */}
-            <div className="border-b border-stone-300 pb-8">
+            <div className="border-b border-gray-400 pb-8">
                 <h2 className="text-3xl font-light uppercase tracking-[0.15em]">Account</h2>
-                <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-stone-300 mt-2">
+                <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-400 mt-2">
                     {user.email}
-                    {isGoogleUser && <span className="ml-3 bg-stone-100 text-stone-400 px-2 py-0.5">Google</span>}
+                    {isGoogleUser && <span className="ml-3 bg-gray-200 text-gray-500 px-2 py-0.5">Google</span>}
                 </p>
             </div>
 
             {/* Profile */}
             <section className="space-y-6">
-                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300">Profile</p>
+                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-gray-400">Profile</p>
                 <div className="space-y-6">
                     <Field label="Display name">
                         <Input
@@ -150,7 +150,7 @@ export const AccountView = ({ user }: { user: User }) => {
                     </Field>
                     <Field label="Email">
                         <Input value={user.email || ""} disabled />
-                        <p className="text-[9px] text-stone-300 mt-2">
+                        <p className="text-[9px] text-gray-400 mt-2">
                             Email is managed through Firebase Auth and cannot be changed here.
                         </p>
                     </Field>
@@ -159,23 +159,23 @@ export const AccountView = ({ user }: { user: User }) => {
                     <Btn onClick={handleSaveProfile} disabled={savingProfile}>
                         <Save size={12} /> {savingProfile ? "Saving…" : "Save profile"}
                     </Btn>
-                    {profileMsg && <span className="text-[10px] text-stone-400">{profileMsg}</span>}
+                    {profileMsg && <span className="text-[10px] text-gray-500">{profileMsg}</span>}
                 </div>
             </section>
 
             {/* Password */}
             <section className="space-y-6">
-                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300">Password</p>
+                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-gray-400">Password</p>
 
                 {isGoogleUser && !isEmailUser ? (
-                    <div className="border border-stone-300 p-6">
+                    <div className="border border-gray-400 p-6">
                         <div className="flex items-start gap-3">
-                            <Mail size={16} className="text-stone-300 flex-shrink-0 mt-0.5" />
+                            <Mail size={16} className="text-gray-400 flex-shrink-0 mt-0.5" />
                             <div>
-                                <p className="text-sm font-light text-stone-600">
+                                <p className="text-sm font-light text-gray-700">
                                     Your account uses Google Sign-In — there is no separate password to manage.
                                 </p>
-                                <p className="text-[10px] text-stone-400 mt-2">
+                                <p className="text-[10px] text-gray-500 mt-2">
                                     To change your Google account password, visit myaccount.google.com.
                                 </p>
                             </div>
@@ -217,13 +217,13 @@ export const AccountView = ({ user }: { user: User }) => {
                             <button
                                 type="button"
                                 onClick={handlePasswordReset}
-                                className="text-[10px] uppercase tracking-[0.2em] font-bold text-stone-300 hover:text-stone-600 transition-colors"
+                                className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 hover:text-gray-700 transition-colors"
                             >
                                 Send reset email instead
                             </button>
                         </div>
                         {pwMsg && (
-                            <p className={`text-[10px] ${pwMsg.ok ? "text-stone-500" : "text-red-500"}`}>
+                            <p className={`text-[10px] ${pwMsg.ok ? "text-gray-600" : "text-red-500"}`}>
                                 {pwMsg.text}
                             </p>
                         )}
@@ -232,7 +232,7 @@ export const AccountView = ({ user }: { user: User }) => {
             </section>
 
             {/* Sign out */}
-            <section className="border-t border-stone-300 pt-8">
+            <section className="border-t border-gray-400 pt-8">
                 <Btn
                     variant="danger"
                     onClick={() => {

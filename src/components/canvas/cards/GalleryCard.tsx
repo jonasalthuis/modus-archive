@@ -39,8 +39,8 @@ export function GalleryCard({ group }: { group: ImageGroup }) {
     return (
         <>
             {/* Card */}
-            <div className="bg-white border border-stone-200 rounded-lg overflow-hidden shadow-[0_14px_40px_-12px_rgba(28,25,23,0.30)] select-none" style={{ width: 300 }}>
-                <div className="relative bg-stone-100 group" style={{ height: 260 }}>
+            <div className="relative bg-gray-100 overflow-hidden rounded-lg select-none shadow-[0_2px_12px_rgba(0,0,0,0.06)]" style={{ width: 360, height: 270 }}>
+                <div className="relative bg-gray-100 group h-full">
                     <Image
                         src={img.url}
                         alt={img.caption ?? `Photo ${index + 1}`}
@@ -57,7 +57,7 @@ export function GalleryCard({ group }: { group: ImageGroup }) {
                             e.stopPropagation();
                             setLightbox(true);
                         }}
-                        className="absolute top-2 right-2 w-7 h-7 bg-white/85 hover:bg-white flex items-center justify-center text-stone-700 transition-colors border border-stone-200"
+                        className="absolute top-2 right-2 w-7 h-7 bg-white/85 hover:bg-white flex items-center justify-center text-gray-700 transition-colors border border-gray-200"
                         aria-label="Open lightbox"
                         title="Expand"
                     >
@@ -67,14 +67,14 @@ export function GalleryCard({ group }: { group: ImageGroup }) {
                         <>
                             <button
                                 onClick={(e) => go(-1, e)}
-                                className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/80 hover:bg-white flex items-center justify-center text-stone-700 transition-colors border border-stone-200"
+                                className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/80 hover:bg-white flex items-center justify-center text-gray-700 transition-colors border border-gray-200"
                                 aria-label="Previous"
                             >
                                 <ChevronLeft size={15} />
                             </button>
                             <button
                                 onClick={(e) => go(1, e)}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/80 hover:bg-white flex items-center justify-center text-stone-700 transition-colors border border-stone-200"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/80 hover:bg-white flex items-center justify-center text-gray-700 transition-colors border border-gray-200"
                                 aria-label="Next"
                             >
                                 <ChevronRight size={15} />
@@ -82,14 +82,16 @@ export function GalleryCard({ group }: { group: ImageGroup }) {
                         </>
                     )}
                 </div>
-                <div className="px-3 py-2 border-t border-stone-100 flex items-center justify-between">
-                    <p className="text-[10px] font-normal text-stone-600 truncate">{img.caption ?? ""}</p>
-                    {total > 1 && (
-                        <p className="text-[8px] font-mono text-stone-500 flex-shrink-0 ml-2">
-                            {index + 1}&thinsp;/&thinsp;{total}
-                        </p>
-                    )}
-                </div>
+                {(img.caption || total > 1) && (
+                    <div className="absolute bottom-0 inset-x-0 bg-white/75 backdrop-blur-sm border-t border-gray-100 px-3 py-2 flex items-center justify-between">
+                        <p className="text-[9px] text-gray-500 font-light truncate">{img.caption ?? ""}</p>
+                        {total > 1 && (
+                            <p className="text-[8px] font-mono text-gray-400 flex-shrink-0 ml-2">
+                                {index + 1}&thinsp;/&thinsp;{total}
+                            </p>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Full-screen lightbox */}

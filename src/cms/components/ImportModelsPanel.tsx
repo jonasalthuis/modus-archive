@@ -224,33 +224,33 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
             <div className="pb-6 border-b border-black flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-light uppercase tracking-widest">Import models</h2>
-                    <p className="text-[9px] font-mono text-stone-500 mt-1">Batch upload from CSV or Excel</p>
+                    <p className="text-[9px] font-mono text-gray-600 mt-1">Batch upload from CSV or Excel</p>
                 </div>
                 <button
                     onClick={onDone}
-                    className="text-[10px] uppercase tracking-[0.25em] font-bold text-stone-500 hover:text-stone-900 transition-colors"
+                    className="text-[10px] uppercase tracking-[0.25em] font-bold text-gray-600 hover:text-gray-900 transition-colors"
                 >
                     ← Back to models
                 </button>
             </div>
 
             {/* Step 1 — template */}
-            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6">
+            <div className="bg-white rounded-xl border border-gray-300 shadow-sm p-6">
                 <div className="flex items-start gap-4">
-                    <div className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
                         1
                     </div>
                     <div className="flex-1">
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-stone-800">Download the template</h3>
-                        <p className="text-sm text-stone-600 mt-1 leading-relaxed">
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800">Download the template</h3>
+                        <p className="text-sm text-gray-700 mt-1 leading-relaxed">
                             Use the template so your columns line up with the database. Fill one model per row. The{" "}
-                            <span className="font-mono text-[12px] bg-stone-100 px-1 rounded">Ref #</span> and{" "}
-                            <span className="font-mono text-[12px] bg-stone-100 px-1 rounded">Title</span> columns are
+                            <span className="font-mono text-[12px] bg-gray-200 px-1 rounded">Ref #</span> and{" "}
+                            <span className="font-mono text-[12px] bg-gray-200 px-1 rounded">Title</span> columns are
                             required; everything else is optional.
                         </p>
                         <button
                             onClick={downloadTemplate}
-                            className="mt-3 inline-flex items-center gap-2 rounded-md bg-stone-900 text-white px-4 py-2.5 text-[10px] uppercase tracking-[0.25em] font-bold hover:bg-stone-700 transition-colors"
+                            className="mt-3 inline-flex items-center gap-2 rounded-md bg-gray-900 text-white px-4 py-2.5 text-[10px] uppercase tracking-[0.25em] font-bold hover:bg-gray-800 transition-colors"
                         >
                             <Download size={13} /> Download Excel template
                         </button>
@@ -259,16 +259,16 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
             </div>
 
             {/* Step 2 — upload */}
-            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6">
+            <div className="bg-white rounded-xl border border-gray-300 shadow-sm p-6">
                 <div className="flex items-start gap-4">
-                    <div className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
                         2
                     </div>
                     <div className="flex-1">
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-stone-800">
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800">
                             Upload your file
                         </h3>
-                        <p className="text-sm text-stone-600 mt-1 mb-4 leading-relaxed">
+                        <p className="text-sm text-gray-700 mt-1 mb-4 leading-relaxed">
                             Drop a <span className="font-mono text-[12px]">.xlsx</span> or{" "}
                             <span className="font-mono text-[12px]">.csv</span> file below. Existing models with the same
                             Ref # are <strong>updated</strong> — their photos and audio are kept.
@@ -283,7 +283,7 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
                             onDrop={onDrop}
                             onClick={() => inputRef.current?.click()}
                             className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
-                                dragOver ? "border-stone-900 bg-stone-50" : "border-stone-300 hover:border-stone-500"
+                                dragOver ? "border-gray-900 bg-gray-100" : "border-gray-400 hover:border-gray-600"
                             }`}
                         >
                             <input
@@ -294,7 +294,7 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
                                 className="hidden"
                             />
                             {fileName ? (
-                                <div className="flex items-center justify-center gap-2 text-stone-700">
+                                <div className="flex items-center justify-center gap-2 text-gray-800">
                                     <FileSpreadsheet size={16} />
                                     <span className="text-sm font-medium">{fileName}</span>
                                     <button
@@ -302,13 +302,13 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
                                             e.stopPropagation();
                                             reset();
                                         }}
-                                        className="ml-2 text-stone-400 hover:text-red-500"
+                                        className="ml-2 text-gray-500 hover:text-red-500"
                                     >
                                         <X size={14} />
                                     </button>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center gap-2 text-stone-400">
+                                <div className="flex flex-col items-center gap-2 text-gray-500">
                                     <Upload size={20} />
                                     <span className="text-[10px] uppercase tracking-[0.3em] font-bold">
                                         Drop file or click to browse
@@ -328,18 +328,18 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
 
             {/* Step 3 — preview & import */}
             {(parsed.length > 0 || rejected.length > 0) && (
-                <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6">
+                <div className="bg-white rounded-xl border border-gray-300 shadow-sm p-6">
                     <div className="flex items-start gap-4">
-                        <div className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
                             3
                         </div>
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-stone-800">Review &amp; import</h3>
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800">Review &amp; import</h3>
 
                             {/* Counts */}
                             <div className="flex flex-wrap gap-3 mt-3">
-                                <span className="inline-flex items-center gap-2 rounded-md bg-stone-100 px-3 py-1.5 text-sm">
-                                    <Check size={14} className="text-stone-700" />
+                                <span className="inline-flex items-center gap-2 rounded-md bg-gray-200 px-3 py-1.5 text-sm">
+                                    <Check size={14} className="text-gray-800" />
                                     <strong>{parsed.length}</strong> ready to import
                                 </span>
                                 {rejected.length > 0 && (
@@ -364,10 +364,10 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
 
                             {/* Preview table */}
                             {parsed.length > 0 && (
-                                <div className="mt-4 overflow-x-auto rounded-lg border border-stone-200 max-h-72 overflow-y-auto">
+                                <div className="mt-4 overflow-x-auto rounded-lg border border-gray-300 max-h-72 overflow-y-auto">
                                     <table className="w-full text-sm">
-                                        <thead className="sticky top-0 bg-stone-100">
-                                            <tr className="text-left text-[9px] uppercase tracking-[0.2em] text-stone-600">
+                                        <thead className="sticky top-0 bg-gray-200">
+                                            <tr className="text-left text-[9px] uppercase tracking-[0.2em] text-gray-700">
                                                 <th className="px-3 py-2 font-bold">Ref #</th>
                                                 <th className="px-3 py-2 font-bold">Title</th>
                                                 <th className="px-3 py-2 font-bold">Architect</th>
@@ -377,16 +377,16 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
                                         </thead>
                                         <tbody>
                                             {parsed.slice(0, 200).map((r) => (
-                                                <tr key={r.id} className="border-t border-stone-100">
-                                                    <td className="px-3 py-1.5 font-mono text-stone-500">{r.id}</td>
+                                                <tr key={r.id} className="border-t border-gray-200">
+                                                    <td className="px-3 py-1.5 font-mono text-gray-600">{r.id}</td>
                                                     <td className="px-3 py-1.5">{String(r.data.title ?? "")}</td>
-                                                    <td className="px-3 py-1.5 text-stone-600">
+                                                    <td className="px-3 py-1.5 text-gray-700">
                                                         {String(r.data.architect ?? "—")}
                                                     </td>
-                                                    <td className="px-3 py-1.5 text-stone-600">
+                                                    <td className="px-3 py-1.5 text-gray-700">
                                                         {String(r.data.year ?? "—")}
                                                     </td>
-                                                    <td className="px-3 py-1.5 text-stone-600">
+                                                    <td className="px-3 py-1.5 text-gray-700">
                                                         {r.data.isVisible ? "Yes" : "No"}
                                                     </td>
                                                 </tr>
@@ -394,7 +394,7 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
                                         </tbody>
                                     </table>
                                     {parsed.length > 200 && (
-                                        <p className="px-3 py-2 text-[11px] text-stone-400 bg-stone-50">
+                                        <p className="px-3 py-2 text-[11px] text-gray-500 bg-gray-100">
                                             Showing first 200 of {parsed.length} rows…
                                         </p>
                                     )}
@@ -404,12 +404,12 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
                             {/* Result / action */}
                             {done != null ? (
                                 <div className="mt-5 flex items-center gap-3">
-                                    <span className="inline-flex items-center gap-2 rounded-md bg-stone-900 text-white px-4 py-2.5 text-[10px] uppercase tracking-[0.25em] font-bold">
+                                    <span className="inline-flex items-center gap-2 rounded-md bg-gray-900 text-white px-4 py-2.5 text-[10px] uppercase tracking-[0.25em] font-bold">
                                         <Check size={14} /> Imported {done} models
                                     </span>
                                     <button
                                         onClick={onDone}
-                                        className="text-[10px] uppercase tracking-[0.25em] font-bold text-stone-500 hover:text-stone-900 transition-colors"
+                                        className="text-[10px] uppercase tracking-[0.25em] font-bold text-gray-600 hover:text-gray-900 transition-colors"
                                     >
                                         View models →
                                     </button>
@@ -418,7 +418,7 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
                                 <button
                                     disabled={parsed.length === 0 || importing}
                                     onClick={() => setShowConfirm(true)}
-                                    className="mt-5 inline-flex items-center gap-2 rounded-md bg-stone-900 text-white px-5 py-2.5 text-[10px] uppercase tracking-[0.25em] font-bold hover:bg-stone-700 transition-colors disabled:opacity-40"
+                                    className="mt-5 inline-flex items-center gap-2 rounded-md bg-gray-900 text-white px-5 py-2.5 text-[10px] uppercase tracking-[0.25em] font-bold hover:bg-gray-800 transition-colors disabled:opacity-40"
                                 >
                                     {importing ? (
                                         <>
@@ -441,13 +441,13 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
             {showConfirm && (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
                     <div className="absolute inset-0 bg-black/40" onClick={() => setShowConfirm(false)} />
-                    <div className="relative bg-white rounded-xl border border-stone-200 shadow-2xl p-8 max-w-sm w-full space-y-5">
+                    <div className="relative bg-white rounded-xl border border-gray-300 shadow-2xl p-8 max-w-sm w-full space-y-5">
                         <div className="space-y-2">
-                            <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-500">Confirm import</p>
+                            <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-gray-600">Confirm import</p>
                             <h3 className="text-lg font-light">
                                 Import <span className="font-medium">{parsed.length}</span> models?
                             </h3>
-                            <p className="text-xs text-stone-600 leading-relaxed">
+                            <p className="text-xs text-gray-700 leading-relaxed">
                                 New Ref #s are created; existing ones are updated (photos and audio are preserved). This
                                 writes to the live database.
                             </p>
@@ -455,13 +455,13 @@ export const ImportModelsPanel = ({ onDone }: { onDone: () => void }) => {
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowConfirm(false)}
-                                className="flex-1 py-3 rounded-md border border-stone-300 text-[10px] uppercase tracking-[0.25em] font-bold text-stone-500 hover:border-stone-900 hover:text-stone-900 transition-colors"
+                                className="flex-1 py-3 rounded-md border border-gray-400 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={runImport}
-                                className="flex-1 py-3 rounded-md bg-stone-900 text-white text-[10px] uppercase tracking-[0.25em] font-bold hover:bg-stone-700 transition-colors"
+                                className="flex-1 py-3 rounded-md bg-gray-900 text-white text-[10px] uppercase tracking-[0.25em] font-bold hover:bg-gray-800 transition-colors"
                             >
                                 Yes, import
                             </button>

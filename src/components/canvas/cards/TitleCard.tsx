@@ -9,19 +9,23 @@ export function TitleCard({ model }: { model: ModelData }) {
     const year = model.year;
 
     return (
-        <div className={`${CARD_SHELL} p-6 select-none`} style={{ width: 300 }}>
-            <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-500 mb-2 font-mono">
+        <div className={`${CARD_SHELL} p-6 select-none`} style={{ width: 280 }}>
+            <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-gray-400 mb-4 font-mono">
                 {model.modelNumber ?? "—"}
             </p>
-            <h1 className="text-2xl font-normal tracking-tight leading-tight text-stone-900 mb-3">{title}</h1>
+            <h1 className="text-[22px] font-light tracking-tight leading-snug text-gray-900 mb-5">{title}</h1>
             {(architect || year) && (
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] font-bold text-stone-600">
-                    {architect && <span>{architect}</span>}
-                    {architect && year && <span className="w-px h-3 bg-stone-300 inline-block" />}
-                    {year && <span>{year}</span>}
+                <div className="space-y-1">
+                    {architect && (
+                        <p className="text-[8px] uppercase tracking-[0.4em] font-bold text-gray-500 leading-relaxed">
+                            {architect}
+                        </p>
+                    )}
+                    {year && (
+                        <p className="text-[10px] font-mono text-gray-400">{year}</p>
+                    )}
                 </div>
             )}
-            <div className="w-10 h-0.5 bg-stone-900 mt-5" />
         </div>
     );
 }

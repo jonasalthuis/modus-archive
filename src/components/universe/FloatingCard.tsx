@@ -23,20 +23,30 @@ const VERT = /* glsl */ `
 
 const FRAG = /* glsl */ `
   uniform sampler2D uMap;
-  uniform float uFade;     // 0 = visible, 1 = fully faded out
-  uniform float uDim;      // 0 = full colour, 1 = greyed/dimmed (filtered but shown)
-  uniform float uFogNear;  // eye-space depth where the fade begins
-  uniform float uFogFar;   // …and where it's fully gone
+  uniform float uFade;        // 0 = visible, 1 = fully faded out
+  uniform float uDim;         // 0 = full colour, 1 = greyed/dimmed (filtered but shown)
+  uniform float uFogNear;     // eye-space depth where the fade begins
+  uniform float uFogFar;      // …and where it's fully gone
+  uniform float uImageAspect; // actual image width/height (for cover cropping)
+  uniform float uFocusAlpha;  // 1.0 normally, 0.85 when this card is the focused one
   varying vec2 vUv;
   varying float vEyeZ;
   void main() {
-    vec4 tex = texture2D(uMap, vUv);
+    // Cover: fill plane preserving image aspect ratio, crop overflow.
+    const float planeAspect = 2.7 / 2.0; // 1.35
+    vec2 uv = vUv;
+    if (uImageAspect > planeAspect) {
+      uv.x = (uv.x - 0.5) * (planeAspect / uImageAspect) + 0.5;
+    } else {
+      uv.y = (uv.y - 0.5) * (uImageAspect / planeAspect) + 0.5;
+    }
+    vec4 tex = texture2D(uMap, uv);
     float fog = 1.0 - smoothstep(uFogNear, uFogFar, vEyeZ);
     // Desaturate + reduce opacity when dimmed
     float lum = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
     vec3 grey = vec3(lum);
     vec3 rgb = mix(tex.rgb, grey, uDim * 0.85);
-    float a = tex.a * fog * (1.0 - uFade) * mix(1.0, 0.22, uDim);
+    float a = tex.a * fog * (1.0 - uFade) * mix(1.0, 0.22, uDim) * uFocusAlpha;
     gl_FragColor = vec4(rgb, a);
   }
 `;
@@ -80,33 +90,37 @@ function makeCardTexture(model: UniverseModel): THREE.CanvasTexture {
     cv.height = H;
     const ctx = cv.getContext("2d")!;
 
-    ctx.fillStyle = "#eceae6";
+    // White card, light grey border
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = "#cbc7c2";
+    ctx.strokeStyle = "#e5e7eb";
     ctx.lineWidth = 1.5;
     ctx.strokeRect(0.75, 0.75, W - 1.5, H - 1.5);
 
-    ctx.fillStyle = "#78716c";
-    ctx.font = "400 18px system-ui, sans-serif";
+    // Model number
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = "400 17px system-ui, sans-serif";
     ctx.fillText(model.modelNumber ?? "—", 32, 52);
 
-    ctx.fillStyle = "#1c1917";
-    ctx.font = "300 32px system-ui, sans-serif";
-    wrapText(ctx, model.title ?? "Untitled", 32, 112, W - 64, 46, 3);
+    // Title
+    ctx.fillStyle = "#111827";
+    ctx.font = "300 30px system-ui, sans-serif";
+    wrapText(ctx, model.title ?? "Untitled", 32, 108, W - 64, 44, 3);
 
-    ctx.fillStyle = "#1c1917";
-    ctx.fillRect(32, 262, 44, 2);
+    // Divider
+    ctx.fillStyle = "#d1d5db";
+    ctx.fillRect(32, 256, 40, 1.5);
 
     if (model.architect) {
-        ctx.fillStyle = "#44403c";
-        ctx.font = "600 15px system-ui, sans-serif";
-        const a = model.architect.length > 38 ? model.architect.slice(0, 38) + "…" : model.architect;
-        ctx.fillText(a.toUpperCase(), 32, 312);
+        ctx.fillStyle = "#374151";
+        ctx.font = "600 14px system-ui, sans-serif";
+        const a = model.architect.length > 40 ? model.architect.slice(0, 40) + "…" : model.architect;
+        ctx.fillText(a.toUpperCase(), 32, 306);
     }
     if (model.year) {
-        ctx.fillStyle = "#a8a29e";
-        ctx.font = "400 15px system-ui, sans-serif";
-        ctx.fillText(String(model.year), 32, 346);
+        ctx.fillStyle = "#9ca3af";
+        ctx.font = "400 14px system-ui, sans-serif";
+        ctx.fillText(String(model.year), 32, 338);
     }
 
     const t = new THREE.CanvasTexture(cv);
@@ -173,13 +187,23 @@ export function FloatingCard({ model, target, visible, dimmed, focused = false, 
 
     const shadowTex = useMemo(() => shadowTexture(), []);
 
+    const imageAspectRef = useRef(2.7 / 2.0); // updated after image loads
+
     const texture = useMemo<THREE.Texture>(() => {
         const url = model.images?.find((i) => i.isStarred)?.url ?? model.images?.[0]?.url;
         if (url) {
             const loader = new THREE.TextureLoader();
             loader.crossOrigin = 'anonymous';
-            return loader.load(url);
+            return loader.load(url, (tex) => {
+                if (tex.image?.width && tex.image?.height) {
+                    imageAspectRef.current = tex.image.width / tex.image.height;
+                    if (matRef.current) {
+                        matRef.current.uniforms.uImageAspect.value = imageAspectRef.current;
+                    }
+                }
+            });
         }
+        // Canvas texture — aspect matches plane (600/440 ≈ 1.36 ≈ plane 1.35)
         return makeCardTexture(model);
     }, [model]);
 
@@ -190,7 +214,10 @@ export function FloatingCard({ model, target, visible, dimmed, focused = false, 
             uDim: { value: 0 },
             uFogNear: { value: 55 },
             uFogFar: { value: 130 },
+            uImageAspect: { value: imageAspectRef.current },
+            uFocusAlpha: { value: 1.0 },
         }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [texture],
     );
 
@@ -248,6 +275,10 @@ export function FloatingCard({ model, target, visible, dimmed, focused = false, 
             const uDim = matRef.current.uniforms.uDim;
             const targetDim = dimmedRef.current ? 1 : 0;
             uDim.value += (targetDim - uDim.value) * 0.10;
+
+            // Focused card: 85% opacity so floating cards remain visible behind it.
+            const uFocusAlpha = matRef.current.uniforms.uFocusAlpha;
+            uFocusAlpha.value += ((focusedRef.current ? 0.85 : 1.0) - uFocusAlpha.value) * 0.1;
 
             // Depth fade only in the open universe; off elsewhere so pulling the
             // camera back (clustered / grid) doesn't fade everything out.

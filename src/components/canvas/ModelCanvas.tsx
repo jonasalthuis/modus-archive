@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Save, RotateCcw, Pin, PinOff, ChevronLeft, ChevronRight, Play, Pause, Square, Maximize } from "lucide-react";
+import { Save, RotateCcw, Pin, PinOff, ChevronLeft, ChevronRight, Play, Pause, Square, Maximize, ArrowLeft } from "lucide-react";
 import { clean } from "@/lib/modelUtils";
 import type { CanvasItemLayout, ImageGroup, ModelData } from "@/types/model";
 import { AudioControllerContext, type AudioController } from "./audioContext";
-import { CanvasBackground } from "./CanvasBackground";
 import { TitleCard } from "./cards/TitleCard";
 import { MetaCard } from "./cards/MetaCard";
 import { NotesCard } from "./cards/NotesCard";
@@ -14,7 +14,9 @@ import { PhotoCard } from "./cards/PhotoCard";
 import { GalleryCard } from "./cards/GalleryCard";
 import { StripCard } from "./cards/StripCard";
 import { AudioCard } from "./cards/AudioCard";
-import { FeaturedCard } from "./cards/FeaturedCard";
+import { HeroCard } from "./cards/HeroCard";
+import { TagsCard } from "./cards/TagsCard";
+import { CanvasHelp } from "./CanvasHelp";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -30,23 +32,32 @@ const ZOOM_SETTLE = 0.0005;
 
 type Slot = { x: number; y: number; jx: number; jy: number; rot: number };
 
-// Base positions in canvas-space, with jitter range
+// Layout constants — derived from actual card sizes so nothing overlaps.
+// Hero: 600×460 at x=60 → right edge x=660. Right column starts at x=700 (40px gap).
+// Secondary photos (320×240) stack in left column below hero, or in far-left column.
+// Far-left column: x = -(320+40) = -360 (width 320 → right edge -40, fully clear of center).
+
 const BASE_POSITIONS: Record<string, Slot> = {
-    title: { x: 40, y: 40, jx: 20, jy: 15, rot: 1.5 },
-    meta: { x: 820, y: 40, jx: 25, jy: 20, rot: 1.2 },
-    "featured-main": { x: 380, y: 70, jx: 15, jy: 15, rot: 1.0 },
-    "featured-secondary": { x: 430, y: 410, jx: 15, jy: 15, rot: 1.5 },
-    notes: { x: 40, y: 400, jx: 20, jy: 25, rot: 2.0 },
-    audio: { x: 840, y: 390, jx: 20, jy: 20, rot: 1.5 },
+    title: { x: 700, y: 60,  jx: 0, jy: 0, rot: 0 },
+    meta:  { x: 700, y: 280, jx: 0, jy: 0, rot: 0 },
+    notes: { x: 700, y: 680, jx: 0, jy: 0, rot: 0 },
+    tags:  { x: 700, y: 920, jx: 0, jy: 0, rot: 0 },
+    audio: { x: 700, y: 1100, jx: 0, jy: 0, rot: 0 },
 };
-// Image groups get distributed across these slots (canvas-space)
+
 const IMAGE_SLOTS: Slot[] = [
-    { x: 400, y: 38, jx: 30, jy: 25, rot: 3.0 },
-    { x: 40, y: 420, jx: 25, jy: 25, rot: 2.5 },
-    { x: 430, y: 390, jx: 30, jy: 25, rot: 3.0 },
-    { x: 820, y: 420, jx: 25, jy: 20, rot: 2.0 },
-    { x: 700, y: 650, jx: 30, jy: 25, rot: 3.0 },
-    { x: 150, y: 700, jx: 25, jy: 25, rot: 2.5 },
+    { x: 60,   y: 60,   jx: 0,  jy: 0,  rot: 0 },  // [0]  hero (600×460) — fixed; right edge 660
+    { x: 60,   y: 560,  jx: 10, jy: 10, rot: 0 },  // [1]  below hero (320×240) — right edge 380
+    { x: 60,   y: 860,  jx: 10, jy: 10, rot: 0 },  // [2]  further below
+    { x: -360, y: 60,   jx: 10, jy: 15, rot: 0 },  // [3]  far-left top
+    { x: -360, y: 360,  jx: 10, jy: 15, rot: 0 },  // [4]  far-left mid
+    { x: -360, y: 660,  jx: 10, jy: 15, rot: 0 },  // [5]  far-left lower
+    { x: 60,   y: 1160, jx: 10, jy: 15, rot: 0 },  // [6]  deep below
+    { x: -360, y: 960,  jx: 10, jy: 15, rot: 0 },  // [7]  far-left deep
+    { x: 60,   y: 1460, jx: 10, jy: 20, rot: 0 },  // [8]  very deep
+    { x: -360, y: 1260, jx: 10, jy: 20, rot: 0 },  // [9]  far-left very deep
+    { x: 60,   y: 1760, jx: 10, jy: 20, rot: 0 },  // [10] deepest left
+    { x: -360, y: 1560, jx: 10, jy: 20, rot: 0 },  // [11] deepest far-left
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -88,9 +99,8 @@ function generateLayout(model: ModelData): CanvasItemLayout[] {
 
     place("title", BASE_POSITIONS.title);
     place("meta", BASE_POSITIONS.meta);
-    if (model.featured?.main?.url) place("featured-main", BASE_POSITIONS["featured-main"]);
-    if (model.featured?.secondary?.url) place("featured-secondary", BASE_POSITIONS["featured-secondary"]);
     if (clean(model.notes)) place("notes", BASE_POSITIONS.notes);
+    if (model.tags?.length) place("tags", BASE_POSITIONS.tags);
     if (model.voiceNarrative) place("audio", BASE_POSITIONS.audio);
 
     const groups = getImageGroups(model);
@@ -102,8 +112,9 @@ function generateLayout(model: ModelData): CanvasItemLayout[] {
     return items;
 }
 
+const LAYOUT_VERSION = "v5";
 function storageKey(modelId: string) {
-    return `nma-canvas-${modelId}`;
+    return `nma-canvas-${LAYOUT_VERSION}-${modelId}`;
 }
 
 // ─── Drag state ref (mutable, never triggers re-render) ───────────────────────
@@ -162,10 +173,10 @@ const CanvasItems = React.memo(function CanvasItems({
                             }}
                             title={item.pinned ? "Unpin (allow moving)" : "Pin in place"}
                             aria-label={item.pinned ? "Unpin item" : "Pin item"}
-                            className={`absolute -top-2.5 -right-2.5 w-6 h-6 flex items-center justify-center border rounded-md bg-white transition-all duration-200 ${
+                            className={`absolute -top-2.5 -right-2.5 w-6 h-6 flex items-center justify-center border rounded-md bg-white cursor-pointer transition-all duration-150 ${
                                 item.pinned
-                                    ? "opacity-100 border-stone-900 text-stone-900"
-                                    : "opacity-0 group-hover:opacity-100 border-stone-200 text-stone-400 hover:border-stone-900 hover:text-stone-900"
+                                    ? "opacity-100 border-stone-900 text-stone-900 hover:bg-stone-900 hover:text-white"
+                                    : "opacity-0 group-hover:opacity-100 border-stone-200 text-stone-400 hover:bg-stone-900 hover:border-stone-900 hover:text-white"
                             }`}
                         >
                             {item.pinned ? <Pin size={11} fill="currentColor" /> : <PinOff size={11} />}
@@ -233,6 +244,7 @@ export function ModelCanvas({
     const [dragging, setDragging] = useState(false);
     const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
     const [savedFeedback, setSavedFeedback] = useState(false);
+    const [canvasVisible, setCanvasVisible] = useState(false);
 
     // ── Shared audio controller (one <audio> element; controlled from the
     //    on-canvas card and the bottom bar) ──────────────────────────────────
@@ -377,9 +389,49 @@ export function ModelCanvas({
         if (typeof window === "undefined" || window.innerWidth >= 768) return;
         if (items.length === 0) return;
         didMobileFitRef.current = true;
+        setCanvasVisible(true);
         const r = requestAnimationFrame(() => requestAnimationFrame(() => zoomEverything()));
         return () => cancelAnimationFrame(r);
     }, [items, zoomEverything]);
+
+    // On desktop: zoom into the hero image on load and stay there.
+    const introPlayedRef = useRef(false);
+    const introTimer1Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => {
+        if (introPlayedRef.current || items.length === 0) return;
+        if (typeof window === "undefined" || window.innerWidth < 768) return;
+        introPlayedRef.current = true;
+
+        // Fade in the canvas just before the zoom fires so nothing snaps
+        setTimeout(() => setCanvasVisible(true), 40);
+        introTimer1Ref.current = setTimeout(() => {
+            const el = viewportRef.current;
+            if (!el) return;
+            const { width: vw, height: vh } = el.getBoundingClientRect();
+
+            const heroId = itemsRef.current.find(i => i.id.startsWith("image-"))?.id;
+            const heroItem = heroId ? itemsRef.current.find(i => i.id === heroId) : null;
+            const heroEl = heroId
+                ? el.querySelector<HTMLElement>(`[data-canvas-item-id="${heroId}"]`)
+                : null;
+
+            if (heroItem && heroEl) {
+                const w = heroEl.offsetWidth;
+                const h = heroEl.offsetHeight;
+                const cx = heroItem.x + w / 2;
+                const cy = heroItem.y + h / 2;
+                // 0.65 fill: hero visible without being overwhelming, title card peeking in
+                const scale = clamp(Math.min((vw * 0.65) / w, (vh * 0.65) / h), SCALE_MIN, SCALE_MAX);
+                setTransform({ x: vw / 2 - cx * scale, y: vh / 2 - cy * scale, scale });
+                zoomRef.current.target = scale;
+            }
+        }, 80);
+
+        return () => {
+            if (introTimer1Ref.current) clearTimeout(introTimer1Ref.current);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [items.length]);
 
     useEffect(() => {
         const el = viewportRef.current;
@@ -405,16 +457,22 @@ export function ModelCanvas({
         const handleWheel = (e: WheelEvent) => {
             e.preventDefault();
             const rect = el.getBoundingClientRect();
-            zoomRef.current.anchorX = e.clientX - rect.left;
-            zoomRef.current.anchorY = e.clientY - rect.top;
-            // Compound, frame-rate independent: exp() keeps zoom steps proportional
-            const base = zoomRef.current.target || transformRef.current.scale;
-            zoomRef.current.target = clamp(
-                base * Math.exp(-e.deltaY * ZOOM_SENSITIVITY),
-                SCALE_MIN,
-                SCALE_MAX,
-            );
-            if (rafRef.current === null) rafRef.current = requestAnimationFrame(step);
+
+            if (e.ctrlKey) {
+                // Pinch-to-zoom gesture (Mac trackpad pinch sets ctrlKey)
+                zoomRef.current.anchorX = e.clientX - rect.left;
+                zoomRef.current.anchorY = e.clientY - rect.top;
+                const base = zoomRef.current.target || transformRef.current.scale;
+                zoomRef.current.target = clamp(
+                    base * Math.exp(-e.deltaY * ZOOM_SENSITIVITY),
+                    SCALE_MIN,
+                    SCALE_MAX,
+                );
+                if (rafRef.current === null) rafRef.current = requestAnimationFrame(step);
+            } else {
+                // Two-finger swipe: pan the canvas (deltaX + deltaY)
+                setTransform((t) => ({ ...t, x: t.x - e.deltaX, y: t.y - e.deltaY }));
+            }
         };
 
         el.addEventListener("wheel", handleWheel, { passive: false });
@@ -605,16 +663,15 @@ export function ModelCanvas({
         (itemId: string): React.ReactNode => {
             if (itemId === "title") return <TitleCard model={model} />;
             if (itemId === "meta") return <MetaCard model={model} />;
-            if (itemId === "featured-main" && model.featured?.main)
-                return <FeaturedCard image={model.featured.main} role="main" />;
-            if (itemId === "featured-secondary" && model.featured?.secondary)
-                return <FeaturedCard image={model.featured.secondary} role="secondary" />;
             if (itemId === "notes" && notes) return <NotesCard notes={notes} />;
+            if (itemId === "tags" && model.tags?.length) return <TagsCard tags={model.tags} />;
             if (itemId === "audio" && model.voiceNarrative) return <AudioCard />;
             if (itemId.startsWith("image-")) {
                 const groupId = itemId.replace("image-", "");
                 const group = imageGroups.find((g) => g.id === groupId);
                 if (!group || group.images.length === 0) return null;
+                // First image group is the hero — render large
+                if (imageGroups[0]?.id === groupId) return <HeroCard group={group} />;
                 if (group.mode === "gallery") return <GalleryCard group={group} />;
                 if (group.mode === "strip") return <StripCard group={group} />;
                 return <PhotoCard group={group} />;
@@ -624,8 +681,16 @@ export function ModelCanvas({
         [model, notes, imageGroups],
     );
 
+    const [archiveHref, setArchiveHref] = useState("/");
+    useEffect(() => {
+        try {
+            const saved = sessionStorage.getItem("archive_view");
+            if (saved) setArchiveHref(`/?view=${saved}`);
+        } catch { /* private browsing */ }
+    }, []);
+
     const iconBtn =
-        "w-9 h-9 flex items-center justify-center border border-stone-200 rounded-md bg-white text-stone-600 hover:border-stone-900 hover:text-stone-900 transition-colors disabled:opacity-30 disabled:pointer-events-none";
+        "w-[34px] h-[34px] flex items-center justify-center border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl text-stone-500 cursor-pointer hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none";
     const divider = <span className="w-px h-5 bg-stone-200 mx-1" aria-hidden />;
     const fmt = (s: number) => {
         if (!isFinite(s)) return "0:00";
@@ -638,19 +703,16 @@ export function ModelCanvas({
         <AudioControllerContext.Provider value={audioController}>
             <div
                 ref={viewportRef}
-                className="fixed inset-0 bg-stone-50 overflow-hidden touch-none"
+                className="fixed inset-0 bg-white overflow-hidden touch-none"
                 style={{ cursor: dragging ? "grabbing" : "default" }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
             >
-                {/* Parallax dotted depth background */}
-                <CanvasBackground x={transform.x} y={transform.y} scale={transform.scale} />
-
                 {/* Canvas layer — all items live inside here */}
                 <div
-                    className="absolute top-0 left-0"
+                    className={`absolute top-0 left-0 transition-opacity duration-700 ${canvasVisible ? "opacity-100" : "opacity-0"}`}
                     style={{
                         transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                         transformOrigin: "0 0",
@@ -678,15 +740,36 @@ export function ModelCanvas({
                     />
                 )}
 
-                {/* ── Model number — top right, prominent ── */}
-                <div className="fixed top-6 right-8 z-50 select-none">
-                    <span className="inline-block border border-stone-300 rounded-md bg-white px-3 py-2 text-[11px] font-bold tracking-[0.35em] text-stone-800 font-mono">
-                        {model.modelNumber ?? "—"}
+                {/* ── Top-left overlay: phantom NMA → back arrow → model number+title ── */}
+                <div className="fixed top-4 left-4 right-4 z-40 flex items-center gap-2 pointer-events-none select-none">
+                    <div className="h-[34px] px-3 text-[10px] font-bold uppercase tracking-[0.4em] opacity-0 flex-shrink-0">NMA</div>
+                    <div className="relative group/back pointer-events-auto flex-shrink-0">
+                        <Link
+                            href={archiveHref}
+                            aria-label="Back to archive"
+                            className="inline-flex items-center justify-center w-[34px] h-[34px] border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                        >
+                            <ArrowLeft size={13} />
+                        </Link>
+                        <span className="absolute top-full mt-2 left-0 px-2 py-1 whitespace-nowrap text-[9px] uppercase tracking-[0.25em] font-bold text-stone-900 bg-white/80 backdrop-blur-xl border border-stone-200 rounded pointer-events-none opacity-0 group-hover/back:opacity-100 transition-opacity duration-150">
+                            Back to archive
+                        </span>
+                    </div>
+                    <span className="pointer-events-auto inline-flex items-center gap-2 h-[34px] px-3 border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl flex-shrink-0 min-w-0">
+                        <span className="text-[10px] font-bold tracking-[0.35em] text-stone-500 font-mono flex-shrink-0">{model.modelNumber ?? "—"}</span>
+                        {model.title && (
+                            <>
+                                <span className="text-stone-200 text-[10px]">|</span>
+                                <span className="text-[10px] font-light tracking-tight text-stone-700 truncate max-w-[260px]">{model.title}</span>
+                            </>
+                        )}
                     </span>
                 </div>
 
+                <CanvasHelp />
+
                 {/* ── Bottom control row (icons only, no visible bar) ── */}
-                <div className="fixed bottom-6 right-8 z-50 flex items-center gap-2">
+                <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2">
                     {/* Prev / next published model */}
                     <button
                         onClick={() => prevId && router.push(`/models/${prevId}`)}
@@ -716,7 +799,7 @@ export function ModelCanvas({
                         aria-label="Save view"
                         className={
                             savedFeedback
-                                ? "w-9 h-9 flex items-center justify-center border border-stone-900 rounded-md bg-white text-stone-900"
+                                ? "w-[34px] h-[34px] flex items-center justify-center border border-stone-900 rounded-md bg-stone-900 text-white"
                                 : iconBtn
                         }
                     >

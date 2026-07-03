@@ -69,13 +69,13 @@ const EMPTY_FORM: ModelForm = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const Label = ({ children }: { children: React.ReactNode }) => (
-    <p className="text-[9px] uppercase tracking-[0.35em] font-bold text-stone-400 mb-1.5">{children}</p>
+    <p className="text-[9px] uppercase tracking-[0.35em] font-bold text-gray-500 mb-1.5">{children}</p>
 );
 
 const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
     <input
         {...props}
-        className="w-full border border-stone-300 focus:border-black outline-none px-3 py-2.5 text-sm font-light transition-colors bg-white"
+        className="w-full border border-gray-400 focus:border-black outline-none px-3 py-2.5 text-sm font-light transition-colors bg-white"
     />
 );
 
@@ -85,7 +85,7 @@ const Select = ({
 }: React.SelectHTMLAttributes<HTMLSelectElement> & { children: React.ReactNode }) => (
     <select
         {...props}
-        className="w-full border border-stone-300 focus:border-black outline-none px-3 py-2.5 text-sm font-light transition-colors bg-white appearance-none cursor-pointer"
+        className="w-full border border-gray-400 focus:border-black outline-none px-3 py-2.5 text-sm font-light transition-colors bg-white appearance-none cursor-pointer"
     >
         {children}
     </select>
@@ -270,17 +270,17 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
     return (
         <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in duration-300">
             {/* ── Header ── */}
-            <div className="flex items-start justify-between border-b border-stone-300 pb-6">
+            <div className="flex items-start justify-between border-b border-gray-400 pb-6">
                 <div>
                     <h2 className="text-2xl font-light uppercase tracking-[0.15em]">New Model</h2>
-                    <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-300 mt-1">
+                    <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-400 mt-1">
                         Fill in the details, then drag in photos
                     </p>
                 </div>
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-300 hover:text-stone-900 transition-colors mt-1"
+                    className="text-[9px] uppercase tracking-[0.3em] font-bold text-gray-400 hover:text-gray-900 transition-colors mt-1"
                 >
                     Cancel
                 </button>
@@ -289,7 +289,7 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
             <div className="grid grid-cols-1 xl:grid-cols-5 gap-10">
                 {/* ── Metadata ── */}
                 <div className="xl:col-span-3 space-y-5">
-                    <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-stone-300">Details</p>
+                    <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-gray-400">Details</p>
 
                     {/* Row: number + year */}
                     <div className="grid grid-cols-2 gap-4">
@@ -309,7 +309,7 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
                                 </p>
                             )}
                             {pendingCount > 0 && modelNumSet && (
-                                <p className="text-[9px] text-stone-400 mt-1">
+                                <p className="text-[9px] text-gray-500 mt-1">
                                     {pendingCount} image(s) queued to upload
                                 </p>
                             )}
@@ -430,7 +430,7 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
                             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                             placeholder="Additional notes about this model…"
                             rows={4}
-                            className="w-full border border-stone-300 focus:border-black outline-none px-3 py-2.5 text-sm font-light transition-colors bg-white resize-none"
+                            className="w-full border border-gray-400 focus:border-black outline-none px-3 py-2.5 text-sm font-light transition-colors bg-white resize-none"
                         />
                     </div>
 
@@ -446,13 +446,13 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
                                     onClick={() => setForm((f) => ({ ...f, [key]: !f[key] }))}
                                     className={`w-10 h-5 flex items-center px-0.5 border transition-colors ${
                                         form[key]
-                                            ? "bg-stone-900 border-stone-900 justify-end"
-                                            : "border-stone-300 justify-start"
+                                            ? "bg-gray-900 border-gray-900 justify-end"
+                                            : "border-gray-400 justify-start"
                                     }`}
                                 >
-                                    <div className={`w-4 h-4 ${form[key] ? "bg-white" : "bg-stone-200"}`} />
+                                    <div className={`w-4 h-4 ${form[key] ? "bg-white" : "bg-gray-300"}`} />
                                 </button>
-                                <span className="text-[9px] uppercase tracking-[0.25em] font-bold text-stone-500">
+                                <span className="text-[9px] uppercase tracking-[0.25em] font-bold text-gray-600">
                                     {label}
                                 </span>
                             </label>
@@ -463,9 +463,9 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
                 {/* ── Image upload ── */}
                 <div className="xl:col-span-2 space-y-4">
                     <div className="flex items-center justify-between">
-                        <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-stone-300">Photos</p>
+                        <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-gray-400">Photos</p>
                         {images.length > 0 && (
-                            <span className="text-[9px] font-mono text-stone-400">
+                            <span className="text-[9px] font-mono text-gray-500">
                                 {activeUploads > 0 ? (
                                     <span className="flex items-center gap-1">
                                         <Loader2 size={9} className="animate-spin" /> {activeUploads} uploading…
@@ -488,18 +488,18 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
                         onClick={() => fileInputRef.current?.click()}
                         className={`border-2 border-dashed p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 min-h-[180px] ${
                             dragOver
-                                ? "border-stone-900 bg-stone-50 scale-[1.01]"
-                                : "border-stone-300 hover:border-stone-400 hover:bg-stone-50"
+                                ? "border-gray-900 bg-gray-100 scale-[1.01]"
+                                : "border-gray-400 hover:border-gray-500 hover:bg-gray-100"
                         }`}
                     >
                         <Upload
                             size={20}
-                            className={`mb-3 transition-colors ${dragOver ? "text-stone-900" : "text-stone-200"}`}
+                            className={`mb-3 transition-colors ${dragOver ? "text-gray-900" : "text-gray-300"}`}
                         />
-                        <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-stone-400">
+                        <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-500">
                             Drop images here
                         </p>
-                        <p className="text-[9px] text-stone-300 mt-1.5">or click to browse — JPG, PNG, TIFF</p>
+                        <p className="text-[9px] text-gray-400 mt-1.5">or click to browse — JPG, PNG, TIFF</p>
                         {!modelNumSet && (
                             <p className="text-[9px] text-amber-500 mt-3 font-bold flex items-center gap-1">
                                 <AlertCircle size={9} /> Enter model number first
@@ -523,7 +523,7 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
                             {images.map((img) => (
                                 <div
                                     key={img.id}
-                                    className="relative group aspect-square bg-stone-50 overflow-hidden border border-stone-300"
+                                    className="relative group aspect-square bg-gray-100 overflow-hidden border border-gray-400"
                                 >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={img.preview} alt="" className="w-full h-full object-cover" />
@@ -552,7 +552,7 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
 
                                     {/* Uploaded indicator */}
                                     {img.url && !img.uploading && (
-                                        <div className="absolute top-1 left-1 w-4 h-4 bg-stone-900 flex items-center justify-center">
+                                        <div className="absolute top-1 left-1 w-4 h-4 bg-gray-900 flex items-center justify-center">
                                             <Check size={8} className="text-white" />
                                         </div>
                                     )}
@@ -604,15 +604,15 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
                             {/* Add more */}
                             <div
                                 onClick={() => fileInputRef.current?.click()}
-                                className="aspect-square border-2 border-dashed border-stone-300 flex items-center justify-center cursor-pointer hover:border-stone-400 hover:bg-stone-50 transition-all"
+                                className="aspect-square border-2 border-dashed border-gray-400 flex items-center justify-center cursor-pointer hover:border-gray-500 hover:bg-gray-100 transition-all"
                             >
-                                <Plus size={14} className="text-stone-300" />
+                                <Plus size={14} className="text-gray-400" />
                             </div>
                         </div>
                     )}
 
                     {images.length > 0 && (
-                        <p className="text-[9px] text-stone-300 leading-relaxed">
+                        <p className="text-[9px] text-gray-400 leading-relaxed">
                             <Star size={8} className="inline fill-amber-300 text-amber-300 mr-1" />= hero image shown in
                             the archive grid. Hover thumbnails to set hero or remove. Numbers cycle importance (1 =
                             high).
@@ -622,7 +622,7 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
             </div>
 
             {/* ── Footer ── */}
-            <div className="border-t border-stone-300 pt-6 flex items-center justify-between gap-4 flex-wrap">
+            <div className="border-t border-gray-400 pt-6 flex items-center justify-between gap-4 flex-wrap">
                 <div>
                     {submitError && (
                         <p className="text-[10px] text-red-500 flex items-center gap-1.5">
@@ -634,14 +634,14 @@ export const AddModelPanel = ({ onSave, onCancel }: { onSave: () => void; onCanc
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="text-[9px] uppercase tracking-[0.25em] font-bold text-stone-300 hover:text-stone-900 transition-colors px-4 py-3"
+                        className="text-[9px] uppercase tracking-[0.25em] font-bold text-gray-400 hover:text-gray-900 transition-colors px-4 py-3"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={saving || activeUploads > 0}
-                        className="bg-stone-900 text-white px-8 py-3 text-[10px] uppercase tracking-[0.25em] font-bold hover:bg-stone-700 transition-colors disabled:opacity-40 flex items-center gap-2"
+                        className="bg-gray-900 text-white px-8 py-3 text-[10px] uppercase tracking-[0.25em] font-bold hover:bg-gray-800 transition-colors disabled:opacity-40 flex items-center gap-2"
                     >
                         {saving ? (
                             <>

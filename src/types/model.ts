@@ -1,11 +1,12 @@
 export interface ModelImage {
     url: string;
-    importance: 1 | 2 | 3;
+    importance?: 1 | 2 | 3;
     isStarred: boolean;
     caption?: string;
 }
 
-export type ImageGroupMode = "single" | "gallery" | "strip";
+/** strip = side-by-side row, cluster = loose unordered grouping, lightbox = click-through slideshow */
+export type ImageGroupMode = "strip" | "cluster" | "lightbox" | "single" | "gallery";
 
 // For "strip" (side-by-side) groups: lay images out in a row or a column
 export type StripOrientation = "horizontal" | "vertical";

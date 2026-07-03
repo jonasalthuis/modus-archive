@@ -12,11 +12,11 @@ export function StripCard({ group }: { group: ImageGroup }) {
     const width = vertical ? 240 : Math.min(140 * images.length + 16, 440);
 
     return (
-        <div className="bg-white border border-stone-200 rounded-lg shadow-[0_14px_40px_-12px_rgba(28,25,23,0.30)] p-2 select-none" style={{ width }}>
+        <div className="bg-white border border-gray-200 rounded-lg shadow-[0_2px_12px_rgba(0,0,0,0.06)] p-2 select-none" style={{ width }}>
             <div className={vertical ? "flex flex-col gap-2" : "flex gap-2"}>
                 {images.map((img, i) => (
                     <div key={img.url + i} className={vertical ? "space-y-1" : "flex-1 space-y-1"}>
-                        <div className={`relative bg-stone-100 ${vertical ? "aspect-[4/3]" : "aspect-square"}`}>
+                        <div className={`relative bg-gray-100 ${vertical ? "aspect-[4/3]" : "aspect-square"}`}>
                             <Image
                                 src={img.url}
                                 alt={img.caption ?? `Photo ${i + 1}`}
@@ -26,7 +26,7 @@ export function StripCard({ group }: { group: ImageGroup }) {
                                 draggable={false}
                             />
                         </div>
-                        {img.caption && <p className="text-[9px] font-normal text-stone-600 truncate">{img.caption}</p>}
+                        {img.caption && <p className="text-[9px] font-normal text-gray-600 truncate">{img.caption}</p>}
                     </div>
                 ))}
             </div>

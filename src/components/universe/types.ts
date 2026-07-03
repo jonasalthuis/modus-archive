@@ -57,16 +57,24 @@ export interface Cluster {
 // Filters driven by the grid-mode header controls. Applied in every mode.
 export interface Filters {
     text: string;
+    pinnedTerms: string[]; // pinned search terms — each must match, stacked AND logic
     modelType: string | null;
     buildingType: string | null;
     buildingStatus: string | null;
+    leadMaker: string | null;
+    material: string | null;
+    decade: string | null;
     scales: string[]; // selected raw scale strings, e.g. ["1:200", "1:500"]
 }
 
 export const EMPTY_FILTERS: Filters = {
     text: "",
+    pinnedTerms: [],
     modelType: null,
     buildingType: null,
     buildingStatus: null,
+    leadMaker: null,
+    material: null,
+    decade: null,
     scales: [],
 };

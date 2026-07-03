@@ -264,11 +264,15 @@ function fitToBox(
 function CameraRig({
     targets,
     cameraCmd,
+    locked,
 }: {
     targets: Map<string, Target>;
     cameraCmd: CameraCommand;
+    locked: boolean;
 }) {
     const { camera, controls, size } = useThree();
+    const lockedRef = useRef(locked);
+    lockedRef.current = locked;
     const anim = useRef<{
         active: boolean;
         t: number;
@@ -331,7 +335,10 @@ function CameraRig({
         camera.lookAt(c?.target ?? a.toTar);
         if (a.t >= 1) {
             a.active = false;
-            if (c) {
+            // Only re-enable orbit controls when not in focus-lock mode.
+            // If locked=true (card is focused), controls stay disabled so damping
+            // doesn't fire residual velocity between back-to-back focus animations.
+            if (c && !lockedRef.current) {
                 c.enabled = true;
                 c.update?.();
             }
@@ -365,7 +372,31 @@ function buildRoundedRectPoints(b: ClusterBounds, r: number, segs: number): THRE
     return pts;
 }
 
-function ClusterOutline({ bounds }: { bounds: ClusterBounds }) {
+// Invisible plane covering cluster bounds — acts as hover hit area for the whole group.
+function ClusterHitArea({ bounds, clusterKey, hovered, onHover }: {
+    bounds: ClusterBounds;
+    clusterKey: string;
+    hovered: boolean;
+    onHover: (key: string | null) => void;
+}) {
+    const { x1, y1, x2, y2, z } = bounds;
+    const cx = (x1 + x2) / 2;
+    const cy = (y1 + y2) / 2;
+    const w = x2 - x1;
+    const h = y2 - y1;
+    return (
+        <mesh
+            position={[cx, cy, z - 0.05]}
+            onPointerEnter={() => onHover(clusterKey)}
+            onPointerLeave={() => onHover(null)}
+        >
+            <planeGeometry args={[w, h]} />
+            <meshBasicMaterial color="#e7e5e4" transparent opacity={hovered ? 0.35 : 0} depthWrite={false} />
+        </mesh>
+    );
+}
+
+function ClusterOutline({ bounds, hovered }: { bounds: ClusterBounds; hovered: boolean }) {
     const geo = useMemo(() => {
         const pts = buildRoundedRectPoints(bounds, 2.2, 12);
         return new THREE.BufferGeometry().setFromPoints(pts);
@@ -374,7 +405,11 @@ function ClusterOutline({ bounds }: { bounds: ClusterBounds }) {
     return (
         // @ts-expect-error – R3F lowercase JSX element
         <line geometry={geo}>
-            <lineBasicMaterial color="#a8a29e" transparent opacity={0.35} />
+            <lineBasicMaterial
+                color={hovered ? "#57534e" : "#a8a29e"}
+                transparent
+                opacity={hovered ? 0.75 : 0.5}
+            />
         </line>
     );
 }
@@ -428,7 +463,7 @@ export function Scene({ models, targets, mode, group, clusters, cameraCmd, pause
             <ControlsConfig mode={mode} group={group} paused={paused} locked={focusedId !== null} />
             <TrackpadControls />
             <ShiftDragPan mode={mode} />
-            <CameraRig targets={targets} cameraCmd={cameraCmd} />
+            <CameraRig targets={targets} cameraCmd={cameraCmd} locked={focusedId !== null} />
 
             {models.map((m) => {
                 const t = targets.get(m.id);
@@ -471,9 +506,8 @@ export function Scene({ models, targets, mode, group, clusters, cameraCmd, pause
                                 <span className="font-mono text-[10px] text-stone-400">{c.count}</span>
                             </div>
                         </Html>
-                        {hoveredCluster === c.key && (
-                            <ClusterOutline bounds={c.bounds} />
-                        )}
+                        <ClusterOutline bounds={c.bounds} hovered={hoveredCluster === c.key} />
+                        <ClusterHitArea bounds={c.bounds} clusterKey={c.key} hovered={hoveredCluster === c.key} onHover={setHoveredCluster} />
                     </React.Fragment>
                 ))}
         </>

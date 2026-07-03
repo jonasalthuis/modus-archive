@@ -46,15 +46,15 @@ interface StatCardProps {
 const StatCard = ({ label, value, sub, icon, onClick }: StatCardProps) => (
     <div
         onClick={onClick}
-        className={`bg-white rounded-xl border border-stone-200 shadow-sm p-6 space-y-4 ${onClick ? "cursor-pointer hover:shadow-md hover:border-stone-300 transition-all duration-200 group" : ""}`}
+        className={`bg-white rounded-xl border border-gray-300 shadow-sm p-6 space-y-4 ${onClick ? "cursor-pointer hover:shadow-md hover:border-gray-400 transition-all duration-200 group" : ""}`}
     >
         <div className="flex justify-between items-start">
-            <span className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-400">{label}</span>
-            <span className="text-stone-200 group-hover:text-stone-400 transition-colors">{icon}</span>
+            <span className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-500">{label}</span>
+            <span className="text-gray-300 group-hover:text-gray-500 transition-colors">{icon}</span>
         </div>
         <div>
             <p className="text-4xl font-light tabular-nums">{value}</p>
-            {sub && <p className="text-[10px] text-stone-400 mt-1 font-mono">{sub}</p>}
+            {sub && <p className="text-[10px] text-gray-500 mt-1 font-mono">{sub}</p>}
         </div>
     </div>
 );
@@ -119,24 +119,24 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
     if (loading)
         return (
             <div className="py-32 flex flex-col items-center gap-4">
-                <div className="w-12 h-px bg-stone-200 animate-pulse" />
-                <p className="text-[10px] uppercase tracking-[0.5em] text-stone-300 animate-pulse">Loading metrics…</p>
+                <div className="w-12 h-px bg-gray-300 animate-pulse" />
+                <p className="text-[10px] uppercase tracking-[0.5em] text-gray-400 animate-pulse">Loading metrics…</p>
             </div>
         );
 
     return (
         <div className="space-y-12 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="border-b border-stone-300 pb-8">
+            <div className="border-b border-gray-400 pb-8">
                 <h2 className="text-3xl font-light uppercase tracking-[0.15em]">Dashboard</h2>
-                <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-stone-400 mt-2">
+                <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 mt-2">
                     Network Modelmakers Archive — Status overview
                 </p>
             </div>
 
             {/* Primary stats */}
             <div>
-                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-500 mb-4">Models</p>
+                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-gray-600 mb-4">Models</p>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard
                         label="Total models"
@@ -171,7 +171,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
 
             {/* Content stats */}
             <div>
-                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-400 mb-4">Content</p>
+                <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-gray-500 mb-4">Content</p>
                 <div className="grid grid-cols-2 gap-4">
                     <StatCard
                         label="Articles"
@@ -201,32 +201,32 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
             {recent.length > 0 && (
                 <div>
                     <div className="flex justify-between items-center mb-4">
-                        <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300">
+                        <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-gray-400">
                             Recently updated — Prototype
                         </p>
                         <button
                             onClick={() => onNavigate("models")}
-                            className="text-[9px] uppercase tracking-[0.2em] font-bold text-stone-400 hover:text-stone-900 transition-colors"
+                            className="text-[9px] uppercase tracking-[0.2em] font-bold text-gray-500 hover:text-gray-900 transition-colors"
                         >
                             View all →
                         </button>
                     </div>
-                    <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
+                    <div className="bg-white rounded-xl border border-gray-300 shadow-sm overflow-hidden">
                         {recent.map((m, i) => (
                             <div
                                 key={m.id}
-                                className={`flex items-center gap-6 px-5 py-3 hover:bg-stone-50 cursor-pointer transition-colors ${i < recent.length - 1 ? "border-b border-stone-200" : ""}`}
+                                className={`flex items-center gap-6 px-5 py-3 hover:bg-gray-100 cursor-pointer transition-colors ${i < recent.length - 1 ? "border-b border-gray-300" : ""}`}
                                 onClick={() => onNavigate("models")}
                             >
-                                <span className="text-[10px] font-mono text-stone-300 w-12 flex-shrink-0">
+                                <span className="text-[10px] font-mono text-gray-400 w-12 flex-shrink-0">
                                     {m.modelNumber || m.id}
                                 </span>
                                 <span className="text-sm font-light flex-1 truncate">{m.title || "—"}</span>
-                                <span className="text-[10px] text-stone-400 truncate hidden md:block">
+                                <span className="text-[10px] text-gray-500 truncate hidden md:block">
                                     {m.architect || "—"}
                                 </span>
                                 {m.updatedAt && (
-                                    <span className="text-[9px] font-mono text-stone-300 flex-shrink-0">
+                                    <span className="text-[9px] font-mono text-gray-400 flex-shrink-0">
                                         {new Date(m.updatedAt.seconds * 1000).toLocaleDateString("en-GB", {
                                             day: "2-digit",
                                             month: "short",

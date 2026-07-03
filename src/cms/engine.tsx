@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { signOut as firebaseSignOut, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth, VerifyEmailScreen, type Role } from "@/lib/auth";
@@ -19,6 +19,9 @@ import {
     HelpCircle,
     ChevronDown,
     Upload,
+    PanelLeftClose,
+    PanelLeftOpen,
+    ArrowLeft,
 } from "lucide-react";
 
 import { LoginView } from "./views/LoginView";
@@ -38,7 +41,7 @@ const ImportModelsPanel = dynamic(
     {
         ssr: false,
         loading: () => (
-            <p className="text-[10px] uppercase tracking-[0.5em] text-stone-400 py-20 text-center">Loading importer…</p>
+            <p className="text-[10px] uppercase tracking-[0.5em] text-gray-500 py-20 text-center">Loading importer…</p>
         ),
     },
 );
@@ -128,6 +131,7 @@ const Sidebar = ({
     activeView,
     user,
     role,
+    collapsed,
     onNavigate,
     onSignOut,
     onNewModel,
@@ -138,6 +142,7 @@ const Sidebar = ({
     activeView: ActiveView;
     user: User;
     role: Role;
+    collapsed: boolean;
     onNavigate: (v: ActiveView) => void;
     onSignOut: () => void;
     onNewModel: () => void;
@@ -145,11 +150,10 @@ const Sidebar = ({
     onNewDossier: () => void;
     onImportModels: () => void;
 }) => {
-    // Restrict the nav to what this role can access
+
     const allowedNavIds = navIdsForRole(role);
     const navItems = NAV.filter((n) => allowedNavIds.includes(n.id));
 
-    // Collect unique section labels in order (only for visible items)
     const sections: (string | null)[] = [];
     navItems.forEach((item) => {
         const s = item.section ?? null;
@@ -157,48 +161,71 @@ const Sidebar = ({
     });
 
     return (
-        <aside className="w-64 flex-shrink-0 border-r border-stone-300 flex flex-col h-full bg-white">
-            {/* Logo + exit to site */}
-            <div className="px-6 py-6 border-b border-stone-300">
-                <p className="text-2xl font-light uppercase tracking-[0.25em] text-stone-900">NMA</p>
-                <p className="text-[11px] uppercase tracking-[0.35em] font-bold text-stone-500 mt-1.5">Admin</p>
-                <a
-                    href="/"
-                    title="Leave the admin panel"
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-stone-300 px-2.5 py-1.5 text-[9px] uppercase tracking-[0.3em] font-bold text-stone-500 hover:text-stone-900 hover:border-stone-900 hover:bg-stone-50 transition-colors"
-                >
-                    Exit to site
-                    <ExternalLink size={11} />
-                </a>
+        <aside className="flex-shrink-0 border-r border-gray-200 flex flex-col h-full bg-white z-10 overflow-hidden" style={{ width: "100%" }}>
+            {/* Logo */}
+            <div className={`border-b border-gray-200 flex-shrink-0 ${collapsed ? "px-3 py-4 flex flex-col items-center gap-2" : "px-4 py-4"}`}>
+                {!collapsed && (
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                            {/* Exit to site — matches front-end back button style */}
+                            <a
+                                href="/"
+                                title="Exit to site"
+                                className="inline-flex items-center justify-center w-[34px] h-[34px] flex-shrink-0 border border-stone-200 rounded-md text-stone-400 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                            >
+                                <ArrowLeft size={13} />
+                            </a>
+                            {/* NMA button — matches front-end nav style */}
+                            <a
+                                href="/"
+                                className="text-[10px] font-bold uppercase tracking-[0.4em] px-3 rounded-md border border-stone-200 hover:border-stone-900 hover:bg-stone-900 hover:text-white bg-white text-stone-900 transition-colors duration-300 select-none h-[34px] flex items-center justify-center flex-shrink-0"
+                            >
+                                NMA
+                            </a>
+                            <span className="text-[9px] uppercase tracking-[0.35em] font-bold text-gray-400 truncate">Admin</span>
+                        </div>
+                    </div>
+                )}
+                {collapsed && (
+                    <a
+                        href="/"
+                        title="Exit to site"
+                        className="inline-flex items-center justify-center w-[34px] h-[34px] border border-stone-200 rounded-md text-stone-400 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                    >
+                        <ArrowLeft size={13} />
+                    </a>
+                )}
             </div>
 
             {/* Nav */}
-            <nav className="flex-1 py-4 overflow-y-auto">
+            <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden">
                 {sections.map((section) => {
                     const items = navItems.filter((n) => (n.section ?? null) === section);
                     return (
                         <div key={section ?? "top"} className="mb-1">
-                            {section && (
-                                <p className="text-[8px] uppercase tracking-[0.6em] font-bold text-stone-400 px-6 py-3">
+                            {section && !collapsed && (
+                                <p className="text-[7px] uppercase tracking-[0.6em] font-bold text-gray-400 px-5 pt-4 pb-1.5">
                                     {section}
                                 </p>
                             )}
+                            {section && collapsed && <div className="my-2 mx-3 border-t border-gray-100" />}
                             {items.map((item) => (
                                 <button
                                     key={item.id}
                                     onClick={() => onNavigate(item.id)}
-                                    className={`w-full flex items-center gap-3 px-6 py-2.5 text-[10px] uppercase tracking-[0.2em] font-bold transition-colors ${
+                                    title={collapsed ? item.label : undefined}
+                                    className={`w-full flex items-center transition-colors ${collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-5 py-2.5 text-[10px] uppercase tracking-[0.2em] font-bold"} ${
                                         activeView === item.id
-                                            ? "text-stone-900 bg-stone-50"
-                                            : "text-stone-600 hover:text-stone-900 hover:bg-stone-50"
+                                            ? "text-gray-900 bg-gray-100"
+                                            : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
                                     }`}
                                 >
-                                    <span className={activeView === item.id ? "text-stone-900" : "text-stone-400"}>
+                                    <span className={`flex-shrink-0 ${activeView === item.id ? "text-gray-900" : "text-gray-400"}`}>
                                         {item.icon}
                                     </span>
-                                    {item.label}
-                                    {activeView === item.id && (
-                                        <span className="ml-auto w-1 h-1 bg-stone-900 rounded-none" />
+                                    {!collapsed && item.label}
+                                    {!collapsed && activeView === item.id && (
+                                        <span className="ml-auto w-1 h-1 bg-gray-900 rounded-none" />
                                     )}
                                 </button>
                             ))}
@@ -207,56 +234,65 @@ const Sidebar = ({
                 })}
             </nav>
 
-            {/* ── New content menu — bottom ── */}
-            <div className="px-4 pt-4 pb-3 border-t border-stone-300">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <button className="w-full flex items-center justify-center gap-2 py-3 rounded-md text-[9px] uppercase tracking-[0.3em] font-bold bg-stone-900 text-white hover:bg-stone-700 transition-all">
-                            <Plus size={13} />
-                            New content
-                            <ChevronDown size={12} className="opacity-70" />
-                        </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" side="top" sideOffset={6} className="w-56">
-                        <DropdownMenuItem onClick={onNewModel} className="gap-2.5">
-                            <Archive size={14} className="text-stone-500" /> New model
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={onNewArtefact} className="gap-2.5">
-                            <FileText size={14} className="text-stone-500" /> New artefact
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={onNewDossier} className="gap-2.5">
-                            <BookOpen size={14} className="text-stone-500" /> New dossier
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={onImportModels} className="gap-2.5">
-                            <Upload size={14} className="text-stone-500" /> Import models (CSV / Excel)
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+            {/* New content */}
+            <div className={`pt-3 pb-2 border-t border-gray-200 ${collapsed ? "px-2" : "px-3"}`}>
+                {collapsed ? (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button title="New content" className="w-full flex items-center justify-center py-2.5 rounded-md bg-gray-900 text-white hover:bg-gray-800 transition-colors">
+                                <Plus size={14} />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" side="right" sideOffset={8} className="w-52">
+                            <DropdownMenuItem onClick={onNewModel} className="gap-2.5"><Archive size={14} className="text-gray-600" /> New model</DropdownMenuItem>
+                            <DropdownMenuItem onClick={onNewArtefact} className="gap-2.5"><FileText size={14} className="text-gray-600" /> New artefact</DropdownMenuItem>
+                            <DropdownMenuItem onClick={onNewDossier} className="gap-2.5"><BookOpen size={14} className="text-gray-600" /> New dossier</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={onImportModels} className="gap-2.5"><Upload size={14} className="text-gray-600" /> Import models</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                ) : (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-[9px] uppercase tracking-[0.3em] font-bold bg-gray-900 text-white hover:bg-gray-800 transition-colors">
+                                <Plus size={13} /> New content <ChevronDown size={11} className="opacity-60" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" side="top" sideOffset={6} className="w-52">
+                            <DropdownMenuItem onClick={onNewModel} className="gap-2.5"><Archive size={14} className="text-gray-600" /> New model</DropdownMenuItem>
+                            <DropdownMenuItem onClick={onNewArtefact} className="gap-2.5"><FileText size={14} className="text-gray-600" /> New artefact</DropdownMenuItem>
+                            <DropdownMenuItem onClick={onNewDossier} className="gap-2.5"><BookOpen size={14} className="text-gray-600" /> New dossier</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={onImportModels} className="gap-2.5"><Upload size={14} className="text-gray-600" /> Import models (CSV / Excel)</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
             </div>
 
             {/* Account + sign out */}
-            <div className="border-t border-stone-300 p-3 space-y-1">
+            <div className={`border-t border-gray-200 py-2 space-y-0.5 ${collapsed ? "px-2" : "px-2"}`}>
                 <button
                     onClick={() => onNavigate("account")}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
-                        activeView === "account"
-                            ? "bg-stone-100 text-stone-900"
-                            : "text-stone-500 hover:bg-stone-50 hover:text-stone-900"
+                    title={collapsed ? `${user.displayName || "Account"} — ${user.email}` : undefined}
+                    className={`w-full flex items-center rounded-md transition-colors ${collapsed ? "justify-center py-2.5 px-0" : "gap-3 px-3 py-2.5"} ${
+                        activeView === "account" ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                 >
-                    <UserCircle size={15} className="flex-shrink-0 text-stone-400" />
-                    <div className="text-left min-w-0">
-                        <p className="text-[10px] font-bold truncate leading-tight">{user.displayName || "Account"}</p>
-                        <p className="text-[9px] text-stone-400 truncate">{user.email}</p>
-                    </div>
+                    <UserCircle size={15} className="flex-shrink-0 text-gray-400" />
+                    {!collapsed && (
+                        <div className="text-left min-w-0">
+                            <p className="text-[10px] font-bold truncate leading-tight">{user.displayName || "Account"}</p>
+                            <p className="text-[9px] text-gray-400 truncate">{user.email}</p>
+                        </div>
+                    )}
                 </button>
                 <button
                     onClick={onSignOut}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[10px] uppercase tracking-[0.2em] font-bold text-stone-500 hover:text-red-500 hover:bg-stone-50 transition-colors"
+                    title={collapsed ? "Sign out" : undefined}
+                    className={`w-full flex items-center rounded-md text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 hover:text-red-500 hover:bg-gray-50 transition-colors ${collapsed ? "justify-center py-2.5 px-0" : "gap-3 px-3 py-2"}`}
                 >
                     <LogOut size={13} />
-                    Sign out
+                    {!collapsed && "Sign out"}
                 </button>
             </div>
         </aside>
@@ -269,19 +305,19 @@ const Sidebar = ({
 const GateScreen = ({ label, message }: { label: string; message: string }) => (
     <div className={`min-h-screen flex items-center justify-center bg-white ${inter.className}`}>
         <div className="text-center space-y-4 max-w-sm px-6">
-            <p className="text-2xl font-light uppercase tracking-[0.25em] text-stone-900">NMA</p>
-            <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-400">{label}</p>
-            <p className="text-sm text-stone-600 leading-relaxed">{message}</p>
+            <p className="text-2xl font-light uppercase tracking-[0.25em] text-gray-900">NMA</p>
+            <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-gray-500">{label}</p>
+            <p className="text-sm text-gray-700 leading-relaxed">{message}</p>
             <div className="flex items-center justify-center gap-5 pt-2">
                 <a
                     href="/"
-                    className="text-[10px] uppercase tracking-[0.3em] font-bold text-stone-500 hover:text-stone-900 transition-colors"
+                    className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-600 hover:text-gray-900 transition-colors"
                 >
                     Go to site →
                 </a>
                 <button
                     onClick={() => firebaseSignOut(auth)}
-                    className="text-[10px] uppercase tracking-[0.3em] font-bold text-stone-500 hover:text-stone-900 transition-colors"
+                    className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-600 hover:text-gray-900 transition-colors"
                 >
                     Sign out →
                 </button>
@@ -294,6 +330,34 @@ const GateScreen = ({ label, message }: { label: string; message: string }) => (
 export const CMSEngine = ({ name: _name, config: _config }: { name?: string; config?: unknown }) => {
     const { user, status, role } = useAuth();
     const [activeView, setActiveView] = useState<ActiveView>("dashboard");
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [sidebarWidth, setSidebarWidth] = useState(224);
+    const isResizing = useRef(false);
+    const startX = useRef(0);
+    const startWidth = useRef(0);
+
+    const onResizeStart = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        isResizing.current = true;
+        startX.current = e.clientX;
+        startWidth.current = sidebarWidth;
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = "col-resize";
+        const onMove = (ev: MouseEvent) => {
+            if (!isResizing.current) return;
+            const next = Math.max(160, Math.min(400, startWidth.current + ev.clientX - startX.current));
+            setSidebarWidth(next);
+        };
+        const onUp = () => {
+            isResizing.current = false;
+            document.body.style.userSelect = "";
+            document.body.style.cursor = "";
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("mouseup", onUp);
+        };
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+    }, [sidebarWidth]);
     const [dossierEditorId, setDossierEditorId] = useState<string | null>(null);
     // Bumped to signal the Artefacts collection to open its create form
     const [artefactCreateNonce, setArtefactCreateNonce] = useState(0);
@@ -326,7 +390,7 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
     if (status === "loading")
         return (
             <div className={`min-h-screen flex items-center justify-center bg-white ${inter.className}`}>
-                <p className="text-[10px] uppercase tracking-[0.5em] text-stone-400">Loading…</p>
+                <p className="text-[10px] uppercase tracking-[0.5em] text-gray-500">Loading…</p>
             </div>
         );
 
@@ -372,6 +436,8 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
         if (confirm("Sign out of NMA Admin?")) await firebaseSignOut(auth);
     };
 
+    const cl = sidebarCollapsed ? 56 : sidebarWidth;
+
     const renderView = () => {
         switch (effectiveView) {
             case "dashboard":
@@ -381,6 +447,7 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
                     <GenericCollection
                         schema={schemas.models}
                         onHelp={helpFor("models")}
+                        contentLeft={cl}
                         quickFilters={[
                             { label: "Prototype", filterFn: (doc) => doc.inPrototype === true },
                             { label: "Published", filterFn: (doc) => doc.isVisible === true },
@@ -406,6 +473,7 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
                     <GenericCollection
                         schema={schemas.artefacts}
                         onHelp={helpFor("artefacts")}
+                        contentLeft={cl}
                         autoCreateNonce={artefactCreateNonce}
                     />
                 );
@@ -414,6 +482,7 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
                     <GenericCollection
                         schema={schemas.dossiers}
                         onHelp={helpFor("dossiers")}
+                        contentLeft={cl}
                         onRowClick={(row) => openDossierEditor(row.id as string)}
                         rowActionLabel="Edit dossier →"
                         onAddNew={() => openDossierEditor(null)}
@@ -428,7 +497,7 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
                     />
                 );
             case "users":
-                return <GenericCollection schema={schemas.users} onHelp={helpFor("users")} />;
+                return <GenericCollection schema={schemas.users} contentLeft={cl} onHelp={helpFor("users")} />;
             case "invites":
                 return <InvitesView />;
             case "guides":
@@ -448,19 +517,53 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
 
     return (
         <div className={`relative flex h-screen overflow-hidden bg-stone-100 text-black ${inter.className}`}>
-            <Sidebar
-                activeView={effectiveView}
-                user={user}
-                role={role}
-                onNavigate={setActiveView}
-                onSignOut={handleSignOut}
-                onNewModel={newModel}
-                onNewArtefact={newArtefact}
-                onNewDossier={newDossier}
-                onImportModels={importModels}
-            />
-            <main className="flex-1 overflow-y-auto">
-                <div className="px-8 py-8 max-w-[1400px] mx-auto">{renderView()}</div>
+            {/* Sidebar wrapper — controlled width */}
+            <div
+                className="relative flex-shrink-0 transition-[width] duration-200"
+                style={{ width: sidebarCollapsed ? 56 : sidebarWidth }}
+            >
+                <Sidebar
+                    activeView={effectiveView}
+                    user={user}
+                    role={role}
+                    collapsed={sidebarCollapsed}
+                    onNavigate={setActiveView}
+                    onSignOut={handleSignOut}
+                    onNewModel={newModel}
+                    onNewArtefact={newArtefact}
+                    onNewDossier={newDossier}
+                    onImportModels={importModels}
+                />
+
+                {/* Resize handle — only when expanded */}
+                {!sidebarCollapsed && (
+                    <div
+                        onMouseDown={onResizeStart}
+                        className="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-stone-300 transition-colors z-20"
+                    />
+                )}
+            </div>
+
+            {/* Collapse / expand button — floats at sidebar edge */}
+            <button
+                onClick={() => setSidebarCollapsed((v) => !v)}
+                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                className="absolute top-6 z-30 flex items-center justify-center w-7 h-7 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-400 transition-all duration-200"
+                style={{ left: (sidebarCollapsed ? 56 : sidebarWidth) - 14 }}
+            >
+                {sidebarCollapsed ? <PanelLeftOpen size={13} /> : <PanelLeftClose size={13} />}
+            </button>
+            <main className={`flex-1 min-h-0 ${effectiveView === "dossier-editor" ? "flex flex-col overflow-hidden" : "overflow-y-auto"}`}>
+                {effectiveView === "dossier-editor"
+                    ? renderView()
+                    : (
+                        <div className="p-6 max-w-[1400px] mx-auto">
+                            <div className="bg-white rounded-xl shadow-[0_2px_20px_rgba(0,0,0,0.08)] px-8 py-8">
+                                {renderView()}
+                            </div>
+                        </div>
+                    )
+                }
             </main>
         </div>
     );
@@ -473,6 +576,7 @@ export const getNMASchemas = () => ({
         name: "Models",
         path: "ma_models",
         idField: "modelNumber",
+        siteUrlTemplate: "/en/models/{id}",
         properties: {
             // ── Table-primary columns (visible by default) ──
             modelNumber: {
@@ -517,7 +621,7 @@ export const getNMASchemas = () => ({
                 tableVisible: false,
                 tableWidth: 120,
             },
-            images: { name: "Images (legacy)", dataType: "imageGallery", tableVisible: true, tableWidth: 72 },
+            images: { name: "Images", dataType: "imageGallery", tableVisible: true, tableWidth: 72 },
             voiceNarrative: { name: "Audio", dataType: "audioUpload", tableVisible: true, tableWidth: 65 },
 
             // ── Extra detail columns (hidden by default, toggleable) ──
@@ -579,6 +683,7 @@ export const getNMASchemas = () => ({
         name: "Dossiers",
         path: "ma_dossiers",
         idField: "slug",
+        siteUrlTemplate: "/dossiers/{slug}",
         properties: {
             // ── Table-primary ──
             title: {
@@ -607,14 +712,20 @@ export const getNMASchemas = () => ({
             // ── Detail fields (managed via full-screen editor) ──
             intro: { name: "Intro text", dataType: "string", tableVisible: false, tableWidth: 300, multiline: true },
             tags: { name: "Tags", dataType: "array", tableVisible: false, tableWidth: 140, of: { dataType: "string" } },
+
+            // ── Image management ──
+            images: { name: "Images (upload pool)", dataType: "imageGallery", tableVisible: false },
+            featuredImages: { name: "Featured images", dataType: "featuredImages", tableVisible: false },
+            imageGroups: { name: "Image groups", dataType: "imageGroups", tableVisible: false },
             // items: DossierItem[] — managed exclusively via DossierEditor, not shown in generic table
         },
     },
 
     artefacts: {
         name: "Artefacts",
-        path: "ma_articles",
+        path: "ma_artefacts",
         idField: "slug",
+        siteUrlTemplate: "/artefacts/{slug}",
         properties: {
             // ── Table-primary ──
             title: {
@@ -629,10 +740,16 @@ export const getNMASchemas = () => ({
                 dataType: "string",
                 validation: { required: true },
                 tableVisible: true,
-                tableWidth: 160,
+                tableWidth: 140,
             },
-            author: { name: "Author", dataType: "string", tableVisible: true, tableWidth: 140 },
-            publishDate: { name: "Date", dataType: "date", tableVisible: true, tableWidth: 100 },
+            type: {
+                name: "Type",
+                dataType: "string",
+                tableVisible: true,
+                tableWidth: 90,
+                config: { enumValues: ["image", "audio", "video", "document", "text", "interview"] },
+                defaultValue: "image",
+            },
             isVisible: {
                 name: "Published",
                 dataType: "boolean",
@@ -640,12 +757,33 @@ export const getNMASchemas = () => ({
                 tableVisible: true,
                 tableWidth: 90,
             },
+            modelNumber: { name: "Model #", dataType: "string", tableVisible: true, tableWidth: 80 },
+            photographer: { name: "Photographer", dataType: "string", tableVisible: true, tableWidth: 140 },
+            usedInDossiers: {
+                name: "Used in dossiers",
+                dataType: "array",
+                tableVisible: true,
+                tableWidth: 200,
+                of: { dataType: "string" },
+            },
 
-            // ── Detail fields ──
-            heroImage: { name: "Hero image", dataType: "string", tableVisible: false, tableWidth: 180 },
+            // ── Links ──
+            modelId: { name: "Linked model (doc ID)", dataType: "string", tableVisible: false },
+            tags: { name: "Tags", dataType: "array", tableVisible: false, tableWidth: 130, of: { dataType: "string" } },
+            publishDate: { name: "Date", dataType: "date", tableVisible: false, tableWidth: 100 },
+            author: { name: "Author / credit", dataType: "string", tableVisible: false, tableWidth: 140 },
+
+            // ── Content (for text / interview artefacts) ──
             excerpt: { name: "Excerpt", dataType: "string", tableVisible: false, tableWidth: 280, multiline: true },
             content: { name: "Content", dataType: "string", tableVisible: false, tableWidth: 300, markdown: true },
-            tags: { name: "Tags", dataType: "array", tableVisible: false, tableWidth: 130, of: { dataType: "string" } },
+
+            // ── Media ──
+            audioUrl: { name: "Audio file", dataType: "audioUpload", tableVisible: false },
+
+            // ── Image management ──
+            images: { name: "Images (upload pool)", dataType: "imageGallery", tableVisible: false },
+            featuredImages: { name: "Featured images", dataType: "featuredImages", tableVisible: false },
+            imageGroups: { name: "Image groups", dataType: "imageGroups", tableVisible: false },
         },
     },
 

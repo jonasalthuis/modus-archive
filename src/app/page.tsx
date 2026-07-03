@@ -2,6 +2,10 @@
 
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
+import { prefetchArchive } from "@/lib/archivePrefetch";
+
+// Kick off Firestore queries immediately — before the dynamic chunk finishes loading.
+prefetchArchive();
 
 function Loading() {
     return (

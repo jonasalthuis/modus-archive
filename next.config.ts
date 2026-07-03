@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
                 protocol: 'https',
                 hostname: 'firebasestorage.googleapis.com',
             },
+            {
+                protocol: 'https',
+                hostname: 'picsum.photos',
+            },
         ],
     },
     // Allow importing Markdown files as raw strings (used by the in-app Knowledge Center)

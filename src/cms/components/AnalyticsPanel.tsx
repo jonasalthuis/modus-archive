@@ -113,18 +113,18 @@ export const AnalyticsPanel = () => {
     // ── Not configured ──
     if (!loading && error?.includes("GA4_PROPERTY_ID not configured")) {
         return (
-            <div className="bg-white rounded-xl border border-dashed border-stone-300 shadow-sm p-6 space-y-3">
-                <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-500">Web Analytics</p>
-                <p className="text-[11px] text-stone-500 leading-relaxed">
-                    Add <code className="bg-stone-100 px-1 font-mono text-[10px]">GA4_PROPERTY_ID</code> and{" "}
-                    <code className="bg-stone-100 px-1 font-mono text-[10px]">NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID</code>{" "}
+            <div className="bg-white rounded-xl border border-dashed border-gray-400 shadow-sm p-6 space-y-3">
+                <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-600">Web Analytics</p>
+                <p className="text-[11px] text-gray-600 leading-relaxed">
+                    Add <code className="bg-gray-200 px-1 font-mono text-[10px]">GA4_PROPERTY_ID</code> and{" "}
+                    <code className="bg-gray-200 px-1 font-mono text-[10px]">NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID</code>{" "}
                     to your env to enable live analytics.
                 </p>
                 <a
                     href="https://console.firebase.google.com/project/modus-archive-nexus/analytics"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-400 hover:text-stone-900 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-bold text-gray-500 hover:text-gray-900 transition-colors"
                 >
                     Open Firebase Console <ExternalLink size={10} />
                 </a>
@@ -135,18 +135,18 @@ export const AnalyticsPanel = () => {
     // ── Error state ──
     if (!loading && error) {
         return (
-            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6 space-y-3">
+            <div className="bg-white rounded-xl border border-gray-300 shadow-sm p-6 space-y-3">
                 <div className="flex items-center justify-between">
-                    <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-500">Web Analytics</p>
+                    <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-600">Web Analytics</p>
                     <button
                         onClick={() => load()}
-                        className="text-[9px] uppercase tracking-[0.2em] font-bold text-stone-400 hover:text-stone-900 transition-colors flex items-center gap-1.5"
+                        className="text-[9px] uppercase tracking-[0.2em] font-bold text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1.5"
                     >
                         <RefreshCw size={10} /> Retry
                     </button>
                 </div>
                 <p className="text-[10px] font-mono text-red-400">{error}</p>
-                <p className="text-[10px] text-stone-400 leading-relaxed">
+                <p className="text-[10px] text-gray-500 leading-relaxed">
                     Ensure the Google Analytics Data API is enabled in GCP Console and your service account has the
                     Analytics Viewer role.
                 </p>
@@ -157,11 +157,11 @@ export const AnalyticsPanel = () => {
     // ── Loading ──
     if (loading) {
         return (
-            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6 space-y-4 animate-pulse">
-                <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-300">Web Analytics</p>
+            <div className="bg-white rounded-xl border border-gray-300 shadow-sm p-6 space-y-4 animate-pulse">
+                <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-400">Web Analytics</p>
                 <div className="grid grid-cols-2 gap-3">
                     {[...Array(4)].map((_, i) => (
-                        <div key={i} className="h-14 bg-stone-100 rounded-lg" />
+                        <div key={i} className="h-14 bg-gray-200 rounded-lg" />
                     ))}
                 </div>
             </div>
@@ -173,28 +173,28 @@ export const AnalyticsPanel = () => {
     const maxViews = Math.max(...data.daily.map((d) => d.pageViews), 1);
 
     return (
-        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6 space-y-6 col-span-full">
+        <div className="bg-white rounded-xl border border-gray-300 shadow-sm p-6 space-y-6 col-span-full">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-500">Web Analytics</p>
-                    <p className="text-[10px] text-stone-400 font-mono mt-0.5">7-day rolling window</p>
+                    <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-600">Web Analytics</p>
+                    <p className="text-[10px] text-gray-500 font-mono mt-0.5">7-day rolling window</p>
                 </div>
                 <div className="flex items-center gap-3">
                     {/* Live indicator */}
                     <div className="flex items-center gap-2">
                         <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full bg-stone-400 opacity-75" />
-                            <span className="relative inline-flex h-2 w-2 bg-stone-700" />
+                            <span className="animate-ping absolute inline-flex h-full w-full bg-gray-500 opacity-75" />
+                            <span className="relative inline-flex h-2 w-2 bg-gray-800" />
                         </span>
-                        <span className="text-[9px] uppercase tracking-[0.25em] font-bold text-stone-600">
+                        <span className="text-[9px] uppercase tracking-[0.25em] font-bold text-gray-700">
                             {data.activeUsers} active now
                         </span>
                     </div>
                     <button
                         onClick={() => load(true)}
                         disabled={refreshing}
-                        className="p-1.5 border border-stone-300 text-stone-400 hover:text-stone-900 hover:border-stone-900 transition-colors disabled:opacity-40"
+                        className="p-1.5 border border-gray-400 text-gray-500 hover:text-gray-900 hover:border-gray-900 transition-colors disabled:opacity-40"
                         title="Refresh"
                     >
                         <RefreshCw size={11} className={refreshing ? "animate-spin" : ""} />
@@ -225,12 +225,12 @@ export const AnalyticsPanel = () => {
                         spark: null,
                     },
                 ].map((stat) => (
-                    <div key={stat.label} className="bg-stone-50 rounded-lg border border-stone-200 p-3 space-y-2">
+                    <div key={stat.label} className="bg-gray-100 rounded-lg border border-gray-300 p-3 space-y-2">
                         <div className="flex items-center justify-between">
-                            <span className="text-[8px] uppercase tracking-[0.3em] font-bold text-stone-400">
+                            <span className="text-[8px] uppercase tracking-[0.3em] font-bold text-gray-500">
                                 {stat.label}
                             </span>
-                            <span className="text-stone-300">{stat.icon}</span>
+                            <span className="text-gray-400">{stat.icon}</span>
                         </div>
                         <p className="text-2xl font-light tabular-nums">{stat.value}</p>
                         {stat.spark && <Sparkline data={stat.spark} />}
@@ -241,18 +241,18 @@ export const AnalyticsPanel = () => {
             {/* Daily bar chart */}
             {data.daily.length > 0 && (
                 <div>
-                    <p className="text-[8px] uppercase tracking-[0.4em] font-bold text-stone-400 mb-3">
+                    <p className="text-[8px] uppercase tracking-[0.4em] font-bold text-gray-500 mb-3">
                         Page views — last 7 days
                     </p>
                     <div className="flex items-end gap-1 h-16">
                         {data.daily.map((day) => (
                             <div key={day.date} className="flex-1 flex flex-col items-center gap-1 group">
                                 <div
-                                    className="w-full bg-stone-200 group-hover:bg-stone-700 transition-colors"
+                                    className="w-full bg-gray-300 group-hover:bg-gray-800 transition-colors"
                                     style={{ height: `${Math.max((day.pageViews / maxViews) * 48, 2)}px` }}
                                     title={`${day.date}: ${day.pageViews} views`}
                                 />
-                                <span className="text-[7px] font-mono text-stone-300 group-hover:text-stone-500 transition-colors whitespace-nowrap">
+                                <span className="text-[7px] font-mono text-gray-400 group-hover:text-gray-600 transition-colors whitespace-nowrap">
                                     {day.date}
                                 </span>
                             </div>
@@ -264,7 +264,7 @@ export const AnalyticsPanel = () => {
             {/* Top pages */}
             {data.topPages.length > 0 && (
                 <div>
-                    <p className="text-[8px] uppercase tracking-[0.4em] font-bold text-stone-400 mb-2">Top pages</p>
+                    <p className="text-[8px] uppercase tracking-[0.4em] font-bold text-gray-500 mb-2">Top pages</p>
                     <div className="space-y-1">
                         {data.topPages.map((page) => {
                             const pct = (page.views / (data.topPages[0]?.views || 1)) * 100;
@@ -272,14 +272,14 @@ export const AnalyticsPanel = () => {
                                 <div key={page.path} className="flex items-center gap-3 group">
                                     <div className="flex-1 relative">
                                         <div
-                                            className="absolute inset-y-0 left-0 bg-stone-100 group-hover:bg-stone-200 transition-colors"
+                                            className="absolute inset-y-0 left-0 bg-gray-200 group-hover:bg-gray-300 transition-colors"
                                             style={{ width: `${pct}%` }}
                                         />
-                                        <span className="relative text-[10px] font-mono text-stone-600 px-2 py-0.5 truncate block">
+                                        <span className="relative text-[10px] font-mono text-gray-700 px-2 py-0.5 truncate block">
                                             {page.path}
                                         </span>
                                     </div>
-                                    <span className="text-[10px] font-mono text-stone-500 w-10 text-right flex-shrink-0">
+                                    <span className="text-[10px] font-mono text-gray-600 w-10 text-right flex-shrink-0">
                                         {fmtNum(page.views)}
                                     </span>
                                 </div>
@@ -290,7 +290,7 @@ export const AnalyticsPanel = () => {
             )}
 
             {/* Footer timestamp */}
-            <p className="text-[9px] font-mono text-stone-300">
+            <p className="text-[9px] font-mono text-gray-400">
                 Updated{" "}
                 {new Date(data.fetchedAt).toLocaleTimeString("en-GB", {
                     hour: "2-digit",
@@ -302,7 +302,7 @@ export const AnalyticsPanel = () => {
                     href="https://console.firebase.google.com/project/modus-archive-nexus/analytics"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:text-stone-600 transition-colors inline-flex items-center gap-1"
+                    className="hover:text-gray-700 transition-colors inline-flex items-center gap-1"
                 >
                     Firebase Console <ExternalLink size={8} />
                 </a>

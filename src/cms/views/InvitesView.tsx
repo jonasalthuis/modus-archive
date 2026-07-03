@@ -39,9 +39,9 @@ function getStatus(invite: Invite): InviteStatus {
 }
 
 const STATUS_STYLES: Record<InviteStatus, string> = {
-    active: "text-stone-900 bg-stone-900/10",
-    expired: "text-stone-400 bg-stone-100",
-    exhausted: "text-stone-400 bg-stone-100",
+    active: "text-gray-900 bg-gray-900/10",
+    expired: "text-gray-500 bg-gray-200",
+    exhausted: "text-gray-500 bg-gray-200",
     revoked: "text-red-500 bg-red-50",
 };
 
@@ -160,7 +160,7 @@ export const InvitesView = () => {
                 <div>
                     <h2 className="text-2xl font-light uppercase tracking-widest">Invites</h2>
                     {!loading && (
-                        <p className="text-[9px] font-mono text-stone-400 mt-1">
+                        <p className="text-[9px] font-mono text-gray-500 mt-1">
                             {activeCount} active · {invites.length} total · {totalUses} total uses
                         </p>
                     )}
@@ -168,14 +168,14 @@ export const InvitesView = () => {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={fetchInvites}
-                        className="p-2 border border-stone-300 text-stone-400 hover:text-stone-900 hover:border-stone-900 transition-colors"
+                        className="p-2 border border-gray-400 text-gray-500 hover:text-gray-900 hover:border-gray-900 transition-colors"
                     >
                         <RefreshCw size={13} />
                     </button>
                     <button
                         onClick={() => setShowForm((v) => !v)}
                         className={`flex items-center gap-2 px-4 py-2.5 uppercase text-[10px] font-bold tracking-widest transition-colors ${
-                            showForm ? "bg-stone-200 text-stone-900" : "bg-black text-white hover:bg-stone-800"
+                            showForm ? "bg-gray-300 text-gray-900" : "bg-black text-white hover:bg-gray-800"
                         }`}
                     >
                         <Plus size={13} /> Generate invite
@@ -185,16 +185,16 @@ export const InvitesView = () => {
 
             {/* ── Generate form ── */}
             {showForm && (
-                <form onSubmit={handleCreate} className="border border-stone-300 p-6 space-y-5 bg-stone-50">
+                <form onSubmit={handleCreate} className="border border-gray-400 p-6 space-y-5 bg-gray-100">
                     <div className="flex items-center gap-3">
-                        <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-500">New invite</p>
-                        <div className="flex-1 h-px bg-stone-200" />
-                        <span className="text-[10px] font-mono text-stone-400 select-all">{previewCode}</span>
+                        <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-600">New invite</p>
+                        <div className="flex-1 h-px bg-gray-300" />
+                        <span className="text-[10px] font-mono text-gray-500 select-all">{previewCode}</span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="md:col-span-1 space-y-1">
-                            <label className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-500 block">
+                            <label className="text-[9px] uppercase tracking-[0.3em] font-bold text-gray-600 block">
                                 Label
                             </label>
                             <input
@@ -202,18 +202,18 @@ export const InvitesView = () => {
                                 value={formLabel}
                                 onChange={(e) => setFormLabel(e.target.value)}
                                 placeholder="e.g. Guest preview — Alessandro"
-                                className="w-full border border-stone-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:border-black transition-colors"
+                                className="w-full border border-gray-400 bg-white px-3 py-2.5 text-sm focus:outline-none focus:border-black transition-colors"
                             />
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-500 block">
+                            <label className="text-[9px] uppercase tracking-[0.3em] font-bold text-gray-600 block">
                                 Expires after
                             </label>
                             <select
                                 value={formExpiry}
                                 onChange={(e) => setFormExpiry(e.target.value)}
-                                className="w-full border border-stone-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:border-black"
+                                className="w-full border border-gray-400 bg-white px-3 py-2.5 text-sm focus:outline-none focus:border-black"
                             >
                                 <option value="1">1 day</option>
                                 <option value="3">3 days</option>
@@ -224,13 +224,13 @@ export const InvitesView = () => {
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-500 block">
+                            <label className="text-[9px] uppercase tracking-[0.3em] font-bold text-gray-600 block">
                                 Max uses
                             </label>
                             <select
                                 value={formMaxUses}
                                 onChange={(e) => setFormMaxUses(e.target.value)}
-                                className="w-full border border-stone-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:border-black"
+                                className="w-full border border-gray-400 bg-white px-3 py-2.5 text-sm focus:outline-none focus:border-black"
                             >
                                 <option value="1">1 — one time</option>
                                 <option value="3">3 uses</option>
@@ -245,14 +245,14 @@ export const InvitesView = () => {
                         <button
                             type="button"
                             onClick={() => setShowForm(false)}
-                            className="px-5 py-2.5 text-[10px] uppercase tracking-widest font-bold text-stone-400 hover:text-stone-900 transition-colors"
+                            className="px-5 py-2.5 text-[10px] uppercase tracking-widest font-bold text-gray-500 hover:text-gray-900 transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={formSaving}
-                            className="bg-black text-white px-6 py-2.5 uppercase text-[10px] font-bold tracking-widest hover:bg-stone-800 disabled:opacity-40 transition-colors"
+                            className="bg-black text-white px-6 py-2.5 uppercase text-[10px] font-bold tracking-widest hover:bg-gray-800 disabled:opacity-40 transition-colors"
                         >
                             {formSaving ? "Generating…" : "Generate"}
                         </button>
@@ -262,24 +262,24 @@ export const InvitesView = () => {
 
             {/* ── Invites table ── */}
             {loading ? (
-                <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 animate-pulse py-8 text-center">
+                <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500 animate-pulse py-8 text-center">
                     Loading…
                 </p>
             ) : invites.length === 0 ? (
-                <div className="py-16 text-center border border-dashed border-stone-300">
-                    <p className="text-[10px] uppercase tracking-[0.4em] text-stone-300">No invites yet</p>
-                    <p className="text-[11px] text-stone-400 mt-2">
+                <div className="py-16 text-center border border-dashed border-gray-400">
+                    <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400">No invites yet</p>
+                    <p className="text-[11px] text-gray-500 mt-2">
                         Click "Generate invite" to create your first access code.
                     </p>
                 </div>
             ) : (
-                <div className="border border-stone-300">
+                <div className="border border-gray-400">
                     {/* Table header */}
-                    <div className="grid grid-cols-[1fr_1.5fr_100px_80px_80px_120px] gap-0 border-b-2 border-stone-300 bg-stone-100">
+                    <div className="grid grid-cols-[1fr_1.5fr_100px_80px_80px_120px] gap-0 border-b-2 border-gray-400 bg-gray-200">
                         {["Code", "Label", "Expires", "Uses", "Status", ""].map((h) => (
                             <div
                                 key={h}
-                                className="px-4 py-3 text-[9px] uppercase tracking-[0.3em] font-bold text-stone-600"
+                                className="px-4 py-3 text-[9px] uppercase tracking-[0.3em] font-bold text-gray-700"
                             >
                                 {h}
                             </div>
@@ -294,20 +294,20 @@ export const InvitesView = () => {
                             <div
                                 key={invite.id}
                                 className={`grid grid-cols-[1fr_1.5fr_100px_80px_80px_120px] gap-0 items-center ${
-                                    !isLast ? "border-b border-stone-300" : ""
-                                } ${status === "active" ? "hover:bg-stone-50" : "opacity-60"} transition-colors`}
+                                    !isLast ? "border-b border-gray-400" : ""
+                                } ${status === "active" ? "hover:bg-gray-100" : "opacity-60"} transition-colors`}
                             >
                                 {/* Code */}
                                 <div className="px-4 py-3">
-                                    <span className="text-[11px] font-mono text-stone-700 select-all">
+                                    <span className="text-[11px] font-mono text-gray-800 select-all">
                                         {invite.code}
                                     </span>
                                 </div>
 
                                 {/* Label */}
                                 <div className="px-4 py-3">
-                                    <span className="text-[11px] text-stone-600 truncate block">{invite.label}</span>
-                                    <span className="text-[9px] font-mono text-stone-300">
+                                    <span className="text-[11px] text-gray-700 truncate block">{invite.label}</span>
+                                    <span className="text-[9px] font-mono text-gray-400">
                                         {fmtDate(invite.createdAt)} · {invite.createdBy}
                                     </span>
                                 </div>
@@ -315,7 +315,7 @@ export const InvitesView = () => {
                                 {/* Expires */}
                                 <div className="px-4 py-3">
                                     <span
-                                        className="text-[11px] font-mono text-stone-500"
+                                        className="text-[11px] font-mono text-gray-600"
                                         title={fmtDate(invite.expiresAt)}
                                     >
                                         {fmtRelative(invite.expiresAt)}
@@ -324,7 +324,7 @@ export const InvitesView = () => {
 
                                 {/* Uses */}
                                 <div className="px-4 py-3">
-                                    <span className="text-[11px] font-mono text-stone-500">
+                                    <span className="text-[11px] font-mono text-gray-600">
                                         {invite.useCount}
                                         {invite.maxUses !== null ? `/${invite.maxUses}` : ""}
                                     </span>
@@ -345,10 +345,10 @@ export const InvitesView = () => {
                                     <button
                                         onClick={() => copyCode(invite)}
                                         title="Copy code"
-                                        className="p-1.5 text-stone-400 hover:text-stone-900 transition-colors"
+                                        className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors"
                                     >
                                         {copiedId === invite.id + "-code" ? (
-                                            <Check size={12} className="text-stone-900" />
+                                            <Check size={12} className="text-gray-900" />
                                         ) : (
                                             <span className="text-[8px] font-mono font-bold">CODE</span>
                                         )}
@@ -358,10 +358,10 @@ export const InvitesView = () => {
                                     <button
                                         onClick={() => copyLink(invite)}
                                         title="Copy invite link"
-                                        className="p-1.5 text-stone-400 hover:text-stone-900 transition-colors"
+                                        className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors"
                                     >
                                         {copiedId === invite.id ? (
-                                            <Check size={12} className="text-stone-900" />
+                                            <Check size={12} className="text-gray-900" />
                                         ) : (
                                             <LinkIcon size={12} />
                                         )}
@@ -373,7 +373,7 @@ export const InvitesView = () => {
                                             onClick={() => handleRevoke(invite)}
                                             disabled={revoking === invite.id}
                                             title="Revoke this invite"
-                                            className="p-1.5 text-stone-300 hover:text-red-500 transition-colors disabled:opacity-40"
+                                            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-40"
                                         >
                                             <X size={12} />
                                         </button>
@@ -386,11 +386,11 @@ export const InvitesView = () => {
             )}
 
             {/* How-to note */}
-            <div className="border-l-2 border-stone-300 pl-4 space-y-1">
-                <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-400">How to share</p>
-                <p className="text-[11px] text-stone-400 leading-relaxed">
-                    Copy a <strong className="text-stone-600">link</strong> to send the full URL — recipients click it
-                    and are admitted automatically. Or copy just the <strong className="text-stone-600">code</strong>{" "}
+            <div className="border-l-2 border-gray-400 pl-4 space-y-1">
+                <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-gray-500">How to share</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">
+                    Copy a <strong className="text-gray-700">link</strong> to send the full URL — recipients click it
+                    and are admitted automatically. Or copy just the <strong className="text-gray-700">code</strong>{" "}
                     for them to enter manually on the access page.
                 </p>
             </div>

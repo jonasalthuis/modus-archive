@@ -19,17 +19,9 @@ export const CanvasBackground = React.memo(function CanvasBackground({ x, y, sca
             <div
                 className="absolute inset-0"
                 style={{
-                    backgroundImage: `radial-gradient(circle at center, rgba(28,25,23,0.14) ${dot}px, transparent ${dot + 0.7}px)`,
+                    backgroundImage: `radial-gradient(circle at center, rgba(28,25,23,0.045) ${dot}px, transparent ${dot + 0.7}px)`,
                     backgroundSize: `${size}px ${size}px`,
                     backgroundPosition: `${x}px ${y}px`,
-                }}
-            />
-            {/* Depth vignette — lighter centre, soft dark edges */}
-            <div
-                className="absolute inset-0"
-                style={{
-                    background:
-                        "radial-gradient(ellipse 85% 85% at 50% 45%, transparent 50%, rgba(28,25,23,0.06) 100%)",
                 }}
             />
         </div>

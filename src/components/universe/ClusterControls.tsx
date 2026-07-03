@@ -1,27 +1,31 @@
 "use client";
 
 import React from "react";
-import { X } from "lucide-react";
+import { Layers, X } from "lucide-react";
 import { SidePanel } from "./SidePanel";
 import { GROUP_ATTRS } from "./layouts";
 import type { GroupAttr } from "./types";
 
-// Clustered-mode "group by" picker. No grouping is the default state;
-// a "Clear" button appears beneath the list when a grouping is active.
+// Clustered-mode "group by" picker. Collapsed by default.
 
 export function ClusterControls({
     groupBy,
     onChange,
+    collapseToken = 0,
+    expandToken = 0,
 }: {
     groupBy: GroupAttr;
     onChange: (g: GroupAttr) => void;
+    collapseToken?: number;
+    expandToken?: number;
 }) {
     return (
-        <SidePanel>
-            <div className="w-48 bg-white/90 backdrop-blur border border-stone-200 rounded-lg p-3 shadow-sm">
-                <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-500 mb-2 px-1">
-                    Group by
-                </p>
+        <SidePanel side="right" defaultOpen={false} collapseToken={collapseToken} expandToken={expandToken} icon={<Layers size={12} />}>
+            <div className="w-48 bg-white/50 backdrop-blur-xl border border-stone-200 rounded-lg p-3 shadow-sm">
+                <div className="flex items-center gap-2 mb-2 px-1 pr-6">
+                    <Layers size={11} className="text-stone-500" />
+                    <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-500">Group by</p>
+                </div>
                 <div className="flex flex-col gap-1">
                     {GROUP_ATTRS.map((attr) => {
                         const active = groupBy === attr.key;

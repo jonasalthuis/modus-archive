@@ -102,7 +102,7 @@ export const PrototypeCollection = ({ schema }: { schema: Schema }) => {
             <div className="flex justify-between items-start pb-6 border-b border-black">
                 <div>
                     <h2 className="text-2xl font-light uppercase tracking-widest">Prototype</h2>
-                    <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-stone-400 mt-1">
+                    <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-500 mt-1">
                         {models.length} models selected · {visible} visible · {withImages} with images
                     </p>
                 </div>
@@ -111,17 +111,17 @@ export const PrototypeCollection = ({ schema }: { schema: Schema }) => {
                     placeholder="Search…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="bg-white border border-stone-300 focus:border-black px-4 py-2 text-[10px] uppercase tracking-[0.2em] font-bold outline-none transition-colors w-48"
+                    className="bg-white border border-gray-400 focus:border-black px-4 py-2 text-[10px] uppercase tracking-[0.2em] font-bold outline-none transition-colors w-48"
                 />
             </div>
 
             {loading ? (
-                <div className="text-stone-400 italic py-12 text-center">Loading prototype models…</div>
+                <div className="text-gray-500 italic py-12 text-center">Loading prototype models…</div>
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-black text-[9px] uppercase tracking-widest text-stone-500">
+                            <tr className="border-b border-black text-[9px] uppercase tracking-widest text-gray-600">
                                 <th className="py-3 px-3 font-bold w-16">Ref #</th>
                                 <th className="py-3 px-3 font-bold">Title</th>
                                 <th className="py-3 px-3 font-bold">Architect</th>
@@ -137,20 +137,20 @@ export const PrototypeCollection = ({ schema }: { schema: Schema }) => {
                                 return (
                                     <tr
                                         key={m.id}
-                                        className="border-b border-stone-300 hover:bg-stone-50 transition-colors"
+                                        className="border-b border-gray-400 hover:bg-gray-100 transition-colors"
                                     >
-                                        <td className="py-3 px-3 font-mono text-[11px] text-stone-500">
+                                        <td className="py-3 px-3 font-mono text-[11px] text-gray-600">
                                             {m.modelNumber || m.id}
                                         </td>
                                         <td className="py-3 px-3 text-sm font-light">{m.title || "—"}</td>
-                                        <td className="py-3 px-3 text-[11px] text-stone-500">{m.architect || "—"}</td>
-                                        <td className="py-3 px-3 font-mono text-[11px] text-stone-400">
+                                        <td className="py-3 px-3 text-[11px] text-gray-600">{m.architect || "—"}</td>
+                                        <td className="py-3 px-3 font-mono text-[11px] text-gray-500">
                                             {m.year || "—"}
                                         </td>
                                         <td className="py-3 px-3 text-center">
                                             <span
                                                 className={`inline-flex items-center gap-1 text-[10px] font-mono ${
-                                                    imgCount > 0 ? "text-stone-900" : "text-stone-200"
+                                                    imgCount > 0 ? "text-gray-900" : "text-gray-300"
                                                 }`}
                                             >
                                                 <ImageIcon size={10} />
@@ -168,8 +168,8 @@ export const PrototypeCollection = ({ schema }: { schema: Schema }) => {
                                                 }
                                                 className={`transition-colors ${
                                                     m.isVisible
-                                                        ? "text-stone-900 hover:text-stone-400"
-                                                        : "text-stone-200 hover:text-stone-500"
+                                                        ? "text-gray-900 hover:text-gray-500"
+                                                        : "text-gray-300 hover:text-gray-600"
                                                 }`}
                                             >
                                                 {m.isVisible ? <Eye size={15} /> : <EyeOff size={15} />}
@@ -178,7 +178,7 @@ export const PrototypeCollection = ({ schema }: { schema: Schema }) => {
                                         <td className="py-3 px-3 text-right">
                                             <button
                                                 onClick={() => setEditingDoc(m)}
-                                                className="p-1 text-stone-400 hover:text-stone-900 transition-colors"
+                                                className="p-1 text-gray-500 hover:text-gray-900 transition-colors"
                                             >
                                                 <Edit size={14} />
                                             </button>
@@ -190,7 +190,7 @@ export const PrototypeCollection = ({ schema }: { schema: Schema }) => {
                     </table>
 
                     {filtered.length === 0 && (
-                        <div className="py-12 text-center text-stone-300 text-[10px] uppercase tracking-widest">
+                        <div className="py-12 text-center text-gray-400 text-[10px] uppercase tracking-widest">
                             No models match &ldquo;{search}&rdquo;
                         </div>
                     )}

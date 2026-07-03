@@ -23,8 +23,8 @@ export function MetaCard({ model }: { model: ModelData }) {
     return (
         <div className={`${CARD_SHELL} select-none`} style={{ width: 270 }}>
             {/* Header */}
-            <div className="px-5 pt-4 pb-3 border-b border-stone-200">
-                <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-600">Catalogue</p>
+            <div className="px-5 pt-4 pb-3 border-b border-gray-100">
+                <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-500">Catalogue</p>
             </div>
 
             {/* Spec rows */}
@@ -33,12 +33,12 @@ export function MetaCard({ model }: { model: ModelData }) {
                     {rows.map((row) => (
                         <div
                             key={row.label}
-                            className="flex items-baseline justify-between gap-4 py-2.5 border-b border-stone-100 last:border-0"
+                            className="flex items-baseline justify-between gap-4 py-2.5 border-b border-gray-100 last:border-0"
                         >
-                            <dt className="text-[8px] uppercase tracking-[0.3em] font-bold text-stone-500 flex-shrink-0 pt-0.5">
+                            <dt className="text-[8px] uppercase tracking-[0.3em] font-bold text-gray-400 flex-shrink-0 pt-0.5">
                                 {row.label}
                             </dt>
-                            <dd className="text-[12px] font-normal text-stone-900 text-right leading-snug">
+                            <dd className="text-[12px] font-normal text-gray-900 text-right leading-snug">
                                 {row.value}
                             </dd>
                         </div>
@@ -48,13 +48,13 @@ export function MetaCard({ model }: { model: ModelData }) {
 
             {/* Materials */}
             {materials.length > 0 && (
-                <div className="px-5 py-4 border-t border-stone-200">
-                    <dt className="text-[8px] uppercase tracking-[0.3em] font-bold text-stone-500 mb-2">Materials</dt>
+                <div className="px-5 py-4 border-t border-gray-100">
+                    <dt className="text-[8px] uppercase tracking-[0.3em] font-bold text-gray-400 mb-2">Materials</dt>
                     <dd className="flex flex-wrap gap-1.5">
                         {materials.map((m) => (
                             <span
                                 key={m}
-                                className="text-[9px] font-mono bg-stone-100 text-stone-700 px-2 py-1 uppercase tracking-wide"
+                                className="text-[9px] font-mono bg-gray-100 text-gray-600 px-2 py-1 uppercase tracking-wide rounded-md"
                             >
                                 {m}
                             </span>

@@ -1,37 +1,68 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 
-// Bottom-docked scale filter: a wide, labelled track with a draggable dot,
-// attached to the bottom-centre of the screen. Position 0 = "All".
+// Bottom-docked scale filter. Collapses to a small tab at the bottom edge.
 
 export function ScaleDock({
     scales,
     selected,
     onChange,
+    collapseToken = 0,
+    expandToken = 0,
 }: {
     scales: string[];
     selected: string[];
     onChange: (next: string[]) => void;
+    collapseToken?: number;
+    expandToken?: number;
 }) {
+    const [open, setOpen] = useState(true);
+
+    const mountedCollapse = useRef(collapseToken);
+    const mountedExpand = useRef(expandToken);
+
+    useEffect(() => {
+        if (collapseToken > mountedCollapse.current) setOpen(false);
+    }, [collapseToken]);
+
+    useEffect(() => {
+        if (expandToken > mountedExpand.current) setOpen(true);
+    }, [expandToken]);
+
     if (scales.length === 0) return null;
 
     const stops = ["All", ...scales];
     const max = stops.length - 1;
     const current = selected.length ? Math.max(0, stops.indexOf(selected[0])) : 0;
     const setIndex = (i: number) => onChange(i === 0 ? [] : [stops[i]]);
-
     const pct = max === 0 ? 0 : (current / max) * 100;
     const label = current === 0 ? "All scales" : stops[current];
 
+    if (!open) {
+        return (
+            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+                <button
+                    onClick={() => setOpen(true)}
+                    aria-label="Open scale filter"
+                    className="flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-xl border border-stone-200 rounded-xl text-stone-400 hover:text-stone-900 transition-colors shadow-sm text-[9px] uppercase tracking-[0.3em] font-bold"
+                >
+                    Scale
+                    <ChevronUp size={12} />
+                </button>
+            </div>
+        );
+    }
+
     return (
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-[min(94vw,680px)]">
-            <div className="bg-white/95 backdrop-blur border border-stone-200 border-b-0 rounded-t-xl px-8 pt-4 pb-6 shadow-[0_-6px_24px_rgba(0,0,0,0.05)]">
-                <div className="flex items-baseline justify-between mb-4">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[min(94vw,680px)]">
+            <div className="bg-white/50 backdrop-blur-xl border border-stone-200 rounded-xl px-8 pt-4 pb-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
                     <span className="text-[9px] uppercase tracking-[0.45em] font-bold text-stone-500">
                         Filter by scale
                     </span>
-                    <div className="flex items-baseline gap-3">
+                    <div className="flex items-center gap-3">
                         <span className="font-mono text-sm text-stone-900 tabular-nums">{label}</span>
                         {current !== 0 && (
                             <button
@@ -42,6 +73,13 @@ export function ScaleDock({
                                 All
                             </button>
                         )}
+                        <button
+                            onClick={() => setOpen(false)}
+                            aria-label="Collapse scale filter"
+                            className="text-stone-400 hover:text-stone-800 transition-colors"
+                        >
+                            <ChevronDown size={13} />
+                        </button>
                     </div>
                 </div>
 
@@ -77,7 +115,7 @@ export function ScaleDock({
                         );
                     })}
 
-                    {/* draggable input (transparent) — drives the dot, click-to-jump */}
+                    {/* draggable input (transparent) */}
                     <input
                         type="range"
                         min={0}

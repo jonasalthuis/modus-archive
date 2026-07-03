@@ -111,7 +111,7 @@ export const GuidesView = ({
                                     ?.querySelector(`#${CSS.escape(id)}`)
                                     ?.scrollIntoView({ behavior: "smooth", block: "start" });
                             }}
-                            className="ml-2 opacity-0 group-hover:opacity-100 text-stone-300 hover:text-stone-600 no-underline align-middle"
+                            className="ml-2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-700 no-underline align-middle"
                             aria-label="Link to section"
                         >
                             <Hash size={14} className="inline" />
@@ -128,10 +128,10 @@ export const GuidesView = ({
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <div className="pb-6 border-b border-black flex items-center gap-3">
-                <BookOpen size={22} className="text-stone-900" />
+                <BookOpen size={22} className="text-gray-900" />
                 <div>
                     <h2 className="text-2xl font-light uppercase tracking-widest">Knowledge Center</h2>
-                    <p className="text-[9px] font-mono text-stone-400 mt-1">Guides &amp; reference for running the archive</p>
+                    <p className="text-[9px] font-mono text-gray-500 mt-1">Guides &amp; reference for running the archive</p>
                 </div>
             </div>
 
@@ -140,12 +140,12 @@ export const GuidesView = ({
                 <aside className="w-60 flex-shrink-0 space-y-4 sticky top-0">
                     {/* Search */}
                     <div className="relative">
-                        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                         <input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search guides…"
-                            className="w-full pl-8 pr-3 py-2 bg-white rounded-lg border border-stone-200 shadow-sm text-[11px] focus:outline-none focus:border-stone-900 transition-colors"
+                            className="w-full pl-8 pr-3 py-2 bg-white rounded-lg border border-gray-300 shadow-sm text-[11px] focus:outline-none focus:border-gray-900 transition-colors"
                         />
                     </div>
 
@@ -156,14 +156,14 @@ export const GuidesView = ({
                                 onClick={() => goTo(g.id)}
                                 className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${
                                     g.id === activeId
-                                        ? "bg-stone-900 text-white border-stone-900"
-                                        : "bg-white border-stone-200 shadow-sm hover:border-stone-400"
+                                        ? "bg-gray-900 text-white border-gray-900"
+                                        : "bg-white border-gray-300 shadow-sm hover:border-gray-500"
                                 }`}
                             >
                                 <p className="text-[11px] font-bold uppercase tracking-[0.15em]">{g.title}</p>
                                 <p
                                     className={`text-[10px] leading-snug mt-1 ${
-                                        g.id === activeId ? "text-stone-300" : "text-stone-400"
+                                        g.id === activeId ? "text-gray-400" : "text-gray-500"
                                     }`}
                                 >
                                     {g.description}
@@ -177,24 +177,24 @@ export const GuidesView = ({
                 <div className="flex-1 min-w-0 flex gap-6">
                     <article
                         ref={scrollRef}
-                        className="flex-1 min-w-0 bg-white rounded-xl border border-stone-200 shadow-sm p-10 max-h-[calc(100vh-12rem)] overflow-y-auto"
+                        className="flex-1 min-w-0 bg-white rounded-xl border border-gray-300 shadow-sm p-10 max-h-[calc(100vh-12rem)] overflow-y-auto"
                     >
                         <div
                             className="prose prose-stone max-w-none
                                 prose-headings:font-light prose-headings:tracking-tight
                                 prose-h1:text-3xl prose-h1:uppercase prose-h1:tracking-[0.1em] prose-h1:mb-2
-                                prose-h2:text-xl prose-h2:mt-10 prose-h2:pb-2 prose-h2:border-b prose-h2:border-stone-200
-                                prose-h3:text-base prose-h3:uppercase prose-h3:tracking-wider prose-h3:text-stone-700
-                                prose-p:text-stone-700 prose-p:leading-relaxed
-                                prose-a:text-stone-900 prose-a:font-medium prose-a:underline-offset-2
-                                prose-strong:text-stone-900
-                                prose-code:text-stone-800 prose-code:bg-stone-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-[''] prose-code:after:content-['']
+                                prose-h2:text-xl prose-h2:mt-10 prose-h2:pb-2 prose-h2:border-b prose-h2:border-gray-300
+                                prose-h3:text-base prose-h3:uppercase prose-h3:tracking-wider prose-h3:text-gray-800
+                                prose-p:text-gray-800 prose-p:leading-relaxed
+                                prose-a:text-gray-900 prose-a:font-medium prose-a:underline-offset-2
+                                prose-strong:text-gray-900
+                                prose-code:text-gray-800 prose-code:bg-gray-200 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-[''] prose-code:after:content-['']
                                 prose-table:text-sm
-                                prose-th:bg-stone-100 prose-th:text-[10px] prose-th:uppercase prose-th:tracking-wider prose-th:text-stone-600 prose-th:font-bold prose-th:px-3 prose-th:py-2
-                                prose-td:px-3 prose-td:py-2 prose-td:align-top prose-td:border-stone-200
-                                prose-blockquote:border-l-2 prose-blockquote:border-stone-900 prose-blockquote:bg-stone-50 prose-blockquote:py-1 prose-blockquote:not-italic prose-blockquote:font-normal prose-blockquote:text-stone-600
-                                prose-li:text-stone-700 prose-li:marker:text-stone-400
-                                prose-hr:border-stone-200"
+                                prose-th:bg-gray-200 prose-th:text-[10px] prose-th:uppercase prose-th:tracking-wider prose-th:text-gray-700 prose-th:font-bold prose-th:px-3 prose-th:py-2
+                                prose-td:px-3 prose-td:py-2 prose-td:align-top prose-td:border-gray-300
+                                prose-blockquote:border-l-2 prose-blockquote:border-gray-900 prose-blockquote:bg-gray-100 prose-blockquote:py-1 prose-blockquote:not-italic prose-blockquote:font-normal prose-blockquote:text-gray-700
+                                prose-li:text-gray-800 prose-li:marker:text-gray-500
+                                prose-hr:border-gray-300"
                         >
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
@@ -246,7 +246,7 @@ export const GuidesView = ({
                                         );
                                     },
                                     table: ({ children }) => (
-                                        <div className="overflow-x-auto border border-stone-200 rounded-lg my-6">
+                                        <div className="overflow-x-auto border border-gray-300 rounded-lg my-6">
                                             <table className="!my-0">{children}</table>
                                         </div>
                                     ),
@@ -260,10 +260,10 @@ export const GuidesView = ({
                     {/* ── On-this-page TOC ── */}
                     {toc.length > 2 && (
                         <nav className="hidden xl:block w-52 flex-shrink-0 sticky top-0 max-h-[calc(100vh-12rem)] overflow-y-auto">
-                            <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-stone-400 mb-3 pl-3">
+                            <p className="text-[8px] uppercase tracking-[0.5em] font-bold text-gray-500 mb-3 pl-3">
                                 On this page
                             </p>
-                            <ul className="space-y-1 border-l border-stone-200">
+                            <ul className="space-y-1 border-l border-gray-300">
                                 {toc.map((t) => (
                                     <li key={t.id}>
                                         <button
@@ -272,7 +272,7 @@ export const GuidesView = ({
                                                     ?.querySelector(`#${CSS.escape(t.id)}`)
                                                     ?.scrollIntoView({ behavior: "smooth", block: "start" })
                                             }
-                                            className={`block text-left w-full text-[11px] leading-snug py-1 -ml-px border-l border-transparent hover:border-stone-900 hover:text-stone-900 transition-colors text-stone-500 ${
+                                            className={`block text-left w-full text-[11px] leading-snug py-1 -ml-px border-l border-transparent hover:border-gray-900 hover:text-gray-900 transition-colors text-gray-600 ${
                                                 t.level === 3 ? "pl-6" : "pl-3"
                                             }`}
                                         >
