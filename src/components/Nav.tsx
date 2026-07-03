@@ -66,6 +66,9 @@ export function Nav() {
     const menuRef = useRef<HTMLDivElement>(null);
     const [archiveHref, setArchiveHref] = useState("/");
 
+    const isAdmin = Boolean(pathname?.startsWith("/admin"));
+    const isArchive = pathname === "/";
+
     // Restore last archive view (grid/explore) from sessionStorage on mount.
     useEffect(() => {
         try {
@@ -73,11 +76,6 @@ export function Nav() {
             if (saved) setArchiveHref(`/?view=${saved}`);
         } catch { /* private browsing */ }
     }, [pathname]);
-
-    // Hide entirely on admin routes.
-    if (pathname?.startsWith("/admin")) return null;
-
-    const isArchive = pathname === "/";
 
     // Close on outside click.
     useEffect(() => {
@@ -101,6 +99,9 @@ export function Nav() {
     useEffect(() => {
         setOpen(false);
     }, [pathname]);
+
+    // All hooks must run before any conditional return.
+    if (isAdmin) return null;
 
     return (
         <div className="fixed top-4 left-4 right-4 z-50 flex items-center gap-2 pointer-events-none">
