@@ -48,6 +48,7 @@ import {
     Upload,
     Check,
 } from "lucide-react";
+import type { ModelImage } from "@/types/model";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -399,7 +400,7 @@ interface ModelEntry {
     id: string;
     title?: string;
     architect?: string;
-    images?: string[];
+    images?: ModelImage[];
 }
 
 const ModelImagePicker = ({
@@ -501,7 +502,7 @@ const ModelImagePicker = ({
                                             className="group flex flex-col text-left border border-gray-200 rounded-lg overflow-hidden hover:border-gray-900 transition-colors"
                                         >
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img src={m.images![0]} alt={m.title || m.id} className="w-full aspect-square object-cover" />
+                                            <img src={m.images![0].url} alt={m.title || m.id} className="w-full aspect-square object-cover" />
                                             <div className="px-2 py-1.5">
                                                 <p className="font-mono text-[8px] text-gray-400">{m.id}</p>
                                                 <p className="text-[10px] font-light text-gray-700 truncate leading-tight">{m.title || "—"}</p>
@@ -516,15 +517,15 @@ const ModelImagePicker = ({
                     {/* Image grid for selected model */}
                     {!loading && selectedModel && (
                         <div className="grid grid-cols-3 gap-2 p-4">
-                            {(selectedModel.images || []).map((url, i) => (
+                            {(selectedModel.images || []).map((img, i) => (
                                 <button
                                     key={i}
                                     type="button"
-                                    onClick={() => onSelect(selectedModel.id, url, selectedModel.title)}
+                                    onClick={() => onSelect(selectedModel.id, img.url, selectedModel.title)}
                                     className="aspect-square border border-gray-200 hover:border-gray-900 overflow-hidden transition-colors rounded-lg"
                                 >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={url} alt={`Image ${i + 1}`} className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
+                                    <img src={img.url} alt={`Image ${i + 1}`} className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
                                 </button>
                             ))}
                         </div>
@@ -542,7 +543,7 @@ type CoverTab = "models" | "artefacts" | "upload";
 interface ArtefactImageEntry {
     id: string;
     title?: string;
-    images?: string[];
+    images?: ModelImage[];
 }
 
 const CoverImagePicker = ({
@@ -709,7 +710,7 @@ const CoverImagePicker = ({
                                             <button key={m.id} type="button" onClick={() => setSelectedModel(m)}
                                                 className="group flex flex-col text-left border border-gray-200 rounded-lg overflow-hidden hover:border-gray-900 transition-colors">
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={m.images![0]} alt={m.title || m.id} className="w-full aspect-square object-cover" />
+                                                <img src={m.images![0].url} alt={m.title || m.id} className="w-full aspect-square object-cover" />
                                                 <div className="px-2 py-1.5">
                                                     <p className="font-mono text-[8px] text-gray-400">{m.id}</p>
                                                     <p className="text-[10px] font-light text-gray-700 truncate">{m.title || "—"}</p>
@@ -725,11 +726,11 @@ const CoverImagePicker = ({
                                         <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-600">{selectedModel.id} — {selectedModel.title}</p>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2 p-4">
-                                        {(selectedModel.images || []).map((url, i) => (
-                                            <button key={i} type="button" onClick={() => onSelect(url)}
+                                        {(selectedModel.images || []).map((img, i) => (
+                                            <button key={i} type="button" onClick={() => onSelect(img.url)}
                                                 className="aspect-square border border-gray-200 hover:border-gray-900 overflow-hidden transition-colors rounded-lg">
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={url} alt="" className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
+                                                <img src={img.url} alt="" className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
                                             </button>
                                         ))}
                                     </div>
@@ -761,7 +762,7 @@ const CoverImagePicker = ({
                                             <button key={a.id} type="button" onClick={() => setSelectedArtefact(a)}
                                                 className="group flex flex-col text-left border border-gray-200 rounded-lg overflow-hidden hover:border-gray-900 transition-colors">
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={a.images![0]} alt={a.title || a.id} className="w-full aspect-square object-cover" />
+                                                <img src={a.images![0].url} alt={a.title || a.id} className="w-full aspect-square object-cover" />
                                                 <div className="px-2 py-1.5">
                                                     <p className="text-[10px] font-light text-gray-700 truncate">{a.title || a.id}</p>
                                                 </div>
@@ -776,11 +777,11 @@ const CoverImagePicker = ({
                                         <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-600">{selectedArtefact.title || selectedArtefact.id}</p>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2 p-4">
-                                        {(selectedArtefact.images || []).map((url, i) => (
-                                            <button key={i} type="button" onClick={() => onSelect(url)}
+                                        {(selectedArtefact.images || []).map((img, i) => (
+                                            <button key={i} type="button" onClick={() => onSelect(img.url)}
                                                 className="aspect-square border border-gray-200 hover:border-gray-900 overflow-hidden transition-colors rounded-lg">
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={url} alt="" className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
+                                                <img src={img.url} alt="" className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
                                             </button>
                                         ))}
                                     </div>

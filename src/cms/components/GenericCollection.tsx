@@ -461,8 +461,8 @@ export const GenericCollection = ({
                     <div
                         className="fixed z-50 bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)] flex flex-col font-sans rounded-xl overflow-hidden transition-all duration-300 ease-in-out animate-in slide-in-from-right-4 fade-in duration-200"
                         style={isFullscreen
-                            ? { top: 16, bottom: 16, left: contentLeft + 16, right: 16 }
-                            : { top: 16, bottom: 16, right: 16, width: "40vw" }
+                            ? { top: 24, bottom: 24, left: contentLeft + 24, right: 24 }
+                            : { top: 24, bottom: 24, right: 24, width: "40vw" }
                         }
                     >
                         {/* Panel header */}

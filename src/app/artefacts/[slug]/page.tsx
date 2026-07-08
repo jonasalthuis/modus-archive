@@ -4,8 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { doc, getDoc, collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { AdminEditBadge } from "@/components/AdminEditBadge";
-import { ChevronLeft, ChevronRight, Shuffle } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Shuffle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -134,44 +133,45 @@ export default async function ArtefactPage({ params }: { params: Promise<{ slug:
 
     return (
         <main className="min-h-screen bg-white text-stone-900 flex flex-col">
-            <AdminEditBadge href="/admin" />
 
-            {/* Back to artefacts — under NMA in top-left */}
-            <div className="fixed top-[52px] left-4 z-40">
-                <Link href="/artefacts" className={pill}>
-                    ← All artefacts
-                </Link>
+            {/* Back button — next to NMA */}
+            <div className="fixed top-4 left-4 z-[49] flex items-center gap-2 pointer-events-none">
+                <div className="h-[34px] px-3 text-[10px] font-bold uppercase tracking-[0.4em] opacity-0 select-none">NMA</div>
+                <div className="relative group/back pointer-events-auto">
+                    <Link
+                        href="/artefacts"
+                        aria-label="Back to artefacts"
+                        className="inline-flex items-center justify-center w-[34px] h-[34px] border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                    >
+                        <ArrowLeft size={13} />
+                    </Link>
+                    <span className="absolute top-full mt-2 left-0 px-2 py-1 whitespace-nowrap text-[9px] uppercase tracking-[0.25em] font-bold text-stone-900 bg-white/80 backdrop-blur-xl border border-stone-200 rounded pointer-events-none opacity-0 group-hover/back:opacity-100 transition-opacity duration-150">
+                        Back to artefacts
+                    </span>
+                </div>
             </div>
 
-            {/* Random — under hamburger in top-right */}
-            {randomSlug && (
-                <div className="fixed top-[52px] right-4 z-40">
+            {/* Bottom-right: random + prev/next */}
+            <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2">
+                {randomSlug && (
                     <Link href={`/artefacts/${randomSlug}`} className={pill}>
                         <Shuffle size={11} />
                         Random
                     </Link>
-                </div>
-            )}
-
-            {/* Prev / next arrows */}
-            {prevSlug && (
-                <Link
-                    href={`/artefacts/${prevSlug}`}
-                    aria-label="Previous artefact"
-                    className={`fixed left-4 top-1/2 -translate-y-1/2 z-50 ${navBtn}`}
-                >
-                    <ChevronLeft size={15} />
-                </Link>
-            )}
-            {nextSlug && (
-                <Link
-                    href={`/artefacts/${nextSlug}`}
-                    aria-label="Next artefact"
-                    className={`fixed right-4 top-1/2 -translate-y-1/2 z-50 ${navBtn}`}
-                >
-                    <ChevronRight size={15} />
-                </Link>
-            )}
+                )}
+                {(prevSlug || nextSlug) && (
+                    <div className="flex items-center gap-1">
+                        <Link href={prevSlug ? `/artefacts/${prevSlug}` : "#"} aria-label="Previous artefact"
+                            className={`${navBtn} ${!prevSlug ? "opacity-30 pointer-events-none" : ""}`}>
+                            <ChevronLeft size={15} />
+                        </Link>
+                        <Link href={nextSlug ? `/artefacts/${nextSlug}` : "#"} aria-label="Next artefact"
+                            className={`${navBtn} ${!nextSlug ? "opacity-30 pointer-events-none" : ""}`}>
+                            <ChevronRight size={15} />
+                        </Link>
+                    </div>
+                )}
+            </div>
 
             {/* ── Full-screen artefact display ── */}
             <div className="flex-1 relative">

@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Search, X, ChevronDown, ChevronUp, LayoutList, LayoutGrid, Shuffle, ArrowUpDown } from "lucide-react";
+import { Shuffle, X, HelpCircle, ChevronDown, ArrowUp } from "lucide-react";
+import { SearchPinBar } from "@/components/archive/SearchPinBar";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type TimestampLike = { seconds: number } | string | null | undefined;
 
 export interface Dossier {
     id: string;
@@ -14,297 +18,326 @@ export interface Dossier {
     coverImage?: string;
     tags?: string[];
     items?: unknown[];
+    createdAt?: TimestampLike;
+    updatedAt?: TimestampLike;
 }
 
-type ViewMode = "list" | "grid";
+type DossierItem = { type?: string; imageUrl?: string; [key: string]: unknown };
+type SortKey = "default" | "title" | "newest" | "updated";
 
-function FloatingSearch({
-    value,
-    onChange,
-    open,
-    onToggle,
-    placeholder,
-}: {
-    value: string;
-    onChange: (v: string) => void;
-    open: boolean;
-    onToggle: () => void;
-    placeholder: string;
-}) {
-    const inputRef = useRef<HTMLInputElement>(null);
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function parseTimestamp(v: TimestampLike): Date | null {
+    if (!v) return null;
+    if (typeof v === "string") return new Date(v);
+    if (typeof v === "object" && "seconds" in v) return new Date(v.seconds * 1000);
+    return null;
+}
+
+function formatDate(v: TimestampLike): string | null {
+    const d = parseTimestamp(v);
+    if (!d || isNaN(d.getTime())) return null;
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function getDossierImages(d: Dossier): string[] {
+    const urls: string[] = [];
+    if (d.coverImage) urls.push(d.coverImage);
+    if (Array.isArray(d.items)) {
+        for (const item of d.items as DossierItem[]) {
+            if (item.imageUrl && !urls.includes(item.imageUrl)) urls.push(item.imageUrl);
+        }
+    }
+    return urls;
+}
+
+// ── DossierCard ───────────────────────────────────────────────────────────────
+
+function DossierCard({ d }: { d: Dossier }) {
+    const [hovered, setHovered] = useState(false);
+    const [imgIdx, setImgIdx] = useState(0);
+    const images = useMemo(() => getDossierImages(d), [d]);
+    const href = `/dossiers/${d.slug || d.id}`;
+    const createdLabel = formatDate(d.createdAt);
+    const updatedLabel = formatDate(d.updatedAt);
 
     useEffect(() => {
-        if (open) setTimeout(() => inputRef.current?.focus(), 50);
-    }, [open]);
-
-    if (!open) {
-        return (
-            <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40">
-                <button
-                    onClick={onToggle}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-xl border border-stone-200 rounded-xl text-stone-400 hover:text-stone-900 transition-colors text-[9px] uppercase tracking-[0.3em] font-bold"
-                >
-                    <Search size={12} />
-                    {value && (
-                        <span className="text-stone-500 font-light normal-case tracking-normal text-[10px]">
-                            {value}
-                        </span>
-                    )}
-                    <ChevronDown size={12} />
-                </button>
-            </div>
-        );
-    }
+        if (!hovered || images.length <= 1) { setImgIdx(0); return; }
+        const id = setInterval(() => setImgIdx((i) => (i + 1) % images.length), 700);
+        return () => clearInterval(id);
+    }, [hovered, images.length]);
 
     return (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-[min(calc(100vw-300px),560px)]">
-            <div className="bg-white/50 backdrop-blur-xl border border-stone-200 rounded-xl px-6 py-3 shadow-sm">
-                <div className="flex items-center gap-2">
-                    <Search size={12} className="text-stone-300 flex-shrink-0" />
-                    <input
-                        ref={inputRef}
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        onKeyDown={(e) => e.key === "Escape" && onChange("")}
-                        placeholder={placeholder}
-                        autoComplete="off"
-                        spellCheck={false}
-                        className="flex-1 min-w-[60px] text-[10px] tracking-[0.15em] font-bold text-stone-800 placeholder:text-stone-300 placeholder:font-normal placeholder:tracking-[0.1em] bg-transparent outline-none"
+        <Link
+            href={href}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => { setHovered(false); setImgIdx(0); }}
+            className="group grid grid-cols-[1fr_200px] items-center gap-8 p-7 bg-white border border-gray-200 rounded-xl hover:border-gray-400 hover:shadow-sm transition-all duration-300"
+        >
+            {/* Text */}
+            <div className="min-w-0 space-y-3">
+                {d.tags && d.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                        {d.tags.slice(0, 5).map((t) => (
+                            <span key={t} className="text-[10px] uppercase tracking-[0.15em] font-semibold border border-gray-300 rounded-md px-2.5 py-0.5 text-gray-600">
+                                {t}
+                            </span>
+                        ))}
+                    </div>
+                )}
+                <h2 className="text-2xl font-bold text-gray-900 leading-tight group-hover:text-gray-500 transition-colors duration-300">
+                    {d.title || "—"}
+                </h2>
+                {d.intro && (
+                    <p className="text-sm font-light text-gray-600 leading-relaxed line-clamp-2 max-w-xl">
+                        {d.intro}
+                    </p>
+                )}
+                {(createdLabel || updatedLabel) && (
+                    <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-gray-400">
+                        {createdLabel && <>Created {createdLabel}</>}
+                        {createdLabel && updatedLabel && <span className="mx-2 text-gray-300">·</span>}
+                        {updatedLabel && <>Updated {updatedLabel}</>}
+                    </p>
+                )}
+            </div>
+
+            {/* Image with crossfade cycling */}
+            <div className="relative h-28 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                {images.length > 0 ? images.map((url, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        key={url}
+                        src={url}
+                        alt=""
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === imgIdx ? "opacity-100" : "opacity-0"}`}
                     />
-                    {value && (
-                        <button
-                            onClick={() => onChange("")}
-                            className="text-stone-400 hover:text-stone-900 transition-colors flex-shrink-0"
-                        >
-                            <X size={12} />
-                        </button>
-                    )}
-                    <button
-                        onClick={onToggle}
-                        className="text-stone-400 hover:text-stone-800 transition-colors flex-shrink-0 ml-1"
-                    >
-                        <ChevronUp size={13} />
-                    </button>
+                )) : null}
+                {images.length > 1 && (
+                    <div className="absolute bottom-2 right-2 flex gap-1 pointer-events-none">
+                        {images.slice(0, 6).map((_, i) => (
+                            <div key={i} className={`w-1 h-1 rounded-full transition-colors duration-300 ${i === imgIdx ? "bg-white" : "bg-white/35"}`} />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </Link>
+    );
+}
+
+// ── Help modal ────────────────────────────────────────────────────────────────
+
+function HelpModal({ onClose }: { onClose: () => void }) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-end justify-end p-6 pointer-events-none">
+            <div
+                className="pointer-events-auto w-80 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200"
+                style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.12)" }}
+            >
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                    <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-gray-500">What are Dossiers?</p>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-900 transition-colors"><X size={14} /></button>
+                </div>
+                <div className="px-5 py-5 space-y-3">
+                    <p className="text-sm font-light text-gray-700 leading-relaxed">
+                        Dossiers are curated thematic collections assembled from the NMA archive. Each dossier brings together models, photographs, and documents around a single architectural idea, period, or collaboration.
+                    </p>
+                    <p className="text-sm font-light text-gray-700 leading-relaxed">
+                        They are authored by Alessandro Rognoni as part of the ongoing archival research — connecting individual models to broader narratives about how architecture was represented and communicated in late 20th‑century Britain.
+                    </p>
+                    <p className="text-sm font-light text-gray-700 leading-relaxed">
+                        Use the tag filters to explore by theme, architect, or period. Click any dossier to read it in full.
+                    </p>
                 </div>
             </div>
         </div>
     );
 }
 
-type SortKey = "default" | "title" | "items";
+// ── Main component ────────────────────────────────────────────────────────────
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-    { key: "default", label: "Default" },
+    { key: "default", label: "Sort by" },
     { key: "title",   label: "Title A–Z" },
-    { key: "items",   label: "Most items" },
+    { key: "newest",  label: "Last added" },
+    { key: "updated", label: "Last modified" },
 ];
 
 export function DossiersListClient({ dossiers }: { dossiers: Dossier[] }) {
     const router = useRouter();
     const [search, setSearch] = useState("");
-    const [searchOpen, setSearchOpen] = useState(true);
-    const [view, setView] = useState<ViewMode>("list");
+    const [pins, setPins] = useState<string[]>([]);
+    const [activeTag, setActiveTag] = useState<string | null>(null);
     const [sort, setSort] = useState<SortKey>("default");
     const [sortOpen, setSortOpen] = useState(false);
+    const [helpOpen, setHelpOpen] = useState(false);
+
+    const allTags = useMemo(() => {
+        const set = new Set<string>();
+        for (const d of dossiers) for (const t of d.tags || []) set.add(t);
+        return Array.from(set).sort();
+    }, [dossiers]);
+
+    // Suggestions = all tags not already pinned
+    const suggestions = useMemo(() => allTags.filter((t) => !pins.includes(t)), [allTags, pins]);
 
     const handleRandom = useCallback(() => {
-        if (dossiers.length === 0) return;
+        if (!dossiers.length) return;
         const pick = dossiers[Math.floor(Math.random() * dossiers.length)];
         router.push(`/dossiers/${pick.slug || pick.id}`);
     }, [dossiers, router]);
 
     const filtered = useMemo(() => {
         let list = dossiers;
-        if (search.trim()) {
-            const q = search.toLowerCase();
-            list = list.filter(
-                (d) =>
-                    (d.title || "").toLowerCase().includes(q) ||
-                    (d.intro || "").toLowerCase().includes(q) ||
-                    (d.tags || []).some((t) => t.toLowerCase().includes(q)),
+        // Pin search: AND across all pins + free-text search
+        const terms = [...pins, ...(search.trim() ? [search.trim()] : [])];
+        if (terms.length) {
+            list = list.filter((d) =>
+                terms.every((q) => {
+                    const lq = q.toLowerCase();
+                    return (
+                        (d.title || "").toLowerCase().includes(lq) ||
+                        (d.intro || "").toLowerCase().includes(lq) ||
+                        (d.tags || []).some((t) => t.toLowerCase().includes(lq))
+                    );
+                }),
             );
         }
-        if (sort === "title") list = [...list].sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
-        if (sort === "items") list = [...list].sort((a, b) => (Array.isArray(b.items) ? b.items.length : 0) - (Array.isArray(a.items) ? a.items.length : 0));
+        if (activeTag) list = list.filter((d) => (d.tags || []).includes(activeTag));
+        if (sort === "title")   list = [...list].sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
+        if (sort === "newest")  list = [...list].sort((a, b) => (parseTimestamp(b.createdAt)?.getTime() ?? 0) - (parseTimestamp(a.createdAt)?.getTime() ?? 0));
+        if (sort === "updated") list = [...list].sort((a, b) => (parseTimestamp(b.updatedAt)?.getTime() ?? 0) - (parseTimestamp(a.updatedAt)?.getTime() ?? 0));
         return list;
-    }, [dossiers, search, sort]);
+    }, [dossiers, search, pins, activeTag, sort]);
+
+    const hasFilter = search.trim() || pins.length || activeTag;
 
     return (
-        <main className="min-h-screen bg-white text-stone-900">
-            <FloatingSearch
-                value={search}
-                onChange={setSearch}
-                open={searchOpen}
-                onToggle={() => setSearchOpen((v) => !v)}
-                placeholder="Search dossiers"
-            />
+        <main className="min-h-screen bg-white text-gray-900">
+            <div className="w-[60vw] mx-auto pt-24 pb-24">
 
-            <div className="pt-[58px]">
-                {filtered.length === 0 ? (
-                    <div className="flex items-center justify-center h-64">
-                        <p className="text-[10px] uppercase tracking-[0.5em] font-bold text-stone-300">
-                            {search ? "No results" : "No dossiers published yet"}
-                        </p>
+                {/* Page header */}
+                <div className="mb-10 space-y-1.5">
+                    <h1 className="text-3xl font-light tracking-tight text-gray-900">Dossiers</h1>
+                    <p className="text-sm font-light text-gray-500">Thematic analyses of the models on the Network Modelmakers Archive.</p>
+                </div>
+
+                {/* Controls bar */}
+                <div className="mb-6 flex items-center gap-3">
+                    <div className="flex-1">
+                        <SearchPinBar
+                            search={search}
+                            onSearch={setSearch}
+                            pins={pins}
+                            onPin={(v) => setPins((ps) => [...ps, v])}
+                            onUnpin={(v) => setPins((ps) => ps.filter((p) => p !== v))}
+                            suggestions={suggestions}
+                            placeholder="Search dossiers…"
+                        />
                     </div>
-                ) : view === "list" ? (
-                    <div className="max-w-7xl mx-auto px-8 py-6 space-y-3">
-                        {filtered.map((d, i) => {
-                            const href = `/dossiers/${d.slug || d.id}`;
-                            const itemCount = Array.isArray(d.items) ? d.items.length : 0;
-                            return (
-                                <Link
-                                    key={d.id}
-                                    href={href}
-                                    className="group grid grid-cols-[2.5rem_1fr_auto] md:grid-cols-[2.5rem_1fr_280px_auto] items-center gap-6 px-6 py-6 rounded-xl border border-stone-100 hover:border-stone-300 bg-white hover:bg-stone-50 transition-all duration-300"
-                                >
-                                    <span className="font-mono text-xs text-stone-400 tabular-nums">
-                                        {String(i + 1).padStart(2, "0")}
-                                    </span>
-                                    <div className="min-w-0 space-y-2">
-                                        {d.tags && d.tags.length > 0 && (
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {d.tags.slice(0, 3).map((t) => (
-                                                    <span
-                                                        key={t}
-                                                        className="text-[7px] uppercase tracking-[0.4em] font-bold border border-stone-200 rounded px-1.5 py-0.5 text-stone-400"
-                                                    >
-                                                        {t}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                        <h2 className="text-xl font-light leading-snug group-hover:text-stone-500 transition-colors duration-300">
-                                            {d.title || "—"}
-                                        </h2>
-                                        {d.intro && (
-                                            <p className="text-sm font-light text-stone-600 leading-relaxed max-w-lg line-clamp-1">
-                                                {d.intro}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="hidden md:block">
-                                        {d.coverImage ? (
-                                            <div className="relative h-16 w-full rounded-md bg-stone-50 overflow-hidden">
-                                                <Image
-                                                    src={d.coverImage}
-                                                    alt={d.title ?? ""}
-                                                    fill
-                                                    className="object-cover group-hover:scale-[1.04] transition-transform duration-500"
-                                                    sizes="280px"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="h-16 w-full rounded-md bg-stone-50 border border-stone-100" />
-                                        )}
-                                    </div>
-                                    <div className="flex flex-col items-end gap-2">
-                                        {itemCount > 0 && (
-                                            <span className="font-mono text-[8px] text-stone-300 whitespace-nowrap">
-                                                {itemCount} item{itemCount !== 1 ? "s" : ""}
-                                            </span>
-                                        )}
-                                        <span className="text-stone-400 group-hover:text-stone-900 transition-colors duration-300 text-base">
-                                            →
-                                        </span>
-                                    </div>
-                                </Link>
-                            );
-                        })}
+
+                    {/* Sort */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setSortOpen((v) => !v)}
+                            className={`flex items-center gap-1.5 h-[38px] px-3 rounded-md border text-[9px] uppercase tracking-[0.3em] font-bold transition-colors bg-white ${sort !== "default" ? "border-gray-900 text-gray-900" : "border-gray-200 text-gray-500 hover:border-gray-900 hover:text-gray-900"}`}
+                        >
+                            {SORT_OPTIONS.find((o) => o.key === sort)?.label}
+                            <ChevronDown size={11} />
+                        </button>
+                        {sortOpen && (
+                            <div className="absolute top-full mt-1 right-0 w-36 bg-white border border-gray-200 rounded-md overflow-hidden shadow-md z-40">
+                                {SORT_OPTIONS.map((o) => (
+                                    <button
+                                        key={o.key}
+                                        onClick={() => { setSort(o.key); setSortOpen(false); }}
+                                        className={`w-full text-left px-4 py-2.5 text-[9px] uppercase tracking-[0.3em] font-bold transition-colors ${sort === o.key ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}
+                                    >
+                                        {o.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Random */}
+                    <button
+                        onClick={handleRandom}
+                        title="Random dossier"
+                        className="flex items-center justify-center h-[38px] w-[38px] rounded-md border border-gray-200 text-gray-500 hover:border-gray-900 hover:text-gray-900 transition-colors bg-white"
+                    >
+                        <Shuffle size={13} />
+                    </button>
+                </div>
+
+                {/* Tag filter chips */}
+                {allTags.length > 0 && (
+                    <div className="mb-8 flex flex-wrap gap-2">
+                        {allTags.map((t) => (
+                            <button
+                                key={t}
+                                onClick={() => setActiveTag(activeTag === t ? null : t)}
+                                className={`text-[10px] uppercase tracking-[0.15em] font-semibold px-3 py-1 rounded-md border transition-colors duration-200 ${
+                                    activeTag === t
+                                        ? "bg-gray-900 text-white border-gray-900"
+                                        : "border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900"
+                                }`}
+                            >
+                                {t}
+                            </button>
+                        ))}
+                        {hasFilter && (
+                            <button
+                                onClick={() => { setSearch(""); setPins([]); setActiveTag(null); }}
+                                className="flex items-center gap-1 text-[10px] uppercase tracking-[0.15em] font-semibold px-3 py-1 rounded-md border border-dashed border-gray-300 text-gray-400 hover:border-gray-900 hover:text-gray-900 transition-colors"
+                            >
+                                <X size={9} /> Clear
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* Result count */}
+                <p className="text-[10px] font-medium text-gray-700 mb-5">
+                    Number of dossiers: {filtered.length}
+                    {hasFilter ? " found" : ""}
+                </p>
+
+                {/* Cards */}
+                {filtered.length === 0 ? (
+                    <div className="flex items-center justify-center h-48 border border-dashed border-gray-200 rounded-xl">
+                        <p className="text-[10px] uppercase tracking-[0.5em] font-bold text-gray-300">No results</p>
                     </div>
                 ) : (
-                    <div className="max-w-7xl mx-auto px-8 py-6">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                            {filtered.map((d) => {
-                                const href = `/dossiers/${d.slug || d.id}`;
-                                return (
-                                    <Link
-                                        key={d.id}
-                                        href={href}
-                                        className="group block rounded-xl overflow-hidden border border-stone-100 hover:border-stone-300 transition-all duration-300 relative aspect-[3/4] bg-stone-100"
-                                    >
-                                        {d.coverImage ? (
-                                            <Image
-                                                src={d.coverImage}
-                                                alt={d.title ?? ""}
-                                                fill
-                                                className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
-                                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full bg-stone-50" />
-                                        )}
-                                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/65 to-transparent px-4 pt-10 pb-4">
-                                            {d.tags && d.tags.length > 0 && (
-                                                <p className="text-white/50 text-[7px] uppercase tracking-[0.35em] font-bold mb-1.5">
-                                                    {d.tags[0]}
-                                                </p>
-                                            )}
-                                            <h2 className="text-white text-[11px] font-light leading-snug">
-                                                {d.title || "—"}
-                                            </h2>
-                                        </div>
-                                    </Link>
-                                );
-                            })}
-                        </div>
+                    <div className="space-y-5">
+                        {filtered.map((d) => <DossierCard key={d.id} d={d} />)}
                     </div>
                 )}
             </div>
 
-            {/* Bottom-right controls */}
-            <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2">
-                {/* Sort picker */}
-                <div className="relative">
-                    <button
-                        onClick={() => setSortOpen((v) => !v)}
-                        className={`flex items-center gap-1.5 px-3 h-[34px] text-[9px] uppercase tracking-[0.25em] font-bold rounded-md border transition-colors duration-200 bg-white/70 backdrop-blur-xl ${sort !== "default" ? "border-stone-900 text-stone-900" : "border-stone-200 text-stone-500 hover:text-stone-900"}`}
-                    >
-                        <ArrowUpDown size={12} />
-                        {SORT_OPTIONS.find((o) => o.key === sort)?.label}
-                    </button>
-                    {sortOpen && (
-                        <div className="absolute bottom-full mb-1 right-0 w-40 bg-white/80 backdrop-blur-xl border border-stone-200 rounded-md overflow-hidden shadow-sm">
-                            {SORT_OPTIONS.map((o) => (
-                                <button
-                                    key={o.key}
-                                    onClick={() => { setSort(o.key); setSortOpen(false); }}
-                                    className={`w-full text-left px-4 py-2.5 text-[9px] uppercase tracking-[0.25em] font-bold transition-colors ${sort === o.key ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-50 hover:text-stone-900"}`}
-                                >
-                                    {o.label}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Random */}
+            {/* Bottom-left: help */}
+            <div className="fixed bottom-5 left-5 z-40">
                 <button
-                    onClick={handleRandom}
-                    aria-label="Random dossier"
-                    className="flex items-center justify-center w-[34px] h-[34px] bg-white/70 backdrop-blur-xl border border-stone-200 rounded-md text-stone-500 hover:text-stone-900 hover:border-stone-900 transition-colors"
+                    onClick={() => setHelpOpen((v) => !v)}
+                    title="What are dossiers?"
+                    className={`flex items-center justify-center w-[34px] h-[34px] rounded-md border transition-colors duration-300 ${helpOpen ? "bg-stone-900 border-stone-900 text-white" : "bg-white/70 backdrop-blur-xl border-stone-200 text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white"}`}
                 >
-                    <Shuffle size={13} />
+                    <HelpCircle size={13} />
                 </button>
-
-                {/* View toggle */}
-                <div className="flex items-center bg-white/70 backdrop-blur-xl border border-stone-200 rounded-md overflow-hidden h-[34px]">
-                    <button
-                        onClick={() => setView("list")}
-                        aria-label="List view"
-                        className={`px-3 h-full flex items-center transition-colors duration-200 ${view === "list" ? "bg-stone-900/80 backdrop-blur-md text-white" : "text-stone-400 hover:text-stone-900"}`}
-                    >
-                        <LayoutList size={13} />
-                    </button>
-                    <div className="w-px h-4 bg-stone-200" />
-                    <button
-                        onClick={() => setView("grid")}
-                        aria-label="Grid view"
-                        className={`px-3 h-full flex items-center transition-colors duration-200 ${view === "grid" ? "bg-stone-900/80 backdrop-blur-md text-white" : "text-stone-400 hover:text-stone-900"}`}
-                    >
-                        <LayoutGrid size={13} />
-                    </button>
-                </div>
             </div>
+
+            {/* Bottom-right: back to top */}
+            <div className="fixed bottom-5 right-5 z-40">
+                <button
+                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                    title="Back to top"
+                    className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                >
+                    <ArrowUp size={13} />
+                </button>
+            </div>
+
+            {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
         </main>
     );
 }

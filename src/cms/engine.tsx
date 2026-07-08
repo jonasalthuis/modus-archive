@@ -581,7 +581,7 @@ export const CMSEngine = ({ name: _name, config: _config }: { name?: string; con
                     />
                     <div
                         className="fixed z-50 bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)] flex flex-col font-sans rounded-xl overflow-hidden animate-in slide-in-from-right-4 fade-in duration-200"
-                        style={{ top: 16, bottom: 16, left: cl + 16, right: 16 }}
+                        style={{ top: 24, bottom: 24, left: cl + 24, right: 24 }}
                     >
                         <DossierEditor
                             dossierId={dossierEditorId}

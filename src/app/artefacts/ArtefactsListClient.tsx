@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { Search, X, ChevronDown, ChevronUp, LayoutList, LayoutGrid } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { X, HelpCircle, ChevronDown, Shuffle, ArrowUp } from "lucide-react";
+import { SearchPinBar } from "@/components/archive/SearchPinBar";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type TimestampLike = { seconds: number } | string | null | undefined;
 
 export interface Artefact {
     id: string;
@@ -23,9 +28,13 @@ export interface Artefact {
     year?: number;
     photographer?: string;
     isStarred?: boolean;
+    createdAt?: TimestampLike;
+    updatedAt?: TimestampLike;
 }
 
-type ViewMode = "list" | "grid";
+type SortKey = "default" | "title" | "year";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function inferType(a: Artefact): string {
     if (a.type) return a.type;
@@ -34,248 +43,345 @@ function inferType(a: Artefact): string {
     return "text";
 }
 
-function thumb(a: Artefact) {
+function thumb(a: Artefact): string | null {
     return a.imageUrl || a.heroImage || null;
 }
 
-function FloatingSearch({
-    value,
-    onChange,
-    open,
-    onToggle,
-    placeholder,
-}: {
-    value: string;
-    onChange: (v: string) => void;
-    open: boolean;
-    onToggle: () => void;
-    placeholder: string;
-}) {
-    const inputRef = useRef<HTMLInputElement>(null);
+// ── ArtefactTile — square image with blur overlay on hover ───────────────────
 
-    useEffect(() => {
-        if (open) setTimeout(() => inputRef.current?.focus(), 50);
-    }, [open]);
-
-    if (!open) {
-        return (
-            <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40">
-                <button
-                    onClick={onToggle}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-xl border border-stone-200 rounded-xl text-stone-400 hover:text-stone-900 transition-colors text-[9px] uppercase tracking-[0.3em] font-bold"
-                >
-                    <Search size={12} />
-                    {value && (
-                        <span className="text-stone-500 font-light normal-case tracking-normal text-[10px]">
-                            {value}
-                        </span>
-                    )}
-                    <ChevronDown size={12} />
-                </button>
-            </div>
-        );
-    }
+function ArtefactTile({ a }: { a: Artefact }) {
+    const img = thumb(a);
+    const type = inferType(a);
+    const href = `/artefacts/${a.slug || a.id}`;
 
     return (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-[min(calc(100vw-300px),560px)]">
-            <div className="bg-white/50 backdrop-blur-xl border border-stone-200 rounded-xl px-6 py-3 shadow-sm">
-                <div className="flex items-center gap-2">
-                    <Search size={12} className="text-stone-300 flex-shrink-0" />
-                    <input
-                        ref={inputRef}
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        onKeyDown={(e) => e.key === "Escape" && onChange("")}
-                        placeholder={placeholder}
-                        autoComplete="off"
-                        spellCheck={false}
-                        className="flex-1 min-w-[60px] text-[10px] tracking-[0.15em] font-bold text-stone-800 placeholder:text-stone-300 placeholder:font-normal placeholder:tracking-[0.1em] bg-transparent outline-none"
-                    />
-                    {value && (
-                        <button
-                            onClick={() => onChange("")}
-                            className="text-stone-400 hover:text-stone-900 transition-colors flex-shrink-0"
-                        >
-                            <X size={12} />
-                        </button>
+        <Link
+            href={href}
+            className="group relative block aspect-square overflow-hidden rounded-xl bg-gray-100"
+        >
+            {/* Image */}
+            {img ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                    src={img}
+                    alt={a.title ?? ""}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                />
+            ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-[8px] uppercase tracking-[0.4em] font-bold text-gray-400">{type}</span>
+                </div>
+            )}
+
+            {/* Hover overlay — light blur, dark text */}
+            <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
+                <div className="bg-white/85 backdrop-blur-md px-3 py-3 space-y-1">
+                    {a.title && (
+                        <p className="text-[11px] font-semibold text-gray-900 leading-snug line-clamp-2">
+                            {a.title}
+                        </p>
                     )}
-                    <button
-                        onClick={onToggle}
-                        className="text-stone-400 hover:text-stone-800 transition-colors flex-shrink-0 ml-1"
-                    >
-                        <ChevronUp size={13} />
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[8px] uppercase tracking-[0.35em] font-bold text-gray-500">{type}</span>
+                        {a.architect && (
+                            <span className="text-[8px] uppercase tracking-[0.2em] font-medium text-gray-400">{a.architect}</span>
+                        )}
+                        {a.year && (
+                            <span className="text-[8px] font-mono text-gray-400">{a.year}</span>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </Link>
+    );
+}
+
+// ── Help modal ────────────────────────────────────────────────────────────────
+
+function HelpModal({ onClose }: { onClose: () => void }) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-end justify-end p-6 pointer-events-none">
+            <div
+                className="pointer-events-auto w-80 bg-white border border-gray-200 rounded-xl overflow-hidden"
+                style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.12)" }}
+            >
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                    <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-gray-500">What are Artefacts?</p>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-900 transition-colors"><X size={14} /></button>
+                </div>
+                <div className="px-5 py-5 space-y-3">
+                    <p className="text-sm font-light text-gray-700 leading-relaxed">
+                        Artefacts are individual items from the archive — photographs, audio recordings, drawings, and documents — each associated with one or more models in the collection.
+                    </p>
+                    <p className="text-sm font-light text-gray-700 leading-relaxed">
+                        They capture details that lie beyond the model itself: the making process, client relationships, conversations with modelmakers, and the physical context in which the work was produced.
+                    </p>
+                    <p className="text-sm font-light text-gray-700 leading-relaxed">
+                        Filter by type or tag to browse the collection. Click any artefact to view it in full.
+                    </p>
                 </div>
             </div>
         </div>
     );
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 24; // load 24 tiles at a time (8 rows of 3)
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+    { key: "default", label: "Sort by" },
+    { key: "title",   label: "Title A–Z" },
+    { key: "year",    label: "Newest first" },
+];
+
 export function ArtefactsListClient({ artefacts }: { artefacts: Artefact[] }) {
+    const router = useRouter();
     const [search, setSearch] = useState("");
-    const [searchOpen, setSearchOpen] = useState(true);
-    const [view, setView] = useState<ViewMode>("list");
+    const [pins, setPins] = useState<string[]>([]);
+    const [activeTypes, setActiveTypes] = useState<string[]>([]);
+    const [activeTags, setActiveTags] = useState<string[]>([]);
+    const [sort, setSort] = useState<SortKey>("default");
+    const [sortOpen, setSortOpen] = useState(false);
+    const [helpOpen, setHelpOpen] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const sentinelRef = useRef<HTMLDivElement>(null);
+
+    const allTypes = useMemo(() => {
+        const set = new Set<string>();
+        for (const a of artefacts) set.add(inferType(a));
+        return Array.from(set).sort();
+    }, [artefacts]);
+
+    const allTags = useMemo(() => {
+        const set = new Set<string>();
+        for (const a of artefacts) for (const t of a.tags || []) set.add(t);
+        return Array.from(set).sort();
+    }, [artefacts]);
+
+    const suggestions = useMemo(
+        () => [...allTypes, ...allTags].filter((s) => !pins.includes(s)),
+        [allTypes, allTags, pins],
+    );
 
     const filtered = useMemo(() => {
-        if (!search.trim()) return artefacts;
-        const q = search.toLowerCase();
-        return artefacts.filter(
-            (a) =>
-                (a.title || "").toLowerCase().includes(q) ||
-                (a.excerpt || "").toLowerCase().includes(q) ||
-                (a.author || "").toLowerCase().includes(q) ||
-                (a.tags || []).some((t) => t.toLowerCase().includes(q)),
+        let list = artefacts;
+        const terms = [...pins, ...(search.trim() ? [search.trim()] : [])];
+        if (terms.length) {
+            list = list.filter((a) =>
+                terms.every((q) => {
+                    const lq = q.toLowerCase();
+                    return (
+                        (a.title || "").toLowerCase().includes(lq) ||
+                        (a.excerpt || "").toLowerCase().includes(lq) ||
+                        (a.author || "").toLowerCase().includes(lq) ||
+                        (a.architect || "").toLowerCase().includes(lq) ||
+                        inferType(a).toLowerCase().includes(lq) ||
+                        (a.tags || []).some((t) => t.toLowerCase().includes(lq))
+                    );
+                }),
+            );
+        }
+        if (activeTypes.length) list = list.filter((a) => activeTypes.includes(inferType(a)));
+        if (activeTags.length) list = list.filter((a) => activeTags.every((t) => (a.tags || []).includes(t)));
+        if (sort === "title") list = [...list].sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
+        if (sort === "year") list = [...list].sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+        return list;
+    }, [artefacts, search, pins, activeTypes, activeTags, sort]);
+
+    // Reset visible count when filters change
+    useEffect(() => { setVisibleCount(PAGE_SIZE); }, [search, pins, activeTypes, activeTags, sort]);
+
+    // Infinite scroll via IntersectionObserver on the bottom sentinel
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setVisibleCount((n) => Math.min(n + PAGE_SIZE, filtered.length));
+                }
+            },
+            { rootMargin: "200px" },
         );
-    }, [artefacts, search]);
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [filtered.length]);
+
+    const visible = filtered.slice(0, visibleCount);
+    const hasFilter = !!(search.trim() || pins.length || activeTypes.length || activeTags.length);
+
+    const handleRandom = useCallback(() => {
+        if (!filtered.length) return;
+        const pick = filtered[Math.floor(Math.random() * filtered.length)];
+        router.push(`/artefacts/${pick.slug || pick.id}`);
+    }, [filtered, router]);
 
     return (
-        <main className="min-h-screen bg-white text-stone-900">
-            <FloatingSearch
-                value={search}
-                onChange={setSearch}
-                open={searchOpen}
-                onToggle={() => setSearchOpen((v) => !v)}
-                placeholder="Search artefacts"
-            />
+        <main className="min-h-screen bg-white text-gray-900">
+            <div className="w-[60vw] mx-auto pt-24 pb-24">
 
-            <div className="pt-[58px]">
-                {filtered.length === 0 ? (
-                    <div className="flex items-center justify-center h-64">
-                        <p className="text-[10px] uppercase tracking-[0.5em] font-bold text-stone-300">
-                            {search ? "No results" : "No artefacts published yet"}
-                        </p>
+                {/* Page header */}
+                <div className="mb-10 space-y-1.5">
+                    <h1 className="text-3xl font-light tracking-tight text-gray-900">Artefacts</h1>
+                    <p className="text-sm font-light text-gray-500">All images, audio files, quotes, sketches, documents and more on Network Modelmakers Archive.</p>
+                </div>
+
+                {/* Controls bar */}
+                <div className="mb-6 flex items-center gap-3">
+                    <div className="flex-1">
+                        <SearchPinBar
+                            search={search}
+                            onSearch={setSearch}
+                            pins={pins}
+                            onPin={(v) => setPins((ps) => [...ps, v])}
+                            onUnpin={(v) => setPins((ps) => ps.filter((p) => p !== v))}
+                            suggestions={suggestions}
+                            placeholder="Search artefacts…"
+                        />
                     </div>
-                ) : view === "list" ? (
-                    <div className="max-w-7xl mx-auto px-8 py-6 space-y-3">
-                        {filtered.map((a, i) => {
-                            const type = inferType(a);
-                            const href = `/artefacts/${a.slug || a.id}`;
-                            return (
-                                <Link
-                                    key={a.id}
-                                    href={href}
-                                    className="group grid grid-cols-[2.5rem_1fr_auto] md:grid-cols-[2.5rem_1fr_280px_auto] items-center gap-6 px-6 py-6 rounded-xl border border-stone-100 hover:border-stone-300 bg-white hover:bg-stone-50 transition-all duration-300"
-                                >
-                                    <span className="font-mono text-xs text-stone-400 tabular-nums">
-                                        {String(i + 1).padStart(2, "0")}
-                                    </span>
-                                    <div className="min-w-0 space-y-2">
-                                        {a.tags && a.tags.length > 0 && (
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {a.tags.slice(0, 3).map((t) => (
-                                                    <span
-                                                        key={t}
-                                                        className="text-[7px] uppercase tracking-[0.4em] font-bold border border-stone-200 rounded px-1.5 py-0.5 text-stone-400"
-                                                    >
-                                                        {t}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                        <h2 className="text-xl font-light leading-snug group-hover:text-stone-500 transition-colors duration-300">
-                                            {a.title || "—"}
-                                        </h2>
-                                        {(a.architect || a.excerpt) && (
-                                            <p className="text-sm font-light text-stone-400 leading-relaxed max-w-lg line-clamp-1">
-                                                {a.architect || a.excerpt}
-                                                {a.architect && a.year ? `, ${a.year}` : ""}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="hidden md:block">
-                                        {thumb(a) ? (
-                                            <div className="relative h-16 w-full rounded-md bg-stone-50 overflow-hidden">
-                                                <Image
-                                                    src={thumb(a)!}
-                                                    alt={a.title ?? ""}
-                                                    fill
-                                                    className="object-cover group-hover:scale-[1.04] transition-transform duration-500"
-                                                    sizes="280px"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="h-16 w-full rounded-md bg-stone-50 border border-stone-100 flex items-center justify-center">
-                                                <span className="text-[7px] uppercase tracking-[0.4em] font-bold text-stone-300">
-                                                    {type}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex flex-col items-end gap-2">
-                                        <span className="text-[7px] uppercase tracking-[0.35em] font-bold text-stone-300">
-                                            {type}
-                                        </span>
-                                        <span className="text-stone-400 group-hover:text-stone-900 transition-colors duration-300 text-base">
-                                            →
-                                        </span>
-                                    </div>
-                                </Link>
-                            );
-                        })}
-                    </div>
-                ) : (
-                    <div className="max-w-7xl mx-auto px-8 py-6">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                            {filtered.map((a) => {
-                                const type = inferType(a);
-                                const href = `/artefacts/${a.slug || a.id}`;
-                                return (
-                                    <Link
-                                        key={a.id}
-                                        href={href}
-                                        className="group block rounded-xl overflow-hidden border border-stone-100 hover:border-stone-300 transition-all duration-300 relative aspect-[3/4] bg-stone-100"
+
+                    <div className="relative">
+                        <button
+                            onClick={() => setSortOpen((v) => !v)}
+                            className={`flex items-center gap-1.5 h-[38px] px-3 rounded-md border text-[9px] uppercase tracking-[0.3em] font-bold transition-colors bg-white ${sort !== "default" ? "border-gray-900 text-gray-900" : "border-gray-200 text-gray-500 hover:border-gray-900 hover:text-gray-900"}`}
+                        >
+                            {SORT_OPTIONS.find((o) => o.key === sort)?.label}
+                            <ChevronDown size={11} />
+                        </button>
+                        {sortOpen && (
+                            <div className="absolute top-full mt-1 right-0 w-36 bg-white border border-gray-200 rounded-md overflow-hidden shadow-md z-40">
+                                {SORT_OPTIONS.map((o) => (
+                                    <button
+                                        key={o.key}
+                                        onClick={() => { setSort(o.key); setSortOpen(false); }}
+                                        className={`w-full text-left px-4 py-2.5 text-[9px] uppercase tracking-[0.3em] font-bold transition-colors ${sort === o.key ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"}`}
                                     >
-                                        {thumb(a) ? (
-                                            <Image
-                                                src={thumb(a)!}
-                                                alt={a.title ?? ""}
-                                                fill
-                                                className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
-                                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full bg-stone-50 flex items-center justify-center">
-                                                <span className="text-[7px] uppercase tracking-[0.4em] font-bold text-stone-300">
-                                                    {type}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/65 to-transparent px-4 pt-10 pb-4">
-                                            {a.tags && a.tags.length > 0 && (
-                                                <p className="text-white/50 text-[7px] uppercase tracking-[0.35em] font-bold mb-1.5">
-                                                    {a.tags[0]}
-                                                </p>
-                                            )}
-                                            <h2 className="text-white text-[11px] font-light leading-snug">
-                                                {a.title || "—"}
-                                            </h2>
-                                        </div>
-                                    </Link>
-                                );
-                            })}
+                                        {o.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Random button */}
+                    <div className="relative group/random">
+                        <button
+                            onClick={handleRandom}
+                            className="flex items-center justify-center h-[38px] w-[38px] rounded-md border border-gray-200 text-gray-500 hover:border-gray-900 hover:text-gray-900 transition-colors bg-white"
+                        >
+                            <Shuffle size={13} />
+                        </button>
+                        <div className="absolute bottom-full mb-2 right-0 pointer-events-none opacity-0 group-hover/random:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                            <div className="bg-gray-900 text-white text-[8px] uppercase tracking-[0.3em] font-bold px-2.5 py-1.5 rounded-md">
+                                Take me to a random artefact
+                            </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Filter chips — types and tags stack independently */}
+                {(allTypes.length > 1 || allTags.length > 0) && (
+                    <div className="mb-8 space-y-2">
+                        {allTypes.length > 1 && (
+                            <div className="flex flex-wrap gap-2">
+                                {allTypes.map((t) => {
+                                    const on = activeTypes.includes(t);
+                                    return (
+                                        <button
+                                            key={`type:${t}`}
+                                            onClick={() => setActiveTypes((prev) => on ? prev.filter((x) => x !== t) : [...prev, t])}
+                                            className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.15em] font-semibold px-3 py-1 rounded-md border transition-colors duration-200 ${
+                                                on ? "bg-gray-900 text-white border-gray-900" : "border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900"
+                                            }`}
+                                        >
+                                            {t}
+                                            {on && <X size={9} strokeWidth={2.5} />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        {allTags.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {allTags.slice(0, 20).map((t) => {
+                                    const on = activeTags.includes(t);
+                                    return (
+                                        <button
+                                            key={`tag:${t}`}
+                                            onClick={() => setActiveTags((prev) => on ? prev.filter((x) => x !== t) : [...prev, t])}
+                                            className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.15em] font-semibold px-3 py-1 rounded-md border transition-colors duration-200 ${
+                                                on ? "bg-gray-700 text-white border-gray-700" : "border-gray-200 text-gray-500 hover:border-gray-600 hover:text-gray-700"
+                                            }`}
+                                        >
+                                            {t}
+                                            {on && <X size={9} strokeWidth={2.5} />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        {hasFilter && (
+                            <button
+                                onClick={() => { setSearch(""); setPins([]); setActiveTypes([]); setActiveTags([]); }}
+                                className="flex items-center gap-1 text-[10px] uppercase tracking-[0.15em] font-semibold px-3 py-1 rounded-md border border-dashed border-gray-300 text-gray-400 hover:border-gray-900 hover:text-gray-900 transition-colors"
+                            >
+                                <X size={9} /> Clear all
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* Result count */}
+                <p className="text-[10px] font-medium text-gray-700 mb-5">
+                    Number of artefacts: {filtered.length}
+                    {hasFilter ? " found" : ""}
+                </p>
+
+                {/* 3-column image grid */}
+                {filtered.length === 0 ? (
+                    <div className="flex items-center justify-center h-48 border border-dashed border-gray-200 rounded-xl">
+                        <p className="text-[10px] uppercase tracking-[0.5em] font-bold text-gray-300">No results</p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-3 gap-5">
+                            {visible.map((a) => <ArtefactTile key={a.id} a={a} />)}
+                        </div>
+                        {/* Infinite scroll sentinel */}
+                        <div ref={sentinelRef} className="h-10" />
+                        {visibleCount < filtered.length && (
+                            <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-gray-300 text-center mt-2">
+                                Loading…
+                            </p>
+                        )}
+                    </>
                 )}
             </div>
 
-            {/* View toggle — bottom right, matches explore/grid style */}
-            <div className="fixed bottom-4 right-4 z-40 flex items-center bg-white/50 backdrop-blur-xl border border-stone-200 rounded-md overflow-hidden h-[34px]">
+            {/* Bottom-left: help */}
+            <div className="fixed bottom-5 left-5 z-40">
                 <button
-                    onClick={() => setView("list")}
-                    aria-label="List view"
-                    className={`px-3 h-full flex items-center transition-colors duration-200 ${view === "list" ? "bg-stone-900/80 backdrop-blur-md text-white" : "text-stone-400 hover:text-stone-900"}`}
+                    onClick={() => setHelpOpen((v) => !v)}
+                    title="What are artefacts?"
+                    className={`flex items-center justify-center w-[34px] h-[34px] rounded-md border transition-colors duration-300 ${helpOpen ? "bg-stone-900 border-stone-900 text-white" : "bg-white/70 backdrop-blur-xl border-stone-200 text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white"}`}
                 >
-                    <LayoutList size={13} />
-                </button>
-                <div className="w-px h-4 bg-stone-200" />
-                <button
-                    onClick={() => setView("grid")}
-                    aria-label="Grid view"
-                    className={`px-3 h-full flex items-center transition-colors duration-200 ${view === "grid" ? "bg-stone-900/80 backdrop-blur-md text-white" : "text-stone-400 hover:text-stone-900"}`}
-                >
-                    <LayoutGrid size={13} />
+                    <HelpCircle size={13} />
                 </button>
             </div>
+
+            {/* Bottom-right: back to top */}
+            <div className="fixed bottom-5 right-5 z-40">
+                <button
+                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                    title="Back to top"
+                    className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                >
+                    <ArrowUp size={13} />
+                </button>
+            </div>
+
+            {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
         </main>
     );
 }

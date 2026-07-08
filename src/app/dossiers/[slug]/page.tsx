@@ -16,23 +16,12 @@ async function getDossier(slug: string): Promise<DossierData | null> {
     }
 }
 
-async function getRelatedDossiers(currentId: string, tags: string[]): Promise<RelatedDossier[]> {
-    if (tags.length === 0) return [];
+async function getAllDossiers(): Promise<{ id: string; tags?: string[]; coverImage?: string; title?: string; intro?: string }[]> {
     try {
         const snap = await getDocs(
             query(collection(db, "ma_dossiers"), where("isVisible", "==", true)),
         );
-        const all = snap.docs
-            .filter((d) => d.id !== currentId)
-            .map((d) => JSON.parse(JSON.stringify({ id: d.id, ...d.data() })) as RelatedDossier & { tags?: string[] });
-
-        // Score by tag overlap, keep top 4.
-        return all
-            .map((d) => ({ d, score: (d.tags ?? []).filter((t) => tags.includes(t)).length }))
-            .filter(({ score }) => score > 0)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 4)
-            .map(({ d }) => d);
+        return snap.docs.map((d) => JSON.parse(JSON.stringify({ id: d.id, ...d.data() })));
     } catch {
         return [];
     }
@@ -40,10 +29,27 @@ async function getRelatedDossiers(currentId: string, tags: string[]): Promise<Re
 
 export default async function DossierPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const dossier = await getDossier(slug);
+
+    const [dossier, allDossiers] = await Promise.all([
+        getDossier(slug),
+        getAllDossiers(),
+    ]);
+
     if (!dossier) notFound();
 
-    const related = await getRelatedDossiers(dossier.id, dossier.tags ?? []);
+    // Related: scored by tag overlap
+    const related: RelatedDossier[] = allDossiers
+        .filter((d) => d.id !== dossier.id)
+        .map((d) => ({ d, score: (d.tags ?? []).filter((t) => (dossier.tags ?? []).includes(t)).length }))
+        .filter(({ score }) => score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4)
+        .map(({ d }) => d as RelatedDossier);
 
-    return <DossierPageClient dossier={dossier} related={related} />;
+    // Prev / next in document order
+    const idx = allDossiers.findIndex((d) => d.id === dossier.id);
+    const prevSlug = idx > 0 ? allDossiers[idx - 1].id : null;
+    const nextSlug = idx >= 0 && idx < allDossiers.length - 1 ? allDossiers[idx + 1].id : null;
+
+    return <DossierPageClient dossier={dossier} related={related} prevSlug={prevSlug} nextSlug={nextSlug} />;
 }
