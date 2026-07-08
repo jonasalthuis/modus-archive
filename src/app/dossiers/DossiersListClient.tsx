@@ -129,7 +129,7 @@ function DossierCard({ d }: { d: Dossier }) {
 
 function HelpModal({ onClose }: { onClose: () => void }) {
     return (
-        <div className="fixed inset-0 z-50 flex items-end justify-end p-6 pointer-events-none">
+        <div className="fixed bottom-[55px] left-5 z-50 pointer-events-none">
             <div
                 className="pointer-events-auto w-80 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200"
                 style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.12)" }}
@@ -143,7 +143,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
                         Dossiers are curated thematic collections assembled from the NMA archive. Each dossier brings together models, photographs, and documents around a single architectural idea, period, or collaboration.
                     </p>
                     <p className="text-sm font-light text-gray-700 leading-relaxed">
-                        They are authored by Alessandro Rognoni as part of the ongoing archival research — connecting individual models to broader narratives about how architecture was represented and communicated in late 20th‑century Britain.
+                        They are authored by Alessandro Rognoni as part of the ongoing archival research, connecting individual models to broader narratives about how architecture was represented and communicated in late 20th-century Britain.
                     </p>
                     <p className="text-sm font-light text-gray-700 leading-relaxed">
                         Use the tag filters to explore by theme, architect, or period. Click any dossier to read it in full.
@@ -327,10 +327,12 @@ export function DossiersListClient({ dossiers }: { dossiers: Dossier[] }) {
             </div>
 
             {/* Bottom-right: back to top */}
-            <div className="fixed bottom-5 right-5 z-40">
+            <div className="fixed bottom-5 right-5 z-40 group/top">
+                <div className="absolute bottom-full mb-2 right-0 pointer-events-none opacity-0 group-hover/top:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                    <span className="bg-stone-900 text-white text-[8px] uppercase tracking-[0.3em] font-bold px-2.5 py-1.5 rounded-md">Back to top</span>
+                </div>
                 <button
                     onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    title="Back to top"
                     className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
                 >
                     <ArrowUp size={13} />
