@@ -63,8 +63,15 @@ function DossierCard({ d }: { d: Dossier }) {
 
     useEffect(() => {
         if (!hovered || images.length <= 1) { setImgIdx(0); return; }
-        const id = setInterval(() => setImgIdx((i) => (i + 1) % images.length), 150);
-        return () => clearInterval(id);
+        let intervalId: ReturnType<typeof setInterval>;
+        const timeoutId = setTimeout(() => {
+            setImgIdx((i) => (i + 1) % images.length);
+            intervalId = setInterval(() => setImgIdx((i) => (i + 1) % images.length), 700);
+        }, 150);
+        return () => {
+            clearTimeout(timeoutId);
+            clearInterval(intervalId);
+        };
     }, [hovered, images.length]);
 
     return (
@@ -72,7 +79,7 @@ function DossierCard({ d }: { d: Dossier }) {
             href={href}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => { setHovered(false); setImgIdx(0); }}
-            className="group grid grid-cols-[1fr_200px] items-center gap-8 p-7 bg-white border border-gray-200 rounded-xl hover:border-gray-400 hover:shadow-sm transition-all duration-300"
+            className="group grid grid-cols-[1fr_280px] items-center gap-8 p-7 bg-white border border-gray-200 rounded-xl hover:border-gray-400 hover:shadow-sm transition-all duration-300"
         >
             {/* Text */}
             <div className="min-w-0 space-y-3">
@@ -264,14 +271,6 @@ export function DossiersListClient({ dossiers }: { dossiers: Dossier[] }) {
                         )}
                     </div>
 
-                    {/* Random */}
-                    <button
-                        onClick={handleRandom}
-                        title="Random dossier"
-                        className="flex items-center justify-center h-[38px] w-[38px] rounded-md border border-gray-200 text-gray-500 hover:border-gray-900 hover:text-gray-900 transition-colors bg-white"
-                    >
-                        <Shuffle size={13} />
-                    </button>
                 </div>
 
                 {/* Tag filter chips */}
@@ -330,17 +329,26 @@ export function DossiersListClient({ dossiers }: { dossiers: Dossier[] }) {
                 </button>
             </div>
 
-            {/* Bottom-right: back to top */}
-            <div className="fixed bottom-5 right-5 z-40 group/top">
-                <div className="absolute bottom-full mb-2 right-0 pointer-events-none opacity-0 group-hover/top:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                    <span className="bg-stone-900 text-white text-[8px] uppercase tracking-[0.3em] font-bold px-2.5 py-1.5 rounded-md">Back to top</span>
-                </div>
+            {/* Bottom-right: random + back to top */}
+            <div className="fixed bottom-5 right-5 z-40 flex items-center gap-2">
                 <button
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                    onClick={handleRandom}
+                    title="Random dossier"
                     className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
                 >
-                    <ArrowUp size={13} />
+                    <Shuffle size={13} />
                 </button>
+                <div className="relative group/top">
+                    <div className="absolute bottom-full mb-2 right-0 pointer-events-none opacity-0 group-hover/top:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                        <span className="bg-stone-900 text-white text-[8px] uppercase tracking-[0.3em] font-bold px-2.5 py-1.5 rounded-md">Back to top</span>
+                    </div>
+                    <button
+                        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                        className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                    >
+                        <ArrowUp size={13} />
+                    </button>
+                </div>
             </div>
 
             {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}

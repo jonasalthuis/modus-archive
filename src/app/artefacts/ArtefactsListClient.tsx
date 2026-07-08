@@ -264,20 +264,6 @@ export function ArtefactsListClient({ artefacts }: { artefacts: Artefact[] }) {
                         )}
                     </div>
 
-                    {/* Random button */}
-                    <div className="relative group/random">
-                        <button
-                            onClick={handleRandom}
-                            className="flex items-center justify-center h-[38px] w-[38px] rounded-md border border-gray-200 text-gray-500 hover:border-gray-900 hover:text-gray-900 transition-colors bg-white"
-                        >
-                            <Shuffle size={13} />
-                        </button>
-                        <div className="absolute bottom-full mb-2 right-0 pointer-events-none opacity-0 group-hover/random:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                            <div className="bg-gray-900 text-white text-[8px] uppercase tracking-[0.3em] font-bold px-2.5 py-1.5 rounded-md">
-                                Take me to a random artefact
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Filter chips — types and tags stack independently */}
@@ -370,17 +356,26 @@ export function ArtefactsListClient({ artefacts }: { artefacts: Artefact[] }) {
                 </button>
             </div>
 
-            {/* Bottom-right: back to top */}
-            <div className="fixed bottom-5 right-5 z-40 group/top">
-                <div className="absolute bottom-full mb-2 right-0 pointer-events-none opacity-0 group-hover/top:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                    <span className="bg-stone-900 text-white text-[8px] uppercase tracking-[0.3em] font-bold px-2.5 py-1.5 rounded-md">Back to top</span>
-                </div>
+            {/* Bottom-right: random + back to top */}
+            <div className="fixed bottom-5 right-5 z-40 flex items-center gap-2">
                 <button
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                    onClick={handleRandom}
+                    title="Random artefact"
                     className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
                 >
-                    <ArrowUp size={13} />
+                    <Shuffle size={13} />
                 </button>
+                <div className="relative group/top">
+                    <div className="absolute bottom-full mb-2 right-0 pointer-events-none opacity-0 group-hover/top:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                        <span className="bg-stone-900 text-white text-[8px] uppercase tracking-[0.3em] font-bold px-2.5 py-1.5 rounded-md">Back to top</span>
+                    </div>
+                    <button
+                        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                        className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                    >
+                        <ArrowUp size={13} />
+                    </button>
+                </div>
             </div>
 
             {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
