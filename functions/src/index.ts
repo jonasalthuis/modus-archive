@@ -13,7 +13,7 @@ const db = admin.firestore();
 export const syncModelsFromSheet = functions.https.onRequest(async (req, res) => {
     try {
         // 1. Setup Auth
-        const keyPath = process.env.SERVICE_ACCOUNT_KEY_PATH || path.join(__dirname, "..", "sidenotenexus-dc9441f42cca.json");
+        const keyPath = process.env.SERVICE_ACCOUNT_KEY_PATH;
 
         const spreadsheetId = process.env.SPREADSHEET_ID || "1VellbnjPuxdd405OQv6kTdFAlupbCdfWJmY5CagDhhM";
         const range = "Sheet1!A2:AA1000"; // Starting at row 2 to skip headers

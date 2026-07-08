@@ -1,12 +1,10 @@
 import * as admin from "firebase-admin";
 import { google } from "googleapis";
 import { GoogleAuth } from "google-auth-library";
-import * as path from "path";
 
 // Initialize Firestore if not already done
 
-// Path to your service account key file
-const KEYFILEPATH = path.join(__dirname, "../sidenotenexus-dc9441f42cca.json");
+const KEYFILEPATH = process.env.SERVICE_ACCOUNT_KEY_PATH!;
 
 // Define the scopes for Google Sheets API
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"];

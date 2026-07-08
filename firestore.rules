@@ -58,10 +58,12 @@ service cloud.firestore {
     }
 
     // ── Invite codes ──────────────────────────────────────────────────────
-    // Publicly readable so a code can be validated before sign-in.
+    // Single-document reads are public so a code can be validated before sign-in.
+    // List (full collection reads) is admin-only to prevent enumeration.
     // Admins manage them; redemption only allows incrementing useCount by 1.
     match /ma_invites/{document} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if isAdmin();
       allow create, delete: if isAdmin();
       allow update: if isAdmin()
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['useCount'])
