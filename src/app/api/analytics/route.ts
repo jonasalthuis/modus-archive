@@ -106,7 +106,10 @@ export async function GET() {
         });
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Unknown error';
+        // Permission errors (service account not granted Analytics Data API access)
+        // return 503 so CDN logs them as service-unavailable, not server errors
+        const status = message.includes('PERMISSION_DENIED') || message.includes('403') ? 503 : 500;
         console.error('Analytics API error:', message);
-        return NextResponse.json({ error: message }, { status: 500 });
+        return NextResponse.json({ error: message }, { status });
     }
 }
