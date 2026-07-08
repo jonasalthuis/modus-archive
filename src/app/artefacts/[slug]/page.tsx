@@ -128,8 +128,7 @@ export default async function ArtefactPage({ params }: { params: Promise<{ slug:
         ? otherSlugs[Math.floor(Math.random() * otherSlugs.length)]
         : null;
 
-    const navBtn = "flex items-center justify-center w-[34px] h-[34px] bg-white border border-stone-300 rounded-md hover:border-stone-900 hover:text-stone-900 transition-colors text-stone-500 cursor-pointer";
-    const pill = "flex items-center gap-1.5 h-[34px] px-3 bg-white border border-stone-300 rounded-md hover:border-stone-900 hover:text-stone-900 transition-colors text-stone-500 text-[8px] uppercase tracking-[0.35em] font-bold cursor-pointer";
+    const navBtn = "flex items-center justify-center w-[34px] h-[34px] bg-white/50 backdrop-blur-xl border border-stone-200 rounded-md hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors text-stone-400 cursor-pointer";
 
     return (
         <main className="min-h-screen bg-white text-stone-900 flex flex-col">
@@ -151,27 +150,28 @@ export default async function ArtefactPage({ params }: { params: Promise<{ slug:
                 </div>
             </div>
 
-            {/* Bottom-right: random + prev/next */}
-            <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2">
-                {randomSlug && (
-                    <Link href={`/artefacts/${randomSlug}`} className={pill}>
+            {/* Bottom-right: random */}
+            {randomSlug && (
+                <div className="fixed bottom-5 right-5 z-40">
+                    <Link href={`/artefacts/${randomSlug}`} aria-label="Random artefact" className={navBtn}>
                         <Shuffle size={11} />
-                        Random
                     </Link>
-                )}
-                {(prevSlug || nextSlug) && (
-                    <div className="flex items-center gap-1">
-                        <Link href={prevSlug ? `/artefacts/${prevSlug}` : "#"} aria-label="Previous artefact"
-                            className={`${navBtn} ${!prevSlug ? "opacity-30 pointer-events-none" : ""}`}>
-                            <ChevronLeft size={15} />
-                        </Link>
-                        <Link href={nextSlug ? `/artefacts/${nextSlug}` : "#"} aria-label="Next artefact"
-                            className={`${navBtn} ${!nextSlug ? "opacity-30 pointer-events-none" : ""}`}>
-                            <ChevronRight size={15} />
-                        </Link>
-                    </div>
-                )}
-            </div>
+                </div>
+            )}
+
+            {/* Side arrows: prev left / next right, vertically centred */}
+            {prevSlug && (
+                <Link href={`/artefacts/${prevSlug}`} aria-label="Previous artefact"
+                    className={`fixed left-4 top-1/2 -translate-y-1/2 z-50 ${navBtn}`}>
+                    <ChevronLeft size={15} />
+                </Link>
+            )}
+            {nextSlug && (
+                <Link href={`/artefacts/${nextSlug}`} aria-label="Next artefact"
+                    className={`fixed right-4 top-1/2 -translate-y-1/2 z-50 ${navBtn}`}>
+                    <ChevronRight size={15} />
+                </Link>
+            )}
 
             {/* ── Full-screen artefact display ── */}
             <div className="flex-1 relative">
@@ -231,69 +231,68 @@ export default async function ArtefactPage({ params }: { params: Promise<{ slug:
                 )}
             </div>
 
-            {/* ── Info strip ── */}
-            <div className="border-t border-stone-200 bg-white">
-                <div className="mx-auto px-8 py-8 flex flex-col gap-8" style={{ width: "60%" }}>
+            {/* ── Info card ── */}
+            <div className="bg-white py-10">
+                <div className="mx-auto" style={{ width: "60%" }}>
+                    <div className="border border-stone-200 rounded-xl divide-y divide-stone-100 overflow-hidden">
 
-                    {/* Part of */}
-                    <div>
-                        <p className="text-[8px] uppercase tracking-[0.45em] font-bold text-stone-400 mb-3">
-                            Part of
-                        </p>
-                        {model ? (
-                            <Link
-                                href={`/models/${model.id}`}
-                                className="group flex items-baseline gap-3"
-                            >
-                                <span className="font-mono text-[11px] text-stone-400 group-hover:text-stone-700 transition-colors">
-                                    {model.modelNumber ?? model.id}
-                                </span>
-                                <span className="text-lg font-light text-stone-900 group-hover:text-stone-600 transition-colors leading-snug">
-                                    {model.title ?? "Untitled model"}
-                                </span>
-                                {model.architect && (
-                                    <span className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-400 group-hover:text-stone-600 transition-colors hidden sm:inline">
-                                        {model.architect}
+                        {/* Part of */}
+                        <div className="px-7 py-6">
+                            <p className="text-[8px] uppercase tracking-[0.45em] font-bold text-stone-400 mb-4">
+                                Part of
+                            </p>
+                            {model ? (
+                                <Link href={`/models/${model.id}`} className="group flex items-baseline gap-3">
+                                    <span className="font-mono text-[11px] text-stone-400 group-hover:text-stone-700 transition-colors">
+                                        {model.modelNumber ?? model.id}
                                     </span>
-                                )}
-                                <span className="text-stone-400 group-hover:text-stone-900 transition-colors text-sm ml-auto">→</span>
-                            </Link>
-                        ) : (
-                            <p className="text-sm font-light text-stone-400">—</p>
-                        )}
-                    </div>
-
-                    {/* Mentioned in dossier */}
-                    <div>
-                        <p className="text-[8px] uppercase tracking-[0.45em] font-bold text-stone-400 mb-3">
-                            Mentioned in dossier
-                        </p>
-                        {dossiers.length > 0 ? (
-                            <div className="flex flex-col gap-2">
-                                {dossiers.map((d) => (
-                                    <Link
-                                        key={d.id}
-                                        href={`/dossiers/${d.slug || d.id}`}
-                                        className="text-base font-light text-stone-900 hover:text-stone-500 underline underline-offset-4 decoration-stone-300 hover:decoration-stone-500 transition-colors"
-                                    >
-                                        {d.title ?? d.id}
-                                    </Link>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-sm font-light text-stone-400">—</p>
-                        )}
-                    </div>
-
-                    {/* Photographer credit */}
-                    {artefact.photographer && (
-                        <div className="pt-2 border-t border-stone-100">
-                            <span className="text-[9px] font-light text-stone-400">
-                                Photo: {artefact.photographer}
-                            </span>
+                                    <span className="text-lg font-light text-stone-900 group-hover:text-stone-600 transition-colors leading-snug">
+                                        {model.title ?? "Untitled model"}
+                                    </span>
+                                    {model.architect && (
+                                        <span className="text-[9px] uppercase tracking-[0.3em] font-bold text-stone-400 group-hover:text-stone-600 transition-colors hidden sm:inline">
+                                            {model.architect}
+                                        </span>
+                                    )}
+                                    <span className="text-stone-400 group-hover:text-stone-900 transition-colors text-sm ml-auto">→</span>
+                                </Link>
+                            ) : (
+                                <p className="text-sm font-light text-stone-400">No model linked</p>
+                            )}
                         </div>
-                    )}
 
+                        {/* Mentioned in dossier */}
+                        <div className="px-7 py-6">
+                            <p className="text-[8px] uppercase tracking-[0.45em] font-bold text-stone-400 mb-4">
+                                Mentioned in dossier
+                            </p>
+                            {dossiers.length > 0 ? (
+                                <div className="flex flex-col gap-2">
+                                    {dossiers.map((d) => (
+                                        <Link
+                                            key={d.id}
+                                            href={`/dossiers/${d.slug || d.id}`}
+                                            className="text-base font-light text-stone-900 hover:text-stone-500 underline underline-offset-4 decoration-stone-200 hover:decoration-stone-500 transition-colors"
+                                        >
+                                            {d.title ?? d.id}
+                                        </Link>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm font-light text-stone-400">Not mentioned in any dossier</p>
+                            )}
+                        </div>
+
+                        {/* Photographer credit */}
+                        {artefact.photographer && (
+                            <div className="px-7 py-4">
+                                <span className="text-[9px] font-light text-stone-400">
+                                    Photo: {artefact.photographer}
+                                </span>
+                            </div>
+                        )}
+
+                    </div>
                 </div>
             </div>
         </main>

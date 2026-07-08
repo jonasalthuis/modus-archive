@@ -63,7 +63,7 @@ function DossierCard({ d }: { d: Dossier }) {
 
     useEffect(() => {
         if (!hovered || images.length <= 1) { setImgIdx(0); return; }
-        const id = setInterval(() => setImgIdx((i) => (i + 1) % images.length), 700);
+        const id = setInterval(() => setImgIdx((i) => (i + 1) % images.length), 150);
         return () => clearInterval(id);
     }, [hovered, images.length]);
 
@@ -110,11 +110,15 @@ function DossierCard({ d }: { d: Dossier }) {
                         key={url}
                         src={url}
                         alt=""
-                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === imgIdx ? "opacity-100" : "opacity-0"}`}
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${i === imgIdx ? "opacity-100" : "opacity-0"}`}
                     />
-                )) : null}
+                )) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-[8px] uppercase tracking-[0.35em] font-bold text-gray-400">No image</span>
+                    </div>
+                )}
                 {images.length > 1 && (
-                    <div className="absolute bottom-2 right-2 flex gap-1 pointer-events-none">
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 pointer-events-none">
                         {images.slice(0, 6).map((_, i) => (
                             <div key={i} className={`w-1 h-1 rounded-full transition-colors duration-300 ${i === imgIdx ? "bg-white" : "bg-white/35"}`} />
                         ))}
