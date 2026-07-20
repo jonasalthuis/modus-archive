@@ -462,17 +462,10 @@ export function DossierPageClient({
                 </div>
             </div>
 
-            {/* Bottom-right: back to top + prev/next dossier */}
-            <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2">
-                <button
-                    onClick={() => document.getElementById("dossier-scroll")?.scrollTo({ top: 0, behavior: "smooth" })}
-                    title="Back to top"
-                    className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300 shadow-sm"
-                >
-                    <ArrowUp size={13} />
-                </button>
-                {(prevSlug || nextSlug) && (
-                    <div className="flex items-center gap-1">
+            {/* Bottom-right: prev/next dossier + back to top */}
+            <div className="fixed bottom-5 right-5 z-40 flex items-center gap-2">
+                {(prevSlug != null || nextSlug != null) && (
+                    <>
                         <Link
                             href={prevSlug ? `/dossiers/${prevSlug}` : "#"}
                             aria-label="Previous dossier"
@@ -487,8 +480,15 @@ export function DossierPageClient({
                         >
                             <ChevronRight size={13} />
                         </Link>
-                    </div>
+                    </>
                 )}
+                <button
+                    onClick={() => document.getElementById("dossier-scroll")?.scrollTo({ top: 0, behavior: "smooth" })}
+                    title="Back to top"
+                    className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300 shadow-sm"
+                >
+                    <ArrowUp size={13} />
+                </button>
             </div>
 
             {/* ── Gallery panel — slides in from right when an image is clicked ── */}
