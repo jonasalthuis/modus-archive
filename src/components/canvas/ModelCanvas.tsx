@@ -72,14 +72,16 @@ function clamp(v: number, min: number, max: number) {
 
 function getImageGroups(model: ModelData): ImageGroup[] {
     if (model.imageGroups?.length) return model.imageGroups;
-    if (model.images?.length) {
-        return model.images.map((img, i) => ({
-            id: `img-${i}`,
-            mode: "single" as const,
-            images: [img],
-        }));
+    if (!model.images?.length) return [];
+    if (model.images.length === 1) {
+        return [{ id: "img-0", mode: "single" as const, images: model.images }];
     }
-    return [];
+    // Hero shows the first (starred) image; gallery card holds all for click-through.
+    // Grouping prevents overlap when models have many images (slots were cycling).
+    return [
+        { id: "img-0", mode: "single" as const, images: [model.images[0]] },
+        { id: "img-gallery", mode: "gallery" as const, images: model.images },
+    ];
 }
 
 function generateLayout(model: ModelData): CanvasItemLayout[] {
@@ -112,7 +114,7 @@ function generateLayout(model: ModelData): CanvasItemLayout[] {
     return items;
 }
 
-const LAYOUT_VERSION = "v5";
+const LAYOUT_VERSION = "v6";
 function storageKey(modelId: string) {
     return `nma-canvas-${LAYOUT_VERSION}-${modelId}`;
 }
