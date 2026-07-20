@@ -54,6 +54,8 @@ import type { ModelImage } from "@/types/model";
 
 export type DossierItemType = "heading" | "text" | "artefact" | "modelImage";
 
+export type ImageWidth = "small" | "medium" | "full";
+
 export interface DossierItem {
     id: string;
     type: DossierItemType;
@@ -65,6 +67,26 @@ export interface DossierItem {
     modelTitle?: string;
     imageUrl?: string;
     imageCaption?: string;
+    imageWidth?: ImageWidth;
+}
+
+const IMAGE_WIDTH_OPTIONS: { value: ImageWidth; label: string }[] = [
+    { value: "small", label: "50%" },
+    { value: "medium", label: "75%" },
+    { value: "full", label: "Full" },
+];
+
+// Legacy dossiers were seeded with plain "image" items (type: "image", caption
+// instead of imageCaption) directly in Firestore. Normalize them to "modelImage"
+// on load so the editor's type-keyed lookups never see an unrecognized type.
+function normalizeItems(raw: unknown[]): DossierItem[] {
+    return raw.map((item) => {
+        const it = item as Omit<DossierItem, "type"> & { type: string; caption?: string };
+        if (it.type === "image") {
+            return { ...it, type: "modelImage", imageCaption: it.imageCaption ?? it.caption } as DossierItem;
+        }
+        return it as DossierItem;
+    });
 }
 
 interface DossierMeta {
@@ -278,6 +300,24 @@ const SortableItem = ({
                                 placeholder="Caption (optional)"
                                 className="w-full border border-gray-200 rounded-md p-3 font-mono text-sm focus:outline-none focus:border-gray-900 transition-colors"
                             />
+                            <div className="space-y-1.5">
+                                <label className="block text-[8px] uppercase tracking-[0.4em] font-bold text-gray-500">Display width</label>
+                                <div className="flex gap-1.5">
+                                    {IMAGE_WIDTH_OPTIONS.map((opt) => {
+                                        const active = (item.imageWidth ?? "full") === opt.value;
+                                        return (
+                                            <button
+                                                key={opt.value}
+                                                type="button"
+                                                onClick={() => onUpdate(item.id, { imageWidth: opt.value })}
+                                                className={`flex-1 py-2 text-[9px] uppercase tracking-[0.2em] font-bold rounded-md border transition-colors ${active ? "bg-gray-900 text-white border-gray-900" : "border-gray-200 text-gray-500 hover:border-gray-700 hover:text-gray-800"}`}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -373,7 +413,14 @@ const DossierPreview = ({ meta, items }: { meta: DossierMeta; items: DossierItem
                         </div>
                     )}
                     {item.type === "modelImage" && (
-                        <div className="space-y-2">
+                        <div
+                            className="space-y-2"
+                            style={{
+                                maxWidth: item.imageWidth === "small" ? "50%" : item.imageWidth === "medium" ? "75%" : "100%",
+                                marginLeft: "auto",
+                                marginRight: "auto",
+                            }}
+                        >
                             {item.imageUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={item.imageUrl} alt={item.imageCaption || ""} className="w-full object-cover" />
@@ -1104,7 +1151,7 @@ export const DossierEditor = ({
                 const tags = Array.isArray(d.tags) ? (d.tags as string[]) : [];
                 setMeta({ title: d.title || "", slug: d.slug || "", intro: d.intro || "", isVisible: d.isVisible ?? false, tags, coverImage: d.coverImage || "" });
                 setTagsInput(tags.join(", "));
-                setItems(Array.isArray(d.items) ? (d.items as DossierItem[]) : []);
+                setItems(Array.isArray(d.items) ? normalizeItems(d.items) : []);
             }
             setLoading(false);
         });

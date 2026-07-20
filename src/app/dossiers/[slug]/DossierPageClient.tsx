@@ -8,7 +8,9 @@ import { ArrowUpRight, ArrowLeft, ChevronLeft, ChevronRight, Quote as QuoteIcon,
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type DossierItemType = "heading" | "text" | "quote" | "note" | "artefact" | "modelImage";
+export type DossierItemType = "heading" | "text" | "quote" | "note" | "artefact" | "modelImage" | "image";
+
+export type ImageWidth = "small" | "medium" | "full";
 
 export interface DossierItem {
     id: string;
@@ -21,7 +23,16 @@ export interface DossierItem {
     modelTitle?: string;
     imageUrl?: string;
     imageCaption?: string;
+    /** Legacy field used by directly-authored "image" items — same role as imageCaption */
+    caption?: string;
+    imageWidth?: ImageWidth;
 }
+
+const IMAGE_WIDTH_PCT: Record<ImageWidth, string> = {
+    small: "50%",
+    medium: "75%",
+    full: "100%",
+};
 
 export interface DossierData {
     id: string;
@@ -101,44 +112,48 @@ function ContentNote({ item }: { item: DossierItem }) {
 }
 
 function ContentImage({ item, onOpen }: { item: DossierItem; onOpen: () => void }) {
+    const caption = item.imageCaption ?? item.caption;
+    const width = IMAGE_WIDTH_PCT[item.imageWidth ?? "full"];
     return (
-        <button
-            onClick={onOpen}
-            className="group w-full text-left space-y-0 focus:outline-none"
-        >
-            <div className="relative w-full aspect-[4/3] overflow-hidden bg-stone-100">
-                {item.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                        src={item.imageUrl}
-                        alt={item.imageCaption ?? item.modelTitle ?? ""}
-                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                    />
-                ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-300">No image</span>
+        <div style={{ maxWidth: width, marginLeft: "auto", marginRight: "auto" }}>
+            <button
+                onClick={onOpen}
+                className="group w-full text-left space-y-0 focus:outline-none"
+            >
+                <div className="relative w-full aspect-[4/3] overflow-hidden bg-stone-100">
+                    {item.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src={item.imageUrl}
+                            alt={caption ?? item.modelTitle ?? ""}
+                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                        />
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-300">No image</span>
+                        </div>
+                    )}
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white text-[9px] uppercase tracking-[0.4em] font-bold bg-black/50 px-3 py-1.5">
+                            View larger
+                        </span>
+                    </div>
+                </div>
+                {(caption || item.modelId) && (
+                    <div className="border border-t-0 border-stone-200 px-4 py-3 flex items-start justify-between gap-4">
+                        {caption && (
+                            <p className="text-[11px] text-stone-600 font-light leading-relaxed">{caption}</p>
+                        )}
+                        {item.modelId && (
+                            <span className="text-[9px] font-mono text-stone-400 flex-shrink-0">
+                                {item.modelId}
+                            </span>
+                        )}
                     </div>
                 )}
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white text-[9px] uppercase tracking-[0.4em] font-bold bg-black/50 px-3 py-1.5">
-                        View larger
-                    </span>
-                </div>
-            </div>
-            {(item.imageCaption || item.modelId) && (
-                <div className="border border-t-0 border-stone-200 px-4 py-3 flex items-start justify-between gap-4">
-                    {item.imageCaption && (
-                        <p className="text-[11px] text-stone-600 font-light leading-relaxed">{item.imageCaption}</p>
-                    )}
-                    {item.modelId && (
-                        <span className="text-[9px] font-mono text-stone-400 flex-shrink-0">
-                            {item.modelId}
-                        </span>
-                    )}
-                </div>
-            )}
-        </button>
+            </button>
+        </div>
     );
 }
 
@@ -216,91 +231,96 @@ function ImageGallery({
         slideRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
 
+    const galleryBtn =
+        "flex items-center justify-center w-7 h-7 rounded-md text-stone-400 hover:bg-stone-900 hover:text-white disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-stone-400 transition-colors duration-200";
+
     return (
-        <div className="h-full flex flex-col bg-white border-l border-stone-100">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 flex-shrink-0">
-                <div className="flex items-center gap-3">
+        <div className="h-full bg-white p-3">
+            <div className="h-full flex flex-col border border-stone-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 flex-shrink-0">
                     <p className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-400">
                         {currentIdx + 1} / {items.length}
                     </p>
-                </div>
-                <div className="flex items-center gap-1">
-                    <button
-                        onClick={() => scrollTo(Math.max(0, currentIdx - 1))}
-                        disabled={currentIdx === 0}
-                        className="flex items-center justify-center w-7 h-7 text-stone-400 hover:text-stone-900 disabled:opacity-25 transition-colors"
-                    >
-                        <ChevronUp size={14} />
-                    </button>
-                    <button
-                        onClick={() => scrollTo(Math.min(items.length - 1, currentIdx + 1))}
-                        disabled={currentIdx === items.length - 1}
-                        className="flex items-center justify-center w-7 h-7 text-stone-400 hover:text-stone-900 disabled:opacity-25 transition-colors"
-                    >
-                        <ChevronDown size={14} />
-                    </button>
-                    <div className="w-px h-4 bg-stone-100 mx-1" />
-                    <button
-                        onClick={onClose}
-                        className="flex items-center justify-center w-7 h-7 text-stone-400 hover:text-stone-900 transition-colors"
-                    >
-                        <X size={14} />
-                    </button>
-                </div>
-            </div>
-
-            {/* Filmstrip — each slide is almost full height so next one peeks */}
-            <div
-                ref={containerRef}
-                className="flex-1 overflow-y-scroll"
-                style={{ scrollSnapType: "y mandatory" }}
-            >
-                {items.map((item, i) => (
-                    <div
-                        key={item.id}
-                        ref={(el) => { slideRefs.current[i] = el; }}
-                        data-idx={i}
-                        onClick={() => scrollTo(i)}
-                        style={{ scrollSnapAlign: "start", height: "calc(100% - 64px)" }}
-                        className="flex-shrink-0 flex flex-col cursor-pointer"
-                    >
-                        {/* Image fills available space */}
-                        <div className="flex-1 relative overflow-hidden bg-stone-50">
-                            {item.imageUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                    src={item.imageUrl}
-                                    alt={item.imageCaption ?? ""}
-                                    className="w-full h-full object-contain"
-                                />
-                            ) : (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-300">No image</span>
-                                </div>
-                            )}
-                        </div>
-                        {/* Caption strip */}
-                        <div className="flex-shrink-0 px-4 py-3 border-t border-stone-100 space-y-1 bg-white">
-                            {item.imageCaption && (
-                                <p className="text-[11px] text-stone-500 font-light leading-relaxed">{item.imageCaption}</p>
-                            )}
-                            {item.modelId && (
-                                <Link
-                                    href={`/models/${item.modelId}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center gap-1 text-[9px] font-mono text-stone-400 hover:text-stone-900 transition-colors"
-                                >
-                                    Model {item.modelId}
-                                    {item.modelTitle ? ` — ${item.modelTitle}` : ""}
-                                    <ArrowUpRight size={9} />
-                                </Link>
-                            )}
-                        </div>
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={() => scrollTo(Math.max(0, currentIdx - 1))}
+                            disabled={currentIdx === 0}
+                            aria-label="Previous image"
+                            className={galleryBtn}
+                        >
+                            <ChevronUp size={14} />
+                        </button>
+                        <button
+                            onClick={() => scrollTo(Math.min(items.length - 1, currentIdx + 1))}
+                            disabled={currentIdx === items.length - 1}
+                            aria-label="Next image"
+                            className={galleryBtn}
+                        >
+                            <ChevronDown size={14} />
+                        </button>
+                        <div className="w-px h-4 bg-stone-200 mx-1" />
+                        <button onClick={onClose} aria-label="Close gallery" className={galleryBtn}>
+                            <X size={14} />
+                        </button>
                     </div>
-                ))}
-                {/* Bottom spacer so last slide can scroll into snap position */}
-                <div style={{ height: "64px" }} />
+                </div>
+
+                {/* Filmstrip — each slide is almost full height so next one peeks */}
+                <div
+                    ref={containerRef}
+                    className="flex-1 overflow-y-scroll"
+                    style={{ scrollSnapType: "y mandatory" }}
+                >
+                    {items.map((item, i) => {
+                        const caption = item.imageCaption ?? item.caption;
+                        return (
+                            <div
+                                key={item.id}
+                                ref={(el) => { slideRefs.current[i] = el; }}
+                                data-idx={i}
+                                onClick={() => scrollTo(i)}
+                                style={{ scrollSnapAlign: "start", height: "calc(100% - 64px)" }}
+                                className="flex-shrink-0 flex flex-col cursor-pointer"
+                            >
+                                {/* Image fills available space */}
+                                <div className="flex-1 relative overflow-hidden bg-stone-50">
+                                    {item.imageUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                            src={item.imageUrl}
+                                            alt={caption ?? ""}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <span className="text-[9px] uppercase tracking-[0.4em] font-bold text-stone-300">No image</span>
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Caption strip */}
+                                <div className="flex-shrink-0 px-4 py-3 border-t border-stone-100 space-y-1 bg-white">
+                                    {caption && (
+                                        <p className="text-[11px] text-stone-500 font-light leading-relaxed">{caption}</p>
+                                    )}
+                                    {item.modelId && (
+                                        <Link
+                                            href={`/models/${item.modelId}`}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="inline-flex items-center gap-1 text-[9px] font-mono text-stone-400 hover:text-stone-900 transition-colors"
+                                        >
+                                            Model {item.modelId}
+                                            {item.modelTitle ? ` — ${item.modelTitle}` : ""}
+                                            <ArrowUpRight size={9} />
+                                        </Link>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {/* Bottom spacer so last slide can scroll into snap position */}
+                    <div style={{ height: "64px" }} />
+                </div>
             </div>
         </div>
     );
@@ -324,7 +344,7 @@ export function DossierPageClient({
 
     // All image items collected for gallery
     const imageItems = useMemo(
-        () => items.filter((i) => i.type === "modelImage"),
+        () => items.filter((i) => i.type === "modelImage" || i.type === "image"),
         [items],
     );
 
@@ -417,7 +437,7 @@ export function DossierPageClient({
                                     {item.type === "text"       && <ContentText item={item} />}
                                     {item.type === "quote"      && <ContentQuote item={item} />}
                                     {item.type === "note"       && <ContentNote item={item} />}
-                                    {item.type === "modelImage" && <ContentImage item={item} onOpen={() => openGallery(item)} />}
+                                    {(item.type === "modelImage" || item.type === "image") && <ContentImage item={item} onOpen={() => openGallery(item)} />}
                                     {item.type === "artefact"   && <ContentArtefact item={item} />}
                                 </div>
                             ))}
