@@ -10,7 +10,7 @@ export function HeroCard({ group }: { group: ImageGroup }) {
 
     return (
         <div
-            className="relative bg-gray-100 overflow-hidden rounded-lg select-none"
+            className="relative bg-gray-100 overflow-hidden select-none"
             style={{ width: 600, height: 460 }}
         >
             <Image

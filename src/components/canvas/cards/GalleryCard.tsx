@@ -39,7 +39,7 @@ export function GalleryCard({ group }: { group: ImageGroup }) {
     return (
         <>
             {/* Card */}
-            <div className="relative bg-gray-100 overflow-hidden rounded-lg select-none shadow-[0_2px_12px_rgba(0,0,0,0.06)]" style={{ width: 360, height: 270 }}>
+            <div className="relative bg-gray-100 overflow-hidden select-none shadow-[0_2px_12px_rgba(0,0,0,0.06)]" style={{ width: 360, height: 270 }}>
                 <div className="relative bg-gray-100 group h-full">
                     <Image
                         src={img.url}

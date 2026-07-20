@@ -230,7 +230,7 @@ export function DossiersListClient({ dossiers }: { dossiers: Dossier[] }) {
                 {/* Page header */}
                 <div className="mb-10 space-y-1.5">
                     <h1 className="text-3xl font-light tracking-tight text-gray-900">Dossiers</h1>
-                    <p className="text-sm font-light text-gray-500">Thematic analyses of the models on the Network Modelmakers Archive.</p>
+                    <p className="text-sm font-light text-gray-500">Thematic analyses of the models on the Network Models Archive.</p>
                 </div>
 
                 {/* Controls bar */}

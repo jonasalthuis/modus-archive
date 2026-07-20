@@ -8,7 +8,7 @@ export function PhotoCard({ group }: { group: ImageGroup }) {
     if (!img) return null;
 
     return (
-        <div className="relative bg-gray-100 overflow-hidden rounded-lg select-none shadow-[0_2px_12px_rgba(0,0,0,0.06)]" style={{ width: 320, height: 240 }}>
+        <div className="relative bg-gray-100 overflow-hidden select-none shadow-[0_2px_12px_rgba(0,0,0,0.06)]" style={{ width: 320, height: 240 }}>
             <Image
                 src={img.url}
                 alt={img.caption ?? ""}

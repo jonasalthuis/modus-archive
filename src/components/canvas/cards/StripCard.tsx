@@ -12,7 +12,7 @@ export function StripCard({ group }: { group: ImageGroup }) {
     const width = vertical ? 240 : Math.min(140 * images.length + 16, 440);
 
     return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-[0_2px_12px_rgba(0,0,0,0.06)] p-2 select-none" style={{ width }}>
+        <div className="bg-white border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.06)] p-2 select-none" style={{ width }}>
             <div className={vertical ? "flex flex-col gap-2" : "flex gap-2"}>
                 {images.map((img, i) => (
                     <div key={img.url + i} className={vertical ? "space-y-1" : "flex-1 space-y-1"}>

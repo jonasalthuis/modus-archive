@@ -24,7 +24,7 @@ export default function AboutPage() {
                     {/* Page header */}
                     <header className="border-b border-stone-200 pb-16 mb-0">
                         <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300 mb-6">
-                            Network Modelmakers Archive
+                            Network Models Archive
                         </p>
                         <h1 className="text-6xl font-light tracking-tight leading-[1.03] mb-8 max-w-xl">
                             About<br />MODUS

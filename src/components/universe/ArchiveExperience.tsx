@@ -463,12 +463,12 @@ export function ArchiveExperience() {
 
         if (view === "grid") {
             // Full grid: all sorted models (used for dim mode and as fallback positions).
-            const { positions: fullPos } = gridLayout(sortedModels);
+            const { positions: fullPos } = gridLayout(sortedModels, sort);
             const filteredIds = new Set(filtered.map((m) => m.id));
 
             if (hideFiltered && hasFilter) {
                 // Compact grid: only filtered models, sorted — they animate to new positions.
-                const { positions: compactPos } = gridLayout(filtered);
+                const { positions: compactPos } = gridLayout(filtered, sort);
                 for (const m of sortedModels) {
                     if (filteredIds.has(m.id)) {
                         map.set(m.id, { pos: compactPos.get(m.id)!, visible: true });
@@ -494,7 +494,7 @@ export function ArchiveExperience() {
             for (const m of models) map.set(m.id, { pos: positions.get(m.id)!, visible: true });
         }
         return { baseTargets: map, clusters: cl };
-    }, [view, group, sortedModels, filtered, models, dossierMap, hasFilter, hideFiltered, layoutSeed]);
+    }, [view, group, sort, sortedModels, filtered, models, dossierMap, hasFilter, hideFiltered, layoutSeed]);
 
     // Apply focus dim-override cheaply without recomputing layouts.
     // The focused model is always fully lit+visible regardless of active filters.
@@ -646,7 +646,7 @@ export function ArchiveExperience() {
     // Section labels for the sorted grid (shown above first card of each group).
     const sectionLabels = useMemo(() => {
         if (view !== "grid" || sort === "default" || hideFiltered) return [];
-        const { positions, cols } = gridLayout(sortedModels);
+        const { positions, cols } = gridLayout(sortedModels, sort);
         return computeSections(sortedModels, sort, cols).map(({ id, label }) => {
             const p = positions.get(id);
             if (!p) return null;

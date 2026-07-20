@@ -47,7 +47,7 @@ export function universeLayout(models: UniverseModel[], sessionSeed = ""): Map<s
 
 // ── Grid: orthogonal flat grid on z = 0, row-major, centered ────────────────
 
-export function gridLayout(models: UniverseModel[]): {
+export function gridLayout(models: UniverseModel[], sort?: SortAttr): {
     positions: Map<string, Vec3>;
     cols: number;
     rows: number;
@@ -56,15 +56,40 @@ export function gridLayout(models: UniverseModel[]): {
 } {
     const n = models.length;
     const cols = Math.max(1, Math.ceil(Math.sqrt(n * 1.6)));
-    const rows = Math.max(1, Math.ceil(n / cols));
+
+    // Row-major index per model. When grouped (sort !== "default"), pad so
+    // every new section starts a fresh row — otherwise, with many short
+    // groups (e.g. sorting by architect, where most groups are 1–2 models),
+    // adjacent section labels land in the same row and overlap each other.
+    let indices: number[];
+    if (sort && sort !== "default") {
+        indices = [];
+        let idx = 0;
+        let prevKey: string | null = null;
+        for (const m of models) {
+            const key = getSortSectionLabel(m, sort);
+            if (prevKey !== null && key !== prevKey && idx % cols !== 0) {
+                idx = Math.ceil(idx / cols) * cols;
+            }
+            indices.push(idx);
+            idx++;
+            prevKey = key;
+        }
+    } else {
+        indices = models.map((_, i) => i);
+    }
+
+    const maxIndex = indices.length ? Math.max(...indices) : 0;
+    const rows = Math.max(1, Math.floor(maxIndex / cols) + 1);
     const gapX = 3.4;
     const gapY = 2.8;
     const width = (cols - 1) * gapX;
     const height = (rows - 1) * gapY;
     const positions = new Map<string, Vec3>();
     models.forEach((m, i) => {
-        const col = i % cols;
-        const row = Math.floor(i / cols);
+        const gi = indices[i];
+        const col = gi % cols;
+        const row = Math.floor(gi / cols);
         positions.set(m.id, [col * gapX - width / 2, height / 2 - row * gapY, 0]);
     });
     return { positions, cols, rows, width, height };

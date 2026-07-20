@@ -224,7 +224,7 @@ export function ArtefactsListClient({ artefacts }: { artefacts: Artefact[] }) {
                 {/* Page header */}
                 <div className="mb-10 space-y-1.5">
                     <h1 className="text-3xl font-light tracking-tight text-gray-900">Artefacts</h1>
-                    <p className="text-sm font-light text-gray-500">All images, audio files, quotes, sketches, documents and more on Network Modelmakers Archive.</p>
+                    <p className="text-sm font-light text-gray-500">All images, audio files, quotes, sketches, documents and more on Network Models Archive.</p>
                 </div>
 
                 {/* Controls bar */}

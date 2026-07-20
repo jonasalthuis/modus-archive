@@ -118,7 +118,7 @@ export const AccessView = () => {
                 <div className="text-center space-y-2">
                     <p className="text-3xl font-light uppercase tracking-[0.3em]">NMA</p>
                     <p className="text-[9px] uppercase tracking-[0.6em] font-bold text-stone-300">
-                        Network Modelmakers Archive
+                        Network Models Archive
                     </p>
                     <p className="text-[11px] text-stone-400 pt-1">Private preview — authorised access only</p>
                 </div>

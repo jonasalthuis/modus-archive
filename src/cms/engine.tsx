@@ -183,7 +183,7 @@ const Sidebar = ({
                                 href="/"
                                 className="text-[10px] font-bold uppercase tracking-[0.4em] px-3 rounded-md border border-stone-200 hover:border-stone-900 hover:bg-stone-900 hover:text-white bg-white text-stone-900 transition-colors duration-300 select-none h-[34px] flex items-center justify-center flex-shrink-0"
                             >
-                                NMA
+                                NM<span className="italic">A</span>
                             </a>
                             <span className="text-[9px] uppercase tracking-[0.35em] font-bold text-gray-400 truncate">Admin</span>
                         </div>

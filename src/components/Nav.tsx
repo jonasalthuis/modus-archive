@@ -113,12 +113,12 @@ export function Nav() {
             <div className="relative group/nma flex-shrink-0 pointer-events-auto">
                 <Link
                     href={archiveHref}
-                    className="text-[10px] font-bold uppercase tracking-[0.4em] px-3 rounded-md border border-stone-200 hover:border-stone-900 hover:bg-stone-900 hover:text-white bg-white/70 backdrop-blur-xl text-stone-900 transition-colors duration-300 select-none h-[34px] flex items-center justify-center"
+                    className="px-3 text-stone-900 hover:text-stone-500 transition-colors duration-300 select-none h-[34px] flex items-center justify-center text-2xl font-light tracking-tight"
                 >
-                    NMA
+                    NM<span className="italic">A</span>
                 </Link>
                 <span className="absolute top-full mt-2 left-0 px-2 py-1 whitespace-nowrap text-[9px] uppercase tracking-[0.25em] font-bold text-stone-900 bg-white/80 backdrop-blur-xl border border-stone-200 rounded pointer-events-none opacity-0 group-hover/nma:opacity-100 transition-opacity duration-150">
-                    Network Modelmakers Archive
+                    Network Models Archive
                 </span>
             </div>
 

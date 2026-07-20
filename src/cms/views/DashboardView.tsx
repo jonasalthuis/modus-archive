@@ -130,7 +130,7 @@ export const DashboardView = ({ onNavigate }: { onNavigate: (view: ActiveView) =
             <div className="border-b border-gray-400 pb-8">
                 <h2 className="text-3xl font-light uppercase tracking-[0.15em]">Dashboard</h2>
                 <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 mt-2">
-                    Network Modelmakers Archive — Status overview
+                    Network Models Archive — Status overview
                 </p>
             </div>
 
