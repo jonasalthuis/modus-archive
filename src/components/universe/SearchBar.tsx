@@ -90,7 +90,7 @@ export function SearchBar({
                 <button
                     onClick={() => setOpen(true)}
                     aria-label="Open search"
-                    className="flex items-center gap-2 px-3 h-[34px] bg-white/70 backdrop-blur-xl border border-stone-200 rounded-md text-stone-400 hover:text-stone-900 hover:border-stone-900 hover:bg-stone-900 hover:text-white transition-colors duration-300 text-[10px] uppercase tracking-[0.4em] font-bold select-none"
+                    className="flex items-center gap-2 px-3 h-[34px] bg-white/70 backdrop-blur-xl hover:backdrop-blur-none border border-stone-200 rounded-md text-stone-400 hover:text-stone-900 hover:border-stone-900 hover:bg-stone-900 hover:text-white transition-colors duration-300 text-[10px] uppercase tracking-[0.4em] font-bold select-none"
                 >
                     <Search size={12} />
                     {pinnedTerms.length > 0 && <span>{pinnedTerms.length} pinned</span>}

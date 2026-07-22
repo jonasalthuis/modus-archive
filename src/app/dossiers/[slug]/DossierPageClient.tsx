@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, ArrowLeft, ChevronLeft, ChevronRight, Quote as QuoteIcon, StickyNote, X, ChevronUp, ChevronDown, ArrowUp } from "lucide-react";
+import { ArrowUpRight, ArrowLeft, ChevronLeft, ChevronRight, Quote as QuoteIcon, StickyNote, X, ChevronUp, ChevronDown, ArrowUp, Search } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -134,9 +134,10 @@ function ContentImage({ item, onOpen }: { item: DossierItem; onOpen: () => void 
                         </div>
                     )}
                     {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white text-[9px] uppercase tracking-[0.4em] font-bold bg-black/50 px-3 py-1.5">
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300">
+                        <span className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 inline-flex items-center gap-2 text-white text-[9px] uppercase tracking-[0.4em] font-bold bg-black/50 px-3 py-1.5">
                             View in artefact viewer
+                            <Search size={11} />
                         </span>
                     </div>
                 </div>
@@ -235,7 +236,7 @@ function ImageGallery({
         "flex items-center justify-center w-7 h-7 rounded-md text-stone-400 hover:bg-stone-900 hover:text-white disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-stone-400 transition-colors duration-200";
 
     return (
-        <div className="h-full bg-white p-3">
+        <div className="h-full bg-white p-3 pb-20">
             <div className="h-full flex flex-col border border-stone-200 rounded-xl overflow-hidden bg-white shadow-sm">
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 flex-shrink-0">
@@ -408,7 +409,7 @@ export function DossierPageClient({
                     <Link
                         href="/dossiers"
                         aria-label="Back to dossiers"
-                        className="inline-flex items-center justify-center w-[34px] h-[34px] border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                        className="inline-flex items-center justify-center w-[34px] h-[34px] border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl hover:backdrop-blur-none text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
                     >
                         <ArrowLeft size={13} />
                     </Link>
@@ -530,14 +531,14 @@ export function DossierPageClient({
                         <Link
                             href={prevSlug ? `/dossiers/${prevSlug}` : "#"}
                             aria-label="Previous dossier"
-                            className={`flex items-center justify-center w-[34px] h-[34px] rounded-md border bg-white/70 backdrop-blur-xl shadow-sm transition-colors duration-300 ${prevSlug ? "border-stone-200 text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white" : "border-stone-100 text-stone-300 pointer-events-none"}`}
+                            className={`flex items-center justify-center w-[34px] h-[34px] rounded-md border bg-white/70 backdrop-blur-xl hover:backdrop-blur-none shadow-sm transition-colors duration-300 ${prevSlug ? "border-stone-200 text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white" : "border-stone-100 text-stone-300 pointer-events-none"}`}
                         >
                             <ChevronLeft size={13} />
                         </Link>
                         <Link
                             href={nextSlug ? `/dossiers/${nextSlug}` : "#"}
                             aria-label="Next dossier"
-                            className={`flex items-center justify-center w-[34px] h-[34px] rounded-md border bg-white/70 backdrop-blur-xl shadow-sm transition-colors duration-300 ${nextSlug ? "border-stone-200 text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white" : "border-stone-100 text-stone-300 pointer-events-none"}`}
+                            className={`flex items-center justify-center w-[34px] h-[34px] rounded-md border bg-white/70 backdrop-blur-xl hover:backdrop-blur-none shadow-sm transition-colors duration-300 ${nextSlug ? "border-stone-200 text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white" : "border-stone-100 text-stone-300 pointer-events-none"}`}
                         >
                             <ChevronRight size={13} />
                         </Link>
@@ -546,7 +547,7 @@ export function DossierPageClient({
                 <button
                     onClick={() => document.getElementById("dossier-scroll")?.scrollTo({ top: 0, behavior: "smooth" })}
                     title="Back to top"
-                    className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300 shadow-sm"
+                    className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl hover:backdrop-blur-none text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300 shadow-sm"
                 >
                     <ArrowUp size={13} />
                 </button>
@@ -562,9 +563,6 @@ export function DossierPageClient({
                     className="group/resize relative z-30 w-3 flex-shrink-0 cursor-col-resize select-none flex items-center justify-center"
                 >
                     <div className="w-1.5 h-10 rounded-full bg-stone-300 group-hover/resize:bg-stone-500 transition-colors duration-200" />
-                    <span className="absolute bottom-full mb-2 whitespace-nowrap px-2 py-1 text-[9px] uppercase tracking-[0.25em] font-bold text-stone-900 bg-white/90 backdrop-blur-xl border border-stone-200 rounded pointer-events-none opacity-0 group-hover/resize:opacity-100 transition-opacity duration-150">
-                        Drag to adjust size
-                    </span>
                 </div>
             )}
 

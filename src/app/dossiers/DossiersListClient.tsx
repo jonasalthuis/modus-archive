@@ -323,7 +323,7 @@ export function DossiersListClient({ dossiers }: { dossiers: Dossier[] }) {
                 <button
                     onClick={() => setHelpOpen((v) => !v)}
                     title="What are dossiers?"
-                    className={`flex items-center justify-center w-[34px] h-[34px] rounded-md border transition-colors duration-300 ${helpOpen ? "bg-stone-900 border-stone-900 text-white" : "bg-white/70 backdrop-blur-xl border-stone-200 text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white"}`}
+                    className={`flex items-center justify-center w-[34px] h-[34px] rounded-md border transition-colors duration-300 ${helpOpen ? "bg-stone-900 border-stone-900 text-white" : "bg-white/70 backdrop-blur-xl hover:backdrop-blur-none border-stone-200 text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white"}`}
                 >
                     <HelpCircle size={13} />
                 </button>
@@ -334,7 +334,7 @@ export function DossiersListClient({ dossiers }: { dossiers: Dossier[] }) {
                 <button
                     onClick={handleRandom}
                     title="Random dossier"
-                    className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                    className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl hover:backdrop-blur-none text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
                 >
                     <Shuffle size={13} />
                 </button>
@@ -344,7 +344,7 @@ export function DossiersListClient({ dossiers }: { dossiers: Dossier[] }) {
                     </div>
                     <button
                         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                        className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                        className="flex items-center justify-center w-[34px] h-[34px] rounded-md border border-stone-200 bg-white/70 backdrop-blur-xl hover:backdrop-blur-none text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
                     >
                         <ArrowUp size={13} />
                     </button>

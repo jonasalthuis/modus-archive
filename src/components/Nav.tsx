@@ -61,7 +61,7 @@ function ViewToggle() {
 }
 
 const NAV_BTN =
-    "text-[10px] font-bold uppercase tracking-[0.4em] px-3 leading-none rounded-md border border-stone-200 hover:border-stone-900 hover:bg-stone-900 hover:text-white bg-white/70 backdrop-blur-xl text-stone-700 transition-colors duration-300 select-none h-[34px] flex items-center flex-shrink-0";
+    "text-[10px] font-bold uppercase tracking-[0.4em] px-3 leading-none rounded-md border border-stone-200 hover:border-stone-900 hover:bg-stone-900 hover:text-white bg-white/70 backdrop-blur-xl hover:backdrop-blur-none text-stone-700 transition-colors duration-300 select-none h-[34px] flex items-center flex-shrink-0";
 
 export function Nav() {
     const pathname = usePathname();
@@ -160,7 +160,7 @@ export function Nav() {
                     className={`
  text-[10px] font-bold uppercase tracking-[0.4em] px-3 leading-none rounded-md
  border transition-all duration-300 select-none h-[34px] flex items-center
- ${open ? "bg-stone-900/80 backdrop-blur-xl text-white border-stone-900/60" : "bg-white/50 backdrop-blur-xl text-stone-900 border-stone-200 hover:border-stone-900 hover:bg-stone-900 hover:text-white"}
+ ${open ? "bg-stone-900/80 backdrop-blur-xl hover:backdrop-blur-none text-white border-stone-900/60" : "bg-white/50 backdrop-blur-xl hover:backdrop-blur-none text-stone-900 border-stone-200 hover:border-stone-900 hover:bg-stone-900 hover:text-white"}
  `}
                     aria-label="Toggle navigation"
                     aria-expanded={open}

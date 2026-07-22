@@ -128,7 +128,7 @@ export default async function ArtefactPage({ params }: { params: Promise<{ slug:
         ? otherSlugs[Math.floor(Math.random() * otherSlugs.length)]
         : null;
 
-    const navBtn = "flex items-center justify-center w-[34px] h-[34px] bg-white/50 backdrop-blur-xl border border-stone-200 rounded-md hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors text-stone-400 cursor-pointer";
+    const navBtn = "flex items-center justify-center w-[34px] h-[34px] bg-white/50 backdrop-blur-xl hover:backdrop-blur-none border border-stone-200 rounded-md hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors text-stone-400 cursor-pointer";
 
     return (
         <main className="min-h-screen bg-white text-stone-900 flex flex-col">
@@ -142,7 +142,7 @@ export default async function ArtefactPage({ params }: { params: Promise<{ slug:
                     <Link
                         href="/artefacts"
                         aria-label="Back to artefacts"
-                        className="inline-flex items-center justify-center w-[34px] h-[34px] border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                        className="inline-flex items-center justify-center w-[34px] h-[34px] border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl hover:backdrop-blur-none text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
                     >
                         <ArrowLeft size={13} />
                     </Link>

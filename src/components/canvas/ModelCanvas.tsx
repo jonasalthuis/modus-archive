@@ -692,7 +692,7 @@ export function ModelCanvas({
     }, []);
 
     const iconBtn =
-        "w-[34px] h-[34px] flex items-center justify-center border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl text-stone-500 cursor-pointer hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none";
+        "w-[34px] h-[34px] flex items-center justify-center border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl hover:backdrop-blur-none text-stone-500 cursor-pointer hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed disabled:pointer-events-none";
     const divider = <span className="w-px h-5 bg-stone-200 mx-1" aria-hidden />;
     const fmt = (s: number) => {
         if (!isFinite(s)) return "0:00";
@@ -751,7 +751,7 @@ export function ModelCanvas({
                         <Link
                             href={archiveHref}
                             aria-label="Back to archive"
-                            className="inline-flex items-center justify-center w-[34px] h-[34px] border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                            className="inline-flex items-center justify-center w-[34px] h-[34px] border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl hover:backdrop-blur-none text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
                         >
                             <ArrowLeft size={13} />
                         </Link>

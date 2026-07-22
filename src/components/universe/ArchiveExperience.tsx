@@ -114,7 +114,7 @@ function TooltipButton({
                 className={`flex items-center justify-center w-[34px] h-[34px] rounded-md border transition-colors ${
                     active
                         ? "bg-stone-900 text-white border-stone-900"
-                        : "bg-white/50 backdrop-blur-xl text-stone-400 border-stone-200 hover:bg-stone-900 hover:border-stone-900 hover:text-white"
+                        : "bg-white/50 backdrop-blur-xl hover:backdrop-blur-none text-stone-400 border-stone-200 hover:bg-stone-900 hover:border-stone-900 hover:text-white"
                 }`}
             >
                 {icon}
@@ -185,7 +185,7 @@ function CardFocusOverlay({
                             <button
                                 onClick={onClose}
                                 aria-label="Close"
-                                className="flex items-center justify-center w-[34px] h-[34px] bg-white/50 backdrop-blur-xl border border-stone-200 rounded-md hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors text-stone-400"
+                                className="flex items-center justify-center w-[34px] h-[34px] bg-white/50 backdrop-blur-xl hover:backdrop-blur-none border border-stone-200 rounded-md hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors text-stone-400"
                             >
                                 <X size={13} />
                             </button>
@@ -713,7 +713,7 @@ export function ArchiveExperience() {
                 <button
                     onClick={handlePrev}
                     aria-label="Previous model"
-                    className="fixed left-4 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center w-[34px] h-[34px] bg-white/50 backdrop-blur-xl border border-stone-200 rounded-md hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors text-stone-400"
+                    className="fixed left-4 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center w-[34px] h-[34px] bg-white/50 backdrop-blur-xl hover:backdrop-blur-none border border-stone-200 rounded-md hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors text-stone-400"
                 >
                     <ChevronLeft size={15} />
                 </button>
@@ -722,7 +722,7 @@ export function ArchiveExperience() {
                 <button
                     onClick={handleNext}
                     aria-label="Next model"
-                    className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center w-[34px] h-[34px] bg-white/50 backdrop-blur-xl border border-stone-200 rounded-md hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors text-stone-400"
+                    className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center w-[34px] h-[34px] bg-white/50 backdrop-blur-xl hover:backdrop-blur-none border border-stone-200 rounded-md hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors text-stone-400"
                 >
                     <ChevronRight size={15} />
                 </button>
