@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, ArrowLeft, ChevronLeft, ChevronRight, Quote as QuoteIcon, StickyNote, X, ChevronUp, ChevronDown, ArrowUp } from "lucide-react";
+import { ArrowUpRight, ArrowLeft, ChevronLeft, ChevronRight, Quote as QuoteIcon, StickyNote, X, ChevronUp, ChevronDown, ArrowUp, GripVertical } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -136,7 +136,7 @@ function ContentImage({ item, onOpen }: { item: DossierItem; onOpen: () => void 
                     {/* Hover overlay */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
                         <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white text-[9px] uppercase tracking-[0.4em] font-bold bg-black/50 px-3 py-1.5">
-                            View larger
+                            View in artefact viewer
                         </span>
                     </div>
                 </div>
@@ -357,11 +357,47 @@ export function DossierPageClient({
 
     const galleryOpen = galleryIdx !== null;
 
-    return (
-        <div className="fixed inset-0 flex" style={{ paddingTop: "58px" }}>
+    // ── Resizable gallery panel — drag handle between body and panel, capped at 50/50 ──
+    const GALLERY_MIN = 320;
+    const GALLERY_DEFAULT = 440;
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [galleryWidth, setGalleryWidth] = useState(GALLERY_DEFAULT);
+    const [isResizing, setIsResizing] = useState(false);
+    const resizingRef = useRef(false);
 
-            {/* Fading blur strip behind the header — softens content scrolling underneath */}
-            <div className="fixed top-0 inset-x-0 h-24 z-40 pointer-events-none bg-gradient-to-b from-white/80 via-white/40 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+    const handleResizeStart = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        resizingRef.current = true;
+        setIsResizing(true);
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+    }, []);
+
+    useEffect(() => {
+        const handleMove = (e: MouseEvent) => {
+            if (!resizingRef.current || !containerRef.current) return;
+            const rect = containerRef.current.getBoundingClientRect();
+            const fromRight = rect.right - e.clientX;
+            const max = rect.width * 0.5;
+            setGalleryWidth(Math.min(max, Math.max(GALLERY_MIN, fromRight)));
+        };
+        const handleUp = () => {
+            if (!resizingRef.current) return;
+            resizingRef.current = false;
+            setIsResizing(false);
+            document.body.style.cursor = "";
+            document.body.style.userSelect = "";
+        };
+        window.addEventListener("mousemove", handleMove);
+        window.addEventListener("mouseup", handleUp);
+        return () => {
+            window.removeEventListener("mousemove", handleMove);
+            window.removeEventListener("mouseup", handleUp);
+        };
+    }, []);
+
+    return (
+        <div ref={containerRef} className="fixed inset-0 flex" style={{ paddingTop: "58px" }}>
 
             {/* Back button — next to NMA in nav bar */}
             <div className="fixed top-4 left-4 z-[49] flex items-center gap-3 pointer-events-none">
@@ -383,8 +419,8 @@ export function DossierPageClient({
             </div>
 
             {/* ── Main content column ── */}
-            <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" id="dossier-scroll">
-                <div className="w-[60vw] mx-auto py-10 space-y-0">
+            <div className="flex-1 min-w-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" id="dossier-scroll">
+                <div className="w-full max-w-[60vw] mx-auto px-8 py-10 space-y-0">
 
                     {/* Header card */}
                     <div className="border border-stone-200 rounded-xl p-8 mt-6 mb-10 space-y-5">
@@ -516,13 +552,32 @@ export function DossierPageClient({
                 </button>
             </div>
 
+            {/* ── Drag handle — resizes the gallery panel, capped at 50/50 ── */}
+            {galleryOpen && (
+                <div
+                    onMouseDown={handleResizeStart}
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-label="Resize gallery panel"
+                    className="group/resize relative z-30 w-3 flex-shrink-0 cursor-col-resize select-none flex items-center justify-center"
+                >
+                    <div className="w-1 h-10 rounded-full bg-stone-200 group-hover/resize:bg-stone-400 transition-colors duration-200" />
+                    <div className="absolute w-6 h-6 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center text-stone-500 opacity-0 group-hover/resize:opacity-100 transition-opacity duration-200 pointer-events-none">
+                        <GripVertical size={11} />
+                    </div>
+                    <span className="absolute bottom-full mb-2 whitespace-nowrap px-2 py-1 text-[9px] uppercase tracking-[0.25em] font-bold text-stone-900 bg-white/90 backdrop-blur-xl border border-stone-200 rounded pointer-events-none opacity-0 group-hover/resize:opacity-100 transition-opacity duration-150">
+                        Drag to adjust size
+                    </span>
+                </div>
+            )}
+
             {/* ── Gallery panel — slides in from right when an image is clicked ── */}
             <div
                 style={{
-                    width: galleryOpen ? "clamp(320px, 38vw, 580px)" : 0,
+                    width: galleryOpen ? galleryWidth : 0,
                     flexShrink: 0,
                     overflow: "hidden",
-                    transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    transition: isResizing ? "none" : "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
             >
                 {galleryOpen && galleryIdx !== null && (
