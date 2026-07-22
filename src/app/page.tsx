@@ -13,7 +13,7 @@ function Loading() {
             <div className="space-y-3 text-center">
                 <div className="w-12 h-px bg-stone-300 mx-auto animate-pulse" />
                 <p className="text-[9px] uppercase tracking-[0.5em] font-bold text-stone-300">
-                    Loading universe…
+                    Loading archive…
                 </p>
             </div>
         </div>

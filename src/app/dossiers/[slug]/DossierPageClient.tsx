@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, ArrowLeft, ChevronLeft, ChevronRight, Quote as QuoteIcon, StickyNote, X, ChevronUp, ChevronDown, ArrowUp, GripVertical } from "lucide-react";
+import { ArrowUpRight, ArrowLeft, ChevronLeft, ChevronRight, Quote as QuoteIcon, StickyNote, X, ChevronUp, ChevronDown, ArrowUp } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -561,10 +561,7 @@ export function DossierPageClient({
                     aria-label="Resize gallery panel"
                     className="group/resize relative z-30 w-3 flex-shrink-0 cursor-col-resize select-none flex items-center justify-center"
                 >
-                    <div className="w-1 h-10 rounded-full bg-stone-200 group-hover/resize:bg-stone-400 transition-colors duration-200" />
-                    <div className="absolute w-6 h-6 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center text-stone-500 opacity-0 group-hover/resize:opacity-100 transition-opacity duration-200 pointer-events-none">
-                        <GripVertical size={11} />
-                    </div>
+                    <div className="w-1.5 h-10 rounded-full bg-stone-300 group-hover/resize:bg-stone-500 transition-colors duration-200" />
                     <span className="absolute bottom-full mb-2 whitespace-nowrap px-2 py-1 text-[9px] uppercase tracking-[0.25em] font-bold text-stone-900 bg-white/90 backdrop-blur-xl border border-stone-200 rounded pointer-events-none opacity-0 group-hover/resize:opacity-100 transition-opacity duration-150">
                         Drag to adjust size
                     </span>
