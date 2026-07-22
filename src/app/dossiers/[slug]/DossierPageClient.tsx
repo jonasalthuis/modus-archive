@@ -360,6 +360,9 @@ export function DossierPageClient({
     return (
         <div className="fixed inset-0 flex" style={{ paddingTop: "58px" }}>
 
+            {/* Fading blur strip behind the header — softens content scrolling underneath */}
+            <div className="fixed top-0 inset-x-0 h-24 z-40 pointer-events-none bg-gradient-to-b from-white/80 via-white/40 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+
             {/* Back button — next to NMA in nav bar */}
             <div className="fixed top-4 left-4 z-[49] flex items-center gap-3 pointer-events-none">
                 <div className="px-3 h-[34px] flex items-center justify-center text-2xl font-light tracking-tight opacity-0 select-none">

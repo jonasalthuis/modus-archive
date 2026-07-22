@@ -56,4 +56,11 @@
   body {
     @apply bg-white text-stone-900;
   }
+
+  /* Prevent the default translucent grey tap/focus highlight WebKit draws
+     on links and buttons — it shows through backdrop-blur pills as a soft
+     grey halo instead of the intended solid hover colour. */
+  a, button {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
