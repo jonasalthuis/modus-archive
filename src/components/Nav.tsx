@@ -108,7 +108,10 @@ export function Nav() {
     if (isAdmin) return null;
 
     return (
-        <div className="fixed top-4 left-4 right-4 z-50 flex items-center gap-2 pointer-events-none">
+        <>
+            {/* Fading blur strip behind the fixed header — softens content scrolling underneath */}
+            <div className="fixed top-0 inset-x-0 h-24 z-40 pointer-events-none bg-gradient-to-b from-white/80 via-white/40 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+            <div className="fixed top-4 left-4 right-4 z-50 flex items-center gap-3 pointer-events-none">
             {/* Left cluster: NMA + optional view toggle + optional search */}
             <div className="relative group/nma flex-shrink-0 pointer-events-auto">
                 <Link
@@ -207,6 +210,7 @@ export function Nav() {
                     </nav>
                 </div>
             </div>
-        </div>
+            </div>
+        </>
     );
 }

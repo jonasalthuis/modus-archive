@@ -134,8 +134,10 @@ export default async function ArtefactPage({ params }: { params: Promise<{ slug:
         <main className="min-h-screen bg-white text-stone-900 flex flex-col">
 
             {/* Back button — next to NMA */}
-            <div className="fixed top-4 left-4 z-[49] flex items-center gap-2 pointer-events-none">
-                <div className="h-[34px] px-3 text-[10px] font-bold uppercase tracking-[0.4em] opacity-0 select-none">NMA</div>
+            <div className="fixed top-4 left-4 z-[49] flex items-center gap-3 pointer-events-none">
+                <div className="px-3 h-[34px] flex items-center justify-center text-2xl font-light tracking-tight opacity-0 select-none">
+                    NM<span className="italic">A</span>
+                </div>
                 <div className="relative group/back pointer-events-auto">
                     <Link
                         href="/artefacts"

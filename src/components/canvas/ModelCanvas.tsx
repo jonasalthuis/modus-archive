@@ -743,8 +743,10 @@ export function ModelCanvas({
                 )}
 
                 {/* ── Top-left overlay: phantom NMA → back arrow → model number+title ── */}
-                <div className="fixed top-4 left-4 right-4 z-40 flex items-center gap-2 pointer-events-none select-none">
-                    <div className="h-[34px] px-3 text-[10px] font-bold uppercase tracking-[0.4em] opacity-0 flex-shrink-0">NMA</div>
+                <div className="fixed top-4 left-4 right-4 z-40 flex items-center gap-3 pointer-events-none select-none">
+                    <div className="px-3 h-[34px] flex items-center justify-center text-2xl font-light tracking-tight opacity-0 flex-shrink-0">
+                        NM<span className="italic">A</span>
+                    </div>
                     <div className="relative group/back pointer-events-auto flex-shrink-0">
                         <Link
                             href={archiveHref}
