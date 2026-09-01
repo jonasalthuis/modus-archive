@@ -121,7 +121,7 @@ export const AccessView = () => {
                     <p className="text-[9px] uppercase tracking-[0.6em] font-bold text-stone-300">
                         Network Models Archive
                     </p>
-                    <p className="text-[11px] text-stone-400 pt-1">Private preview — authorised access only</p>
+                    <p className="text-[11px] text-stone-400 pt-1">Beta preview</p>
                 </div>
 
                 {/* Tab switcher */}
