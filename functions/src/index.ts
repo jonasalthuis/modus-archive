@@ -1,31 +1,59 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { google } from "googleapis";
-import * as path from "path";
 
 admin.initializeApp();
 const db = admin.firestore();
 
+const BOOTSTRAP_ADMINS = ["jonasalthuis@gmail.com"]; // mirrors src/lib/auth.tsx
+
+/**
+ * Verifies the caller sent a valid Firebase ID token belonging to a staff
+ * account (admin/editor), mirroring isStaff() in firestore.rules. This
+ * function has full Firestore write + Google Sheets read access, so it must
+ * not be publicly triggerable.
+ */
+async function requireStaff(req: functions.https.Request): Promise<string | null> {
+    const authHeader = req.get("authorization") ?? "";
+    const match = authHeader.match(/^Bearer (.+)$/);
+    if (!match) return null;
+
+    try {
+        const decoded = await admin.auth().verifyIdToken(match[1]);
+        const email = decoded.email;
+        if (!email) return null; // anonymous guests have no email — never staff
+
+        if (BOOTSTRAP_ADMINS.includes(email)) return email;
+
+        const snap = await db.doc(`users/${email}`).get();
+        const role = snap.exists ? (snap.data()?.role as string | undefined) : undefined;
+        return role === "admin" || role === "editor" ? email : null;
+    } catch (e) {
+        console.error("requireStaff check failed:", e);
+        return null; // fail closed on any error (expired/invalid token, etc.)
+    }
+}
+
 /**
  * Syncs data from Google Sheets to Firestore ma_models collection.
- * Uses the service account key provided by the user.
+ * Staff-only (see requireStaff). Authenticates to the Sheets API as this
+ * function's own runtime service account (Application Default Credentials)
+ * — the target spreadsheet must be shared (Viewer) with that account's
+ * email, e.g. `modus-archive-nexus@appspot.gserviceaccount.com` for the
+ * default Gen 1 runtime SA. No key file needed or wanted.
  */
 export const syncModelsFromSheet = functions.https.onRequest(async (req, res) => {
-    try {
-        // 1. Setup Auth
-        const keyPath = process.env.SERVICE_ACCOUNT_KEY_PATH;
+    const staffEmail = await requireStaff(req);
+    if (!staffEmail) {
+        res.status(401).send("Unauthorized");
+        return;
+    }
 
+    try {
         const spreadsheetId = process.env.SPREADSHEET_ID || "1VellbnjPuxdd405OQv6kTdFAlupbCdfWJmY5CagDhhM";
         const range = "Sheet1!A2:AA1000"; // Starting at row 2 to skip headers
 
-        if (!spreadsheetId) {
-            console.error("SPREADSHEET_ID not configured.");
-            res.status(500).send("Server configuration error: SPREADSHEET_ID missing.");
-            return;
-        }
-
         const auth = new google.auth.GoogleAuth({
-            keyFile: keyPath,
             scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
         });
 
@@ -82,7 +110,7 @@ export const syncModelsFromSheet = functions.https.onRequest(async (req, res) =>
         });
 
         await batch.commit();
-        res.status(200).send(`Successfully synced ${rows.length} models to ma_models.`);
+        res.status(200).send(`Successfully synced ${rows.length} models to ma_models. (triggered by ${staffEmail})`);
     } catch (error: any) {
         console.error("Sync Error:", error);
         res.status(500).send(`Error syncing data: ${error.message}`);

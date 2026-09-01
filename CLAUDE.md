@@ -85,10 +85,8 @@ modus-archive/
 │   └── globals.css
 ├── functions/
 │   └── src/
-│       ├── index.ts                         # HTTP trigger: syncModelsFromSheet()
-│       └── sync.ts                          # Google Sheets → Firestore sync
-│                                            # Headers on row 4, data from row 5
-│                                            # REF col → modelNumber (doc ID, zero-padded: "0042")
+│       └── index.ts                         # HTTP trigger: syncModelsFromSheet() — staff-auth'd,
+│                                            # reads Sheet1!A2:AA1000, REF col → modelNumber (doc ID)
 ├── messages/
 │   ├── en.json                              # English translations
 │   └── nl.json                              # Dutch translations
@@ -211,10 +209,14 @@ articles/images/   ← article hero images
 FireCMS uploads store the **download URL** in Firestore (not the storage path) because `storeUrl: true` is set in collection definitions. Use these URLs directly in `<Image src={...}>` and `<audio src={...}>`.
 
 ### Google Sheets → Firestore sync
-- Cloud Function: `syncModelsFromSheet()` — HTTP POST trigger
-- Call: `POST /syncModelsFromSheet?sheetId=SHEET_ID&range=Sheet1!A:Z`
-- Headers on **row 4**, data starts **row 5**
-- Column mapping defined in `functions/src/sync.ts`
+- Cloud Function: `syncModelsFromSheet()` — HTTP POST trigger, defined in `functions/src/index.ts`
+- **Staff-only**: requires `Authorization: Bearer <Firebase ID token>` for an admin/editor account
+  (or the bootstrap admin) — call it signed in as staff, not a bare POST
+- Reads a fixed sheet/range (`SPREADSHEET_ID` env var, `Sheet1!A2:AA1000`) — not caller-supplied
+- Authenticates to the Sheets API as the function's own runtime service account
+  (`modus-archive-nexus@appspot.gserviceaccount.com` for the default Gen 1 SA) via
+  Application Default Credentials — no key file. The target spreadsheet must be
+  shared (Viewer) with that email.
 - Sync writes all metadata fields but does **not** touch `images` or `voiceNarrative` — those are managed via FireCMS
 
 ---
@@ -281,7 +283,10 @@ Role-based enforcement is **not yet implemented**.
 - **Functions region**: us-central1
 - **Build output mode**: `standalone` (set in `next.config.ts`)
 - **Functions runtime**: Node 22
-- **Service account key**: `functions/sidenotenexus-dc9441f42cca.json` — never commit this file
+- **No service account key files** — `syncModelsFromSheet` uses its own runtime
+  service account via Application Default Credentials (see Google Sheets sync
+  above). If you're ever tempted to add a downloaded key file for a function,
+  don't — grant the runtime service account the access it needs instead.
 
 ### Active development
 Development happens in git worktrees under `.claude/worktrees/`. Changes must be merged to `main` before deploying.

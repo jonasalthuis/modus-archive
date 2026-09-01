@@ -32,7 +32,9 @@
         ".git",
         "firebase-debug.log",
         "firebase-debug.*.log",
-        "*.local"
+        "*.local",
+        "**/serviceAccount*.json",
+        "**/*-firebase-adminsdk-*.json"
       ]
     }
   ],
