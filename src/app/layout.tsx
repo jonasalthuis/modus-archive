@@ -14,6 +14,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+    metadataBase: new URL("https://networkmodelsarchive.app"),
     title: "NMA",
     description: "A research-first archive of 850 architectural scale models.",
 };

@@ -60,7 +60,7 @@ function fmtRelative(ts: Timestamp): string {
 
 function getSiteOrigin(): string {
     if (typeof window !== "undefined") return window.location.origin;
-    return "https://modus-archive.com";
+    return "https://networkmodelsarchive.app";
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────

@@ -237,14 +237,6 @@ export const AccessView = () => {
                         </form>
                     </div>
                 )}
-
-                {/* Footer */}
-                <p className="text-center text-[9px] text-stone-300">
-                    Request access:{" "}
-                    <a href="mailto:hello@modus-archive.com" className="hover:text-stone-600 transition-colors">
-                        hello@modus-archive.com
-                    </a>
-                </p>
             </div>
         </div>
     );
