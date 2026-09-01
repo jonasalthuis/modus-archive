@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { collection, getDocs, addDoc, updateDoc, doc, orderBy, query, Timestamp } from "firebase/firestore";
+import { collection, getDocs, getDoc, setDoc, updateDoc, doc, orderBy, query, Timestamp } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { Copy, Check, X, Plus, Link as LinkIcon, RefreshCw } from "lucide-react";
 
@@ -102,8 +102,17 @@ export const InvitesView = () => {
             const expiresAt = new Date(now.getTime() + Number(formExpiry) * 86_400_000);
             const maxUses = formMaxUses === "unlimited" ? null : Number(formMaxUses);
 
-            await addDoc(collection(db, "ma_invites"), {
-                code: genCode(),
+            // Invite docs are keyed by their own code — the public access page
+            // validates a code with a direct `get` by ID (see firestore.rules;
+            // collection queries there are admin-only to prevent enumeration).
+            // Guard against the astronomically unlikely code collision.
+            let code = genCode();
+            while ((await getDoc(doc(db, "ma_invites", code))).exists()) {
+                code = genCode();
+            }
+
+            await setDoc(doc(db, "ma_invites", code), {
+                code,
                 label: formLabel.trim() || "Untitled invite",
                 createdAt: Timestamp.fromDate(now),
                 expiresAt: Timestamp.fromDate(expiresAt),

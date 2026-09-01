@@ -8,7 +8,7 @@ import {
     signInWithEmailAndPassword,
     signInAnonymously,
 } from "firebase/auth";
-import { collection, query, where, getDocs, updateDoc, increment } from "firebase/firestore";
+import { doc, getDoc, updateDoc, increment } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useSearchParams } from "next/navigation";
 
@@ -40,12 +40,13 @@ export const AccessView = () => {
         setLoading(true);
         setError(null);
         try {
-            const q = query(collection(db, "ma_invites"), where("code", "==", entered));
-            const snap = await getDocs(q);
+            // Invite docs are keyed by their code (see firestore.rules — only a
+            // direct `get` by ID is public; collection queries require admin).
+            const docRef = doc(db, "ma_invites", entered);
+            const docSnap = await getDoc(docRef);
 
-            if (snap.empty) throw new Error("Invalid access code.");
+            if (!docSnap.exists()) throw new Error("Invalid access code.");
 
-            const docSnap = snap.docs[0];
             const invite = docSnap.data();
 
             if (invite.isRevoked) throw new Error("This access code has been revoked.");
