@@ -29,21 +29,25 @@ service cloud.firestore {
 
     // ── Content collections ───────────────────────────────────────────────
     // Anyone signed in (incl. anonymous guests) can read published records;
-    // staff (admin/editor) can read everything and write.
+    // staff (admin/editor) can read everything and write. `request.auth != null`
+    // (not the stricter loggedIn(), which requires an email claim) is what
+    // actually admits anonymous guests while still requiring *some* session —
+    // without it, visible content was readable by anyone who could reach the
+    // Firestore API directly, without ever going through the invite gate.
     match /ma_models/{document} {
-      allow read: if resource.data.isVisible == true || isStaff();
+      allow read: if (resource.data.isVisible == true && request.auth != null) || isStaff();
       allow write: if isStaff();
     }
     match /ma_dossiers/{document} {
-      allow read: if resource.data.isVisible == true || isStaff();
+      allow read: if (resource.data.isVisible == true && request.auth != null) || isStaff();
       allow write: if isStaff();
     }
     match /ma_articles/{document} {
-      allow read: if resource.data.isVisible == true || isStaff();
+      allow read: if (resource.data.isVisible == true && request.auth != null) || isStaff();
       allow write: if isStaff();
     }
     match /ma_artefacts/{document} {
-      allow read: if resource.data.isVisible == true || isStaff();
+      allow read: if (resource.data.isVisible == true && request.auth != null) || isStaff();
       allow write: if isStaff();
     }
 
@@ -65,8 +69,13 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isAdmin();
       allow create, delete: if isAdmin();
+      // Redemption requires a signed-in principal (the client signs in
+      // anonymously immediately before this write) — otherwise anyone who
+      // merely knows a code, without ever redeeming it, could spam its
+      // useCount and lock out the real recipient.
       allow update: if isAdmin()
-        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['useCount'])
+        || (request.auth != null
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['useCount'])
             && request.resource.data.useCount == resource.data.useCount + 1);
     }
   }

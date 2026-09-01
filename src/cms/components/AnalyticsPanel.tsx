@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { RefreshCw, Users, Eye, MousePointerClick, Clock, ExternalLink } from "lucide-react";
+import { auth } from "@/lib/firebase";
 
 interface DailyPoint {
     date: string;
@@ -86,7 +87,10 @@ export const AnalyticsPanel = () => {
         else setRefreshing(true);
         setError(null);
         try {
-            const res = await fetch("/api/analytics");
+            const token = await auth.currentUser?.getIdToken();
+            const res = await fetch("/api/analytics", {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            });
             if (!res.ok) {
                 const body = await res.json().catch(() => ({ error: res.statusText }));
                 throw new Error(body.error || res.statusText);

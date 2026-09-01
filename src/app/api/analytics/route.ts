@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
+import { requireStaff } from '@/lib/firebaseAdmin';
 
 // GA4 Property ID (numeric, e.g. "123456789") — set in env
 const PROPERTY_ID = process.env.GA4_PROPERTY_ID;
@@ -7,7 +8,14 @@ const PROPERTY_ID = process.env.GA4_PROPERTY_ID;
 // Disable body parsing (not needed for GET)
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
+    // Internal traffic data — staff only. Without this check, anyone who
+    // discovers the URL could pull site analytics with no login at all.
+    const staffEmail = await requireStaff(req);
+    if (!staffEmail) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     if (!PROPERTY_ID) {
         return NextResponse.json(
             { error: 'GA4_PROPERTY_ID not configured' },
