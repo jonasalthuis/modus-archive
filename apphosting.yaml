@@ -53,5 +53,13 @@ env:
     availability:
       - RUNTIME
 
-  # NEXT_PUBLIC_RECAPTCHA_SITE_KEY omitted — App Check skips gracefully when absent.
-  # Re-enable once token verification is working (currently 0% verified in console).
+  # App Check (reCAPTCHA v3). All App Check services (Firestore, Storage, Auth,
+  # Data Connect) are currently UNENFORCED (verified via API on 2026-09-01), so
+  # this only starts generating + measuring tokens — nothing gets rejected yet.
+  # Watch verified-token rate in Console → App Check for a bit of real traffic
+  # before flipping any service to Enforced.
+  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    value: 6LeylggtAAAAAG-MveWmhTQqSGryp14TjEV7OsXR
+    availability:
+      - BUILD
+      - RUNTIME
