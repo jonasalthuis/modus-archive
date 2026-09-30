@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { storage } from "@/lib/firebase";
+import { storage, ensureFreshAuthToken } from "@/lib/firebase";
 import { Upload, Trash2, Play, Pause } from "lucide-react";
 
 interface AudioUploaderProps {
@@ -18,7 +18,7 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
     const inputRef = useRef<HTMLInputElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
 
-    const handleFile = (file: File) => {
+    const handleFile = async (file: File) => {
         if (!modelId) {
             alert("Save the model number first before uploading audio.");
             return;
@@ -28,13 +28,14 @@ export const AudioUploader = ({ modelId, url, onChange }: AudioUploaderProps) =>
             return;
         }
 
+        setUploading(true);
+        setProgress(0);
+        await ensureFreshAuthToken();
+
         const timestamp = Date.now();
         const storagePath = `models/audio/${modelId}/${timestamp}-${file.name}`;
         const storageRef = ref(storage, storagePath);
         const task = uploadBytesResumable(storageRef, file);
-
-        setUploading(true);
-        setProgress(0);
 
         task.on(
             "state_changed",

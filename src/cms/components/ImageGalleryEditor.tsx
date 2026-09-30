@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
-import { storage } from "@/lib/firebase";
+import { storage, ensureFreshAuthToken } from "@/lib/firebase";
 import { downscaleImage } from "@/lib/downscaleImage";
 import { Star, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
@@ -33,6 +33,7 @@ export function ImageGalleryEditor({ modelId, images, onChange }: Props) {
 
         setUploading(true);
         setError(null);
+        await ensureFreshAuthToken();
 
         const newImages: ModelImage[] = [];
 

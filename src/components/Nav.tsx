@@ -116,7 +116,7 @@ export function Nav() {
             <div className="relative group/nma flex-shrink-0 pointer-events-auto">
                 <Link
                     href={archiveHref}
-                    className="px-3 text-stone-900 hover:text-stone-500 transition-colors duration-300 select-none h-[34px] flex items-center justify-center text-2xl font-light tracking-tight"
+                    className="px-3 text-stone-900 hover:text-stone-500 transition-colors duration-300 select-none h-[34px] flex items-center justify-center text-2xl font-medium tracking-tight"
                 >
                     NM<span className="italic">A</span>
                 </Link>

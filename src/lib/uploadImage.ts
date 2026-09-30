@@ -1,5 +1,5 @@
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { storage } from "@/lib/firebase";
+import { storage, ensureFreshAuthToken } from "@/lib/firebase";
 import { downscaleImage } from "@/lib/downscaleImage";
 
 // Upload one image file for a model and return its download URL.
@@ -7,6 +7,7 @@ import { downscaleImage } from "@/lib/downscaleImage";
 // The image is downscaled to web resolution first — the public bucket never holds
 // the full-res original.
 export async function uploadModelImage(modelId: string, file: File): Promise<string> {
+    await ensureFreshAuthToken();
     const web = await downscaleImage(file);
     const filename = `${Date.now()}-${web.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
     const storageRef = ref(storage, `models/images/${modelId}/${filename}`);

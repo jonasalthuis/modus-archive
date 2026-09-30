@@ -13,6 +13,7 @@ import { NotesCard } from "./cards/NotesCard";
 import { PhotoCard } from "./cards/PhotoCard";
 import { GalleryCard } from "./cards/GalleryCard";
 import { StripCard } from "./cards/StripCard";
+import { ClusterCard } from "./cards/ClusterCard";
 import { AudioCard } from "./cards/AudioCard";
 import { HeroCard } from "./cards/HeroCard";
 import { TagsCard } from "./cards/TagsCard";
@@ -674,8 +675,9 @@ export function ModelCanvas({
                 if (!group || group.images.length === 0) return null;
                 // First image group is the hero — render large
                 if (imageGroups[0]?.id === groupId) return <HeroCard group={group} />;
-                if (group.mode === "gallery") return <GalleryCard group={group} />;
+                if (group.mode === "gallery" || group.mode === "lightbox") return <GalleryCard group={group} />;
                 if (group.mode === "strip") return <StripCard group={group} />;
+                if (group.mode === "cluster") return <ClusterCard group={group} />;
                 return <PhotoCard group={group} />;
             }
             return null;

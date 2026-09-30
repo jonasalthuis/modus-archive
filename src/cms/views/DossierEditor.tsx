@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc, serverTimestamp, arrayUnion, arrayRemove, writeBatch } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { db, storage, ensureFreshAuthToken } from "@/lib/firebase";
 import { slugify } from "../components/GenericEditor";
 import {
     DndContext,
@@ -679,6 +679,7 @@ const CoverImagePicker = ({
         setUploadProgress(0);
         setUploadError("");
         try {
+            await ensureFreshAuthToken();
             const timestamp = Date.now();
             const ext = uploadFile.name.split(".").pop() || "jpg";
             const storagePath = `dossiers/covers/${timestamp}-${uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;

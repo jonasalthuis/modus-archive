@@ -59,4 +59,19 @@ if (typeof window !== "undefined") {
         });
 }
 
+// Force-refresh the current user's ID token before a security-rules-gated
+// write. Storage/Firestore SDKs normally refresh tokens silently in the
+// background, but a tab left open for a while (or a laptop that slept)
+// can miss a refresh cycle and fire the next write with an expired token —
+// surfacing as a confusing storage/unauthorized even though the account's
+// role is correct. Call this right before an upload to rule that out.
+export async function ensureFreshAuthToken(): Promise<void> {
+    if (!auth.currentUser) return;
+    try {
+        await auth.currentUser.getIdToken(true);
+    } catch {
+        /* best-effort — if this fails, the write below will surface its own error */
+    }
+}
+
 export { app, auth, db, storage, analytics };

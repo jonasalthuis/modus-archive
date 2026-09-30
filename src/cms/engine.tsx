@@ -603,7 +603,7 @@ export const getNMASchemas = () => ({
         name: "Models",
         path: "ma_models",
         idField: "modelNumber",
-        siteUrlTemplate: "/en/models/{id}",
+        siteUrlTemplate: "/models/{id}",
         properties: {
             // ── Table-primary columns (visible by default) ──
             modelNumber: {
