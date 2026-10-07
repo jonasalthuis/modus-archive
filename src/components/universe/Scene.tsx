@@ -352,6 +352,8 @@ function CameraRig({
 // A faint rounded-rectangle line loop drawn around the card bounds of a cluster
 // when its label is hovered.
 
+const CLUSTER_RADIUS = 2.2;
+
 type ClusterBounds = { x1: number; y1: number; x2: number; y2: number; z: number };
 
 function buildRoundedRectPoints(b: ClusterBounds, r: number, segs: number): THREE.Vector3[] {
@@ -379,26 +381,28 @@ function ClusterHitArea({ bounds, clusterKey, hovered, onHover }: {
     hovered: boolean;
     onHover: (key: string | null) => void;
 }) {
-    const { x1, y1, x2, y2, z } = bounds;
-    const cx = (x1 + x2) / 2;
-    const cy = (y1 + y2) / 2;
-    const w = x2 - x1;
-    const h = y2 - y1;
+    const { z } = bounds;
+    // Same rounded rectangle as ClusterOutline so the fill and the line match.
+    const geo = useMemo(() => {
+        const pts = buildRoundedRectPoints(bounds, CLUSTER_RADIUS, 12);
+        const shape = new THREE.Shape(pts.slice(0, -1).map((p) => new THREE.Vector2(p.x, p.y)));
+        return new THREE.ShapeGeometry(shape);
+    }, [bounds]);
     return (
         <mesh
-            position={[cx, cy, z - 0.05]}
+            position={[0, 0, z - 0.05]}
+            geometry={geo}
             onPointerEnter={() => onHover(clusterKey)}
             onPointerLeave={() => onHover(null)}
         >
-            <planeGeometry args={[w, h]} />
-            <meshBasicMaterial color="#e7e5e4" transparent opacity={hovered ? 0.35 : 0} depthWrite={false} />
+            <meshBasicMaterial color="#e7e5e4" transparent opacity={hovered ? 0.35 : 0} depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
     );
 }
 
 function ClusterOutline({ bounds, hovered }: { bounds: ClusterBounds; hovered: boolean }) {
     const geo = useMemo(() => {
-        const pts = buildRoundedRectPoints(bounds, 2.2, 12);
+        const pts = buildRoundedRectPoints(bounds, CLUSTER_RADIUS, 12);
         return new THREE.BufferGeometry().setFromPoints(pts);
     }, [bounds]);
 
