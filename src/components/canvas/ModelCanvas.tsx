@@ -753,7 +753,7 @@ export function ModelCanvas({
                         <Link
                             href={archiveHref}
                             aria-label="Back to archive"
-                            className="inline-flex items-center justify-center w-[34px] h-[34px] border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl hover:backdrop-blur-none text-stone-500 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
+                            className="inline-flex items-center justify-center w-[34px] h-[34px] border border-stone-300 rounded-md bg-white/95 backdrop-blur-xl hover:backdrop-blur-none text-stone-900 hover:bg-stone-900 hover:border-stone-900 hover:text-white transition-colors duration-300"
                         >
                             <ArrowLeft size={13} />
                         </Link>
@@ -761,12 +761,12 @@ export function ModelCanvas({
                             Back to archive
                         </span>
                     </div>
-                    <span className="pointer-events-auto inline-flex items-center gap-2 h-[34px] px-3 border border-stone-200 rounded-md bg-white/70 backdrop-blur-xl flex-shrink-0 min-w-0">
-                        <span className="text-[10px] font-bold tracking-[0.35em] text-stone-500 font-mono flex-shrink-0">{model.modelNumber ?? "—"}</span>
+                    <span className="pointer-events-auto inline-flex items-center gap-2 h-[34px] px-3 border border-stone-300 rounded-md bg-white/95 backdrop-blur-xl flex-shrink-0 min-w-0">
+                        <span className="text-[10px] font-bold tracking-[0.35em] text-stone-900 font-mono flex-shrink-0">{model.modelNumber ?? "—"}</span>
                         {model.title && (
                             <>
-                                <span className="text-stone-200 text-[10px]">|</span>
-                                <span className="text-[10px] font-light tracking-tight text-stone-700 truncate max-w-[260px]">{model.title}</span>
+                                <span className="text-stone-400 text-[10px]">|</span>
+                                <span className="text-[10px] font-normal tracking-tight text-stone-900 truncate max-w-[260px]">{model.title}</span>
                             </>
                         )}
                     </span>

@@ -22,7 +22,17 @@ export function SearchBar({
     const searchParamsRef = useRef(searchParams);
     searchParamsRef.current = searchParams;
 
-    const text = searchParams.get("q") ?? "";
+    const urlText = searchParams.get("q") ?? "";
+    // Typing updates local state immediately; the URL (which re-filters and re-lays-out
+    // every card) is only written after a short pause, so the input never lags.
+    const [text, setText] = useState(urlText);
+    const lastSent = useRef(urlText);
+    const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => {
+        // External change (reset, Escape, suggestion pick) — adopt it.
+        if (urlText !== lastSent.current) { lastSent.current = urlText; setText(urlText); }
+    }, [urlText]);
+    useEffect(() => () => { if (debounce.current) clearTimeout(debounce.current); }, []);
     const pinnedTerms = searchParams.getAll("pin");
 
     const [open, setOpen] = useState(true);
@@ -44,6 +54,9 @@ export function SearchBar({
     }, [text, allSuggestions, pinnedTerms]);
 
     const updateSearch = useCallback((q: string, pins: string[]) => {
+        if (debounce.current) { clearTimeout(debounce.current); debounce.current = null; }
+        lastSent.current = q;
+        setText(q);
         const params = new URLSearchParams(searchParamsRef.current.toString());
         if (q) params.set("q", q); else params.delete("q");
         params.delete("pin");
@@ -117,7 +130,13 @@ export function SearchBar({
                 <input
                     ref={inputRef}
                     value={text}
-                    onChange={e => { updateSearch(e.target.value, pinnedTerms); setShowSuggestions(true); }}
+                    onChange={e => {
+                        const v = e.target.value;
+                        setText(v);
+                        setShowSuggestions(true);
+                        if (debounce.current) clearTimeout(debounce.current);
+                        debounce.current = setTimeout(() => updateSearch(v, pinnedTerms), 250);
+                    }}
                     onFocus={() => text.length >= 2 && setShowSuggestions(true)}
                     onKeyDown={handleKeyDown}
                     placeholder={pinnedTerms.length > 0 ? "Add filter…" : "Search collection"}

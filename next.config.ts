@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     // tears them down and recreates them in a tight loop in dev, causing context loss.
     reactStrictMode: false,
     images: {
+        formats: ['image/webp'],
+        // Resized images are immutable per URL — let the CDN/browser keep them for a year.
+        minimumCacheTTL: 31536000,
         remotePatterns: [
             {
                 protocol: 'https',

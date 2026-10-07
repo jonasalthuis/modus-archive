@@ -4,6 +4,7 @@ import React, { useLayoutEffect, useRef, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { UniverseModel, Vec3 } from "./types";
+import { optimizedImageUrl } from "@/lib/imageUrl";
 
 // "grid" = locked flat (no bob, no depth fog); "float" = drifting in space.
 type CardMode = "grid" | "float";
@@ -194,14 +195,24 @@ export function FloatingCard({ model, target, visible, dimmed, focused = false, 
         if (url) {
             const loader = new THREE.TextureLoader();
             loader.crossOrigin = 'anonymous';
-            return loader.load(url, (tex) => {
-                if (tex.image?.width && tex.image?.height) {
-                    imageAspectRef.current = tex.image.width / tex.image.height;
+            const onLoad = (tex: THREE.Texture) => {
+                const img = tex.image as { width?: number; height?: number } | undefined;
+                if (img?.width && img?.height) {
+                    imageAspectRef.current = img.width / img.height;
                     if (matRef.current) {
                         matRef.current.uniforms.uImageAspect.value = imageAspectRef.current;
                     }
                 }
+            };
+            // Small optimized WebP first; if the optimizer fails, fall back to the original.
+            const tex = loader.load(optimizedImageUrl(url), (t) => onLoad(t), undefined, () => {
+                loader.load(url, (t) => {
+                    tex.image = t.image;
+                    tex.needsUpdate = true;
+                    onLoad(tex);
+                });
             });
+            return tex;
         }
         // Canvas texture — aspect matches plane (600/440 ≈ 1.36 ≈ plane 1.35)
         return makeCardTexture(model);
